@@ -1,5 +1,5 @@
-/* AUDIXO V42: cache small app shell only. Never cache private jobs, API streams or uploaded media. */
-const VERSION='audixo-shell-v42-ui-release';
+/* AUDIXO V44: cache small app shell only. Never cache private jobs, API streams or uploaded media. */
+const VERSION='audixo-shell-v44-mobile-release';
 const SHELL=['/','/favicon.png','/pwa/icon-192.png','/pwa/icon-512.png','/site.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()).catch(()=>{}))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==VERSION&&key.startsWith('audixo-shell-')).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});

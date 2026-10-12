@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "AUDIXO \u2014 Online Audio Studio",
+  "name": "AUDIXO — Online Audio Studio",
   "short_name": "AUDIXO",
   "description": "Create, remix, trim and edit audio from your mobile home screen. Online conversion requires internet.",
   "start_url": "/?source=pwa",
@@ -36,6 +36,30 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Studio",
+      "short_name": "Studio",
+      "url": "/editor",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "MP3 / MP4 Downloader",
+      "short_name": "Downloader",
+      "url": "/tools/youtube-to-mp3",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

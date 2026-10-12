@@ -1,6 +1,7 @@
 import type {CSSProperties} from 'react'
 
 export const bitrateSteps=[64,192,240,320] as const
+export type Mp3Bitrate=(typeof bitrateSteps)[number]
 const mp4Steps=[
  {value:'240',name:'240p',detail:'SD'},
  {value:'360',name:'360p',detail:'SD'},
@@ -34,7 +35,7 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
  </section>
 }
 
-export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:number;onChange:(v:64|192|240|320)=>void;duration:number;disabled?:boolean}){
+export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
  const canEncode=duration>0&&duration<=300
  const actual=bitrate===320||!canEncode?320:bitrate
  const index=Math.max(0,bitrateSteps.findIndex(s=>s===bitrate))

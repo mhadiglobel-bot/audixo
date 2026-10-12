@@ -2,17 +2,17 @@ import {useEffect,useRef,useState} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import {downloadFile,downloadMp3AtBitrate,mediaRequest,waitForJob,type MediaPreview,type MediaJob,type MediaKind} from '../services/media'
-import {VideoQualityRail,Mp3QualityRail} from '../components/QualityRail'
+import {VideoQualityRail,Mp3QualityRail,type Mp3Bitrate} from '../components/QualityRail'
 
 type Health={ready:boolean;authenticated?:boolean;maxConcurrent?:number;message?:string}
-type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:64|192|240|320}
-const KEY='audixo-conversion-job-v42'
+type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:Mp3Bitrate}
+const KEY='audixo-conversion-job-v44'
 const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
 function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)?value:null}catch{return null}}
 
 export default function YouTubeConverter(){
  const [url,setUrl]=useState(''),[preview,setPreview]=useState<MediaPreview|null>(null)
- const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState<64|192|240|320>(320)
+ const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState<Mp3Bitrate>(320)
  const [busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[job,setJob]=useState<MediaJob|null>(null)
  const [permission,setPermission]=useState(false),[health,setHealth]=useState<Health|null>(null)
  const [saved,setSaved]=useState<SavedJob|null>(savedJob)

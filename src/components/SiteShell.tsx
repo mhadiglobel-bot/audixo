@@ -20,8 +20,6 @@ export default function SiteShell({children}:{children:ReactNode}){
  },[])
  return <>
   <div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div>
-  <div className="ax42-viewport-veil top" aria-hidden="true"/>
-  <div className="ax42-viewport-veil bottom" aria-hidden="true"/>
   <Header/>{children}<Footer/><MobileDock/><div className="ax40-scroll-progress" aria-hidden="true"/>
  </>
 }

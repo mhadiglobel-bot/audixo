@@ -1,44 +1,62 @@
 import {useEffect,useMemo,useState} from 'react'
 import {Link} from 'react-router-dom'
 import {soundPresets} from '../editor/project'
-import {soundBank} from '../services/soundBank'
 
-const videoResolutions=['240p','360p','480p','720p','1080p','1440p']
 const mp3Rates=['64','192','240','320']
-const stemItems=[
- ['5','vocals'],['4','drums'],['3','bass'],['2','other'],['5','stems'],['4','music'],['3','lead'],['2','fx']
-]
-const presetItems=[
- 'Studio Clean','Vocal Air','Wide Echo','Deep Space','Neo Delay','Tape Glow','Club Punch','Night Drive','Bass Lift','Bright Vox',
- 'Dream Wash','Radio Lite','Tape Flutter','Crystal Hall','Arena Push','Mono Snap','Future Pad','Street Echo','Smooth Tube','Pulse Gate',
- 'Warm Chamber','Soft Boost','Glow Motion','Stereo Bloom','Hyper Chorus','Vocal Throw','Crisp Room','Orbit Verb','Sub Lift','Rush Delay'
-]
+const videoRates=['240p','360p','480p','720p','1080p','1440p','2160p']
+const stems=[{no:1,name:'Vocals'},{no:2,name:'Music'},{no:3,name:'Drums'},{no:4,name:'Bass'},{no:5,name:'Other'}]
+const stemOrder=[2,4,0,3,1].map(i=>stems[i])
+const orderedPresets=soundPresets.map((item,i)=>({...item,no:i+1})).sort((a,b)=>{
+ const hash=(text:string)=>Array.from(text).reduce((v,c)=>(v*31+c.charCodeAt(0))>>>0,17)
+ return hash(a.id)-hash(b.id)
+})
 
-function useCycler<T>(items:T[],interval:number){
+type Cycle={value:string;detail:string}
+function AnimatedMetric({items,offset=0,hold=5000}: {items:Cycle[];offset?:number;hold?:number}){
  const [index,setIndex]=useState(0)
+ const [count,setCount]=useState(0)
+ const [phase,setPhase]=useState<'typing'|'hold'|'burst'>('typing')
+ const [ready,setReady]=useState(offset===0)
+ const [reduced,setReduced]=useState(false)
  useEffect(()=>{
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||items.length<2)return
-  const timer=window.setInterval(()=>setIndex(v=>(v+1)%items.length),interval)
-  return()=>window.clearInterval(timer)
- },[items.length,interval])
- return items[index]
+  const prefers=window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  setReduced(prefers)
+  if(prefers){setReady(true);return}
+  if(offset===0)return
+  const id=window.setTimeout(()=>setReady(true),offset)
+  return()=>window.clearTimeout(id)
+ },[offset])
+ const current=items[index%items.length]||{value:'',detail:''}
+ useEffect(()=>{
+  if(!ready||reduced||items.length<2)return
+  let timeout:number
+  if(phase==='typing'){
+   timeout=window.setTimeout(()=>{
+    if(count<current.value.length)setCount(n=>n+1)
+    else setPhase('hold')
+   },52)
+  }else if(phase==='hold')timeout=window.setTimeout(()=>setPhase('burst'),hold)
+  else timeout=window.setTimeout(()=>{setIndex(i=>(i+1)%items.length);setCount(0);setPhase('typing')},470)
+  return()=>window.clearTimeout(timeout)
+ },[items,index,count,phase,ready,reduced,hold,current.value.length])
+ const visible=!ready?'':reduced?current.value:current.value.slice(0,count)
+ return <div className={`ax44-metric-scene ${phase==='burst'?'is-burst':''}`} aria-label={`${current.value} ${current.detail}`}>
+  <strong className="ax44-metric-value" aria-hidden="true">{visible}<span className="ax44-type-caret"/></strong>
+  <span className="ax44-metric-detail" aria-hidden="true">{current.detail}</span>
+ </div>
 }
 
 export default function TrustMetrics(){
- const mp3Rate=useCycler(mp3Rates,5200)
- const videoRes=useCycler(videoResolutions,5200)
- const stemItem=useCycler(stemItems,5000)
- const presetName=useCycler(presetItems,5000)
- const presetCount=useMemo(()=>Math.max(30,soundPresets.length+soundBank.length),[])
- const presetBadge=videoRes==='1080p'?'HD':videoRes==='1440p'?'QHD':''
- return <section className="ax39-metrics" aria-label="Audixo creative tool highlights">
-  <header><div className="ax25-kicker"><i/> AUDIXO / FAST FACTS</div><h2>Small steps. <em>Big sound.</em></h2><p>Your tools at a glance. Choose what you want to make and start with one click.</p></header>
+ const presetItems=useMemo<Cycle[]>(()=>orderedPresets.map(x=>({value:`${String(x.no).padStart(2,'0')}/${soundPresets.length}`,detail:x.name})),[])
+ const stemsItems=useMemo<Cycle[]>(()=>stemOrder.map(x=>({value:`0${x.no}/05`,detail:x.name})),[])
+ return <section className="ax39-metrics ax44-metrics" aria-label="Audixo tools at a glance">
+  <header><div className="ax25-kicker"><i/> AUDIXO / FAST FACTS</div><h2>Small steps. <em>Big sound.</em></h2><p>Find a tool for your next creative step.</p></header>
   <div className="ax39-metric-grid">
-   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp3"><span>01 / AUDIO</span><strong key={mp3Rate} className="ax42-burst-word">{mp3Rate} <small>kbps</small></strong><p>MP3 quality changes in the card preview before fading and switching again.</p><b>Open converter ↗</b></Link>
-   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp4"><span>02 / VIDEO</span><strong key={videoRes} className="ax42-burst-word">{videoRes}{presetBadge&&<sup>{presetBadge}</sup>}</strong><p>Video quality cycles through available targets with the same burst-style preview.</p><b>Open converter ↗</b></Link>
-   <Link to="/tools/vocals" className="ax39-metric-card stems"><span>03 / SEPARATE</span><strong key={`${stemItem[0]}-${stemItem[1]}`} className="ax42-burst-word">{stemItem[0]} <small>{stemItem[1]}</small></strong><p>Shuffle preview shows changing stem counts and labels instead of a fixed sequence.</p><b>Explore stems ↗</b></Link>
-   <Link to="/editor" className="ax39-metric-card effects"><span>04 / CREATE</span><strong>{presetCount}<small>+</small></strong><p key={presetName} className="ax42-burst-copy">Preset shuffle: <b>{presetName}</b></p><b>Open studio ↗</b></Link>
+   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp3"><span>01 / AUDIO</span><AnimatedMetric items={mp3Rates.map(v=>({value:v,detail:'kbps MP3'}))} hold={5000}/><p>Choose an audio bitrate for eligible, shorter media.</p><b>Open converter ↗</b></Link>
+   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp4"><span>02 / VIDEO</span><AnimatedMetric items={videoRates.map(v=>({value:v,detail:v==='2160p'?'4K video':v==='1440p'?'2K video':v==='1080p'?'Full HD video':'Video resolution'}))} offset={1200} hold={5200}/><p>Request a resolution supported by the video and API.</p><b>Open converter ↗</b></Link>
+   <Link to="/tools/vocals" className="ax39-metric-card stems"><span>03 / SEPARATE</span><AnimatedMetric items={stemsItems} offset={2700} hold={5400}/><p>Five named stem groups, each on its own track.</p><b>Explore stems ↗</b></Link>
+   <Link to="/editor" className="ax39-metric-card effects"><span>04 / PRESETS</span><AnimatedMetric items={presetItems} offset={3800} hold={5600}/><p>{soundPresets.length} real editor presets. Preview each name before editing.</p><b>Open studio ↗</b></Link>
   </div>
-  <p className="ax39-metrics-foot">* Available MP4 resolutions depend on the selected source and REST YTDL API response. The animated card previews highlight supported UI behavior, not a guaranteed quality for every source.</p>
+  <p className="ax39-metrics-foot">* These animated previews show choices, not guaranteed download quality. The server verifies requested MP4 resolutions.</p>
  </section>
 }

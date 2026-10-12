@@ -34,7 +34,7 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
  </section>
 }
 
-export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:number;onChange:(v:number)=>void;duration:number;disabled?:boolean}){
+export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:number;onChange:(v:64|192|240|320)=>void;duration:number;disabled?:boolean}){
  const canEncode=duration>0&&duration<=300
  const actual=bitrate===320||!canEncode?320:bitrate
  const index=Math.max(0,bitrateSteps.findIndex(s=>s===bitrate))

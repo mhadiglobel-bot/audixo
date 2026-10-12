@@ -1,18 +1,19 @@
-# AUDIXO Studio — V40 Responsive Edition
+# AUDIXO Studio — V42 Interaction Fix Release
 
 **Official website:** https://audixo.vercel.app  
 **Stack:** React 18, Vite 5, TypeScript 5, Vercel Node.js API proxy, browser Web Audio and optional ONNX local AI.
 
-This package updates the uploaded **AUDIXO V39.1 MP4 Hotfix** source. It is designed to preserve its editing engines while adding mobile/PWA layout, a deliberate seven-second introductory loader, a real independent Echo control dock, quality sliders, route metadata and navigable tool cards.
+This package is an incremental functional/UI correction built directly on the uploaded **AUDIXO V41 UI Fixes** ZIP. It preserves all existing tools, mobile/PWA, SEO, loader, and media proxy. The working source ZIP contains **99 files**, including application/runtime scripts and assets.
 
 ## Main updates
 
 - The introductory branded loader remains for **at least 7 seconds after application startup**, once per full-page load, not per internal navigation. It uses the supplied official AUDIXO symbol and lettering. This deliberate wait can affect initial UX performance and Core Web Vitals.
-- Full Studio Inspector has **Presets / Tone / Echo / Space / Motion / Clip** tabs. Echo has On/Off, independent mix, time and feedback, plus Slapback, Vocal Echo, and Deep Space starters. Every preset supports an optional Echo layer. These parameters connect to the existing Web Audio DelayNode processing, not a fake UI state.
-- One YouTube converter presents an MP3/MP4 toggle. MP4 includes a stepped slider at **240 / 360 / 480 / 720 / 1080 / 1440 / 2160p**; verified availability depends on `/api/preview`, and unverified qualities are labelled accordingly. The server ultimately decides whether a video is available at the selected resolution.
-- MP3 defaults to a **320 kbps target**. The browser can *actually re-encode* some short files (up to five minutes, 24 MB MP3 input) to 128/192/256 kbps. Otherwise those options are disabled; no fake bitrate choice silently downloads 320 kbps.
-- A bottom navigation for touch devices, responsive workspaces, installable standalone PWA shell with official brand icons, touch-friendly controls, static help and tools galleries on mobile, mobile install guidance and safe caching (excludes API and private media).
+- Full Studio Inspector has **Presets / Tone / Echo / Space / Motion / Clip** tabs. Echo has On/Off, independent mix, time and feedback. **Classic, true stereo Ping Pong, and staggered Wide Halo** are now distinct DSP modes used in both live playback and offline WAV/MP3 exports. Slapback, Vocal Echo, Stereo Bounce, and Hall Halo one-click starters are included. Every sound preset also offers an optional Echo mode.
+- One YouTube converter presents an MP3/MP4 toggle. MP4 includes a stepped slider at **240 / 360 / 480 / 720 / 1080 / 1440 / 2160p**; **every point on the new contained-dot quality rail is selectable after Analyze**, even when `/api/preview` reports only one resolution. API-reported points are marked distinctly and the backend may reject unsupported requests, rather than silently substituting resolutions.
+- MP3 defaults to a **320 kbps target**. The browser can *actually re-encode* some short files (up to five minutes, 24 MB MP3 input) to 128/192/256 kbps. For longer/unknown-duration videos, all points remain selectable in the UI, but **the actual download stays at the server 320 kbps target**, explicitly shown on the button and in the rail. This makes the requested selector feel complete without misleading users about output encoding.
+- New coherent matte-gradient download action, single-focus glowing URL input (removes double purple outline), larger near-square animated-border home metrics, a redesigned 2-row six-tab studio control dock and high-contrast Open Studio button. A bottom navigation for touch devices, responsive workspaces, installable standalone PWA shell with official brand icons, touch-friendly controls, static help and tools galleries on mobile, mobile install guidance and safe caching (excludes API and private media).
 - Footer sections: Audio Tools, More Tools, Explore, Help & Support, Legal. A Copyright & Media Rights page joins the existing Terms and Privacy pages.
+- The footer bottom now contains only copyright ownership and right-aligned Privacy/Terms links; old filler text is removed. V42 also bumps the PWA cache identifier and exposes a `data-audixo-release="v42.0"` marker in the footer for confirming the deployed version.
 - Search-oriented content improvements: distinct route titles/descriptions/canonicals/OG metadata, HTML pre-rendering, XML sitemap, robots.txt, software application JSON-LD, official icon and human-readable FAQs. **Search rankings/AI mentions are never guaranteed.**
 - The Contact page has no form and displays **Official email coming soon** until the address is entered in `src/config/site.ts` as `manualSupportEmail`.
 
@@ -50,7 +51,7 @@ npm run typecheck
 npm run build
 ```
 
-The repository upload edition omits optional diagnostic test harness files and previous-version QA notes to remain below the GitHub web uploader's 100-file limit. This does not alter the production `npm run build` pipeline or the web app, audio editor, media proxy, PWA, or SEO generation scripts. Run live browser/mobile and API acceptance testing after deployment.
+The repository upload edition omits optional diagnostic test harness files and previous-version QA notes to remain at 99 files for GitHub web upload. This does not alter the production `npm run build` pipeline or the web app, audio editor, media proxy, PWA, or SEO generation scripts. **Release QA:** 72 TS/TSX source files parse cleanly and the three CSS files parse with no syntax errors. Mock backend checks are run separately. Full dependency installation / Vite build and live `ytdl.tiers.rest` conversion could not be verified in the current container due npm registry/network errors. Run live browser/mobile and API acceptance testing after deployment.
 
 ## Limitations and operational reality
 

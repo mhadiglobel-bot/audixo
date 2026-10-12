@@ -1,0 +1,4 @@
+import * as lame from '@breezystack/lamejs'
+self.onmessage=(event:MessageEvent<{channels:Float32Array[];sampleRate:number;kbps:number}>)=>{
+ try{const {channels,sampleRate,kbps}=event.data,encoder=new lame.Mp3Encoder(Math.min(2,channels.length),sampleRate,kbps),chunks:Uint8Array[]=[];const to16=(data:Float32Array,start:number)=>{const out=new Int16Array(Math.min(1152,data.length-start));for(let i=0;i<out.length;i++){const n=Math.max(-1,Math.min(1,data[start+i]));out[i]=n<0?n*32768:n*32767}return out};for(let i=0;i<channels[0].length;i+=1152){const l=to16(channels[0],i),r=channels.length>1?to16(channels[1],i):undefined;const b=r?encoder.encodeBuffer(l,r):encoder.encodeBuffer(l);if(b.length)chunks.push(new Uint8Array(b))}const end=encoder.flush();if(end.length)chunks.push(new Uint8Array(end));self.postMessage({blob:new Blob(chunks as BlobPart[],{type:'audio/mpeg'})})}catch(e){self.postMessage({error:e instanceof Error?e.message:'MP3 encoding failed'})}
+}

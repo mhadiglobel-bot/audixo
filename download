@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.build/
+.dev/
+.test/
+.env
+.env.local
+worker/.env
+__pycache__/
+*.pyc

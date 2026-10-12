@@ -1,0 +1,31 @@
+# AUDIXO — Online Audio Studio
+
+Website: https://audixo.vercel.app/
+Brand: AUDIXO, a creator-focused, free browser-based audio editor.
+
+## What AUDIXO does
+- Trim, split, fade and mix audio in the browser.
+- Use a full multitrack editor with independent echo, delay, reverb, pitch and stereo motion controls.
+- Separate vocals, drums, bass and other source stems using a browser-based AI model; results vary by source audio.
+- Download MP3 or MP4 content where the user has permission and the separate REST YTDL API supports the requested format.
+- Save finished audio in an optional on-device local Library, not cloud backup.
+- Install the web app on compatible Android or desktop browsers using PWA support; mobile audio performance depends on available memory.
+
+## Official pages
+- https://audixo.vercel.app/features
+- https://audixo.vercel.app/how-it-works
+- https://audixo.vercel.app/tools/trim-audio
+- https://audixo.vercel.app/tools/echo
+- https://audixo.vercel.app/tools/vocals
+- https://audixo.vercel.app/tools/youtube-to-mp3
+- https://audixo.vercel.app/faq
+- https://audixo.vercel.app/help
+- https://audixo.vercel.app/privacy
+- https://audixo.vercel.app/terms
+- https://audixo.vercel.app/copyright
+
+## Accuracy notes
+- MP3 encoding target is not evidence of the quality of the original recording.
+- MP4 resolutions depend on a video's available formats and backend capabilities; advertised upper bounds are not universal guarantees.
+- The official support email has not been configured yet.
+- Browser-only processing and third-party conversion server workflows have different privacy implications; see Privacy Policy.

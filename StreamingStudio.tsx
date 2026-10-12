@@ -1,0 +1,55 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { formatTime } from './utils'
+import { retainedRanges, sliceAudio } from '../services/audioSlices'
+import {decodeAudio,renderProject} from './audioEngine'
+import {encodeMp3,encodeWav,downloadBlob} from './encoder'
+import {createProject,createTrack,createClip} from './project'
+type Range={start:number;end:number}
+function TimeField({label,value,onCommit}:{label:string;value:number;onCommit:(n:number)=>void}){const [draft,setDraft]=useState(String(Number(value.toFixed(3))));useEffect(()=>setDraft(String(Number(value.toFixed(3)))),[value]);return <label>{label}<input aria-label={label} type="number" step=".001" value={draft} onChange={e=>setDraft(e.target.value)} onBlur={()=>{const n=Number(draft);if(draft!==''&&Number.isFinite(n))onCommit(n);setDraft(String(Number(value.toFixed(3))))}} onKeyDown={e=>{if(e.key==='Enter')e.currentTarget.blur()}}/></label>}
+export default function StreamingStudio({file,duration,onBack}:{file:File;duration:number;onBack:()=>void}){
+ const [range,setRange]=useState<Range>({start:0,end:duration}),[cuts,setCuts]=useState<Range[]>([]),[cutMode,setCutMode]=useState(false),[cut,setCut]=useState<Range>({start:duration*.4,end:duration*.6})
+ const [url,setUrl]=useState(''),[busy,setBusy]=useState(''),[message,setMessage]=useState(''),[kbps,setKbps]=useState(0),[format,setFormat]=useState(/\.wav$/i.test(file.name)?'wav':'mp3'),[playing,setPlaying]=useState(false),[time,setTime]=useState(0)
+ const [gain,setGain]=useState(0),[speed,setSpeed]=useState(1),[fadeIn,setFadeIn]=useState(0),[fadeOut,setFadeOut]=useState(0)
+ const audio=useRef<HTMLAudioElement>(null),lane=useRef<HTMLDivElement>(null),history=useRef<{range:Range;cuts:Range[]}[]>([])
+ useEffect(()=>{const u=URL.createObjectURL(file);setUrl(u);return()=>URL.revokeObjectURL(u)},[file])
+ const edit=(r:Range)=>{if(!Number.isFinite(r.start)||!Number.isFinite(r.end)||r.start<0||r.end>duration||r.end-r.start<.01)return;history.current.push({range,cuts});setRange(r);audio.current?.pause();setPlaying(false)}
+ const drag=(side:'start'|'end',e:React.PointerEvent<HTMLButtonElement>)=>{
+  e.preventDefault();const target=e.currentTarget;target.setPointerCapture(e.pointerId);const rect=lane.current!.getBoundingClientRect(),initial=cutMode?cut:range;let next=initial
+  const move=(ev:PointerEvent)=>{const n=Math.max(0,Math.min(duration,(ev.clientX-rect.left)/rect.width*duration));next=side==='start'?{start:Math.min(n,initial.end-.01),end:initial.end}:{start:initial.start,end:Math.max(n,initial.start+.01)};cutMode?setCut(next):setRange(next)}
+  const done=()=>{target.removeEventListener('pointermove',move);target.removeEventListener('pointerup',done);target.removeEventListener('pointercancel',done);if(!cutMode){history.current.push({range:initial,cuts});audio.current?.pause();setPlaying(false)}}
+  target.addEventListener('pointermove',move);target.addEventListener('pointerup',done,{once:true});target.addEventListener('pointercancel',done,{once:true})
+ }
+ const removeMiddle=()=>{const c={start:Math.max(range.start,cut.start),end:Math.min(range.end,cut.end)};if(c.end<=c.start||cuts.some(x=>Math.max(x.start,c.start)<Math.min(x.end,c.end))){setMessage('Choose a new, non-overlapping cut region.');return}history.current.push({range,cuts});setCuts([...cuts,c].sort((a,b)=>a.start-b.start));setCutMode(false)}
+ const exportAudio=async()=>{
+  setBusy('Indexing your audio…');setMessage('')
+  try{
+   const ranges=retainedRanges(range,cuts),result=await sliceAudio(file,ranges,p=>setBusy(`Reading audio frames ${Math.round(p*100)}%…`))
+   let blob=result.blob
+   const processed=gain!==0||speed!==1||fadeIn!==0||fadeOut!==0||format!==result.format||(format==='mp3'&&kbps!==0)
+   if(processed){
+    if(result.duration>600)throw new Error('For a long recording, use Original quality and no level, speed or fade changes. To re-encode or add effects locally, keep a section of 10 minutes or less.')
+    setBusy('Rendering the selected audio locally…');const buffer=await decodeAudio(await blob.arrayBuffer()),project=createProject(),track=createTrack('Audio'),clip=createClip({bufferId:'long-selection',fileName:file.name,duration:buffer.duration})
+    clip.fx={...clip.fx,gainDb:gain,speed,fadeIn,fadeOut,limiter:false};track.clips=[clip];project.tracks=[track];project.master={...project.master,limiter:false,normalizeOnExport:false,stereoRepair:false}
+    const rendered=await renderProject(project,new Map([['long-selection',buffer]]),{normalize:false,stereoRepair:false});blob=format==='wav'?encodeWav(rendered.buffer):await encodeMp3(rendered.buffer,kbps||320)
+   }
+   downloadBlob(blob,file.name.replace(/\.[^.]+$/,'')+'-edited.'+format);setMessage('Your edited audio is ready. The file was processed on this device.')
+  }catch(e){setMessage(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}
+ }
+
+ const preview=()=>{if(!audio.current)return;if(playing){audio.current.pause();setPlaying(false)}else{if(audio.current.currentTime<range.start||audio.current.currentTime>=range.end)audio.current.currentTime=range.start;audio.current.playbackRate=speed;audio.current.volume=Math.min(1,Math.pow(10,gain/20));audio.current.play().then(()=>setPlaying(true)).catch(()=>setMessage('Playback could not start.'))}}
+ const shown=cutMode?cut:range
+ return <div className="ax-studio ax-stream"><header className="ax-studio-header"><Link to="/" className="ax-studio-brand">∿ <strong>Audixo</strong></Link><strong>{file.name}</strong><button onClick={onBack}>New audio</button></header>
+ <div className="ax-transport"><div><button aria-label="Undo" disabled={!history.current.length} onClick={()=>{const p=history.current.pop();if(p){setRange(p.range);setCuts(p.cuts)}}}>↶</button><button className="ax-play" onClick={preview}>{playing?'Ⅱ':'▶'}</button><output>{formatTime(time,true)} <small>/ {formatTime(duration,true)}</small></output></div><strong>Full-length streaming workspace</strong></div>
+ <div className="ax-edit-strip"><div className="ax-edit-intro"><strong>{cutMode?'Cut middle':'Edge trim'}</strong><small>The entire recording is retained.</small></div><TimeField label="Start seconds" value={shown.start} onCommit={n=>{if(cutMode){if(n>=0&&n<cut.end)setCut({...cut,start:n})}else edit({...range,start:n})}}/><TimeField label="End seconds" value={shown.end} onCommit={n=>{if(cutMode){if(n>cut.start&&n<=duration)setCut({...cut,end:n})}else edit({...range,end:n})}}/><button className={cutMode?'active':''} onClick={()=>setCutMode(v=>!v)}>Cut middle</button>{cutMode&&<button className="button button-primary" onClick={removeMiddle}>Remove & join</button>}</div>
+ <section className="ax-stream-timeline"><div className="ax-timeline-title"><strong>{formatTime(duration)} original · {formatTime((range.end-range.start-cuts.reduce((n,c)=>n+Math.max(0,Math.min(range.end,c.end)-Math.max(range.start,c.start)),0))/speed)} output</strong><span>00:00 → {formatTime(duration)}</span></div><div ref={lane} className="ax-stream-lane" onClick={e=>{if(audio.current){audio.current.currentTime=Math.max(range.start,Math.min(range.end,(e.clientX-e.currentTarget.getBoundingClientRect().left)/e.currentTarget.clientWidth*duration))}}}>
+ <span className="ax-stream-label">Full recording · {formatTime(duration)} · original audio remains on this device</span>
+ <div className="ax-stream-range" style={{left:`${shown.start/duration*100}%`,width:`${(shown.end-shown.start)/duration*100}%`}}><button aria-label="Trim start" className="ax-trim-handle start" onClick={e=>e.stopPropagation()} onPointerDown={e=>drag('start',e)}>Ⅱ</button><button aria-label="Trim end" className="ax-trim-handle end" onClick={e=>e.stopPropagation()} onPointerDown={e=>drag('end',e)}>Ⅱ</button></div>
+ {cuts.map((c,i)=><div key={i} className="ax-cut-region" style={{left:`${c.start/duration*100}%`,width:`${(c.end-c.start)/duration*100}%`}}>Removed</div>)}<div className="ax-playhead" style={{left:`${time/duration*100}%`}}/></div><p>Drag the edges directly. Use Cut middle to remove any section and join the rest.</p></section>
+ <section className="ax-stream-controls"><label>Volume (dB)<input type="number" min="-24" max="12" value={gain} onChange={e=>setGain(+e.target.value)}/></label><label>Speed<input type="number" min=".5" max="2" step=".05" value={speed} onChange={e=>setSpeed(+e.target.value)}/></label><label>Fade in (s)<input type="number" min="0" max="30" value={fadeIn} onChange={e=>setFadeIn(+e.target.value)}/></label><label>Fade out (s)<input type="number" min="0" max="30" value={fadeOut} onChange={e=>setFadeOut(+e.target.value)}/></label><label>Format<select value={format} onChange={e=>setFormat(e.target.value)}><option value="mp3">MP3</option><option value="wav">WAV</option></select></label>{format==='mp3'&&<label>Quality<select value={kbps} onChange={e=>setKbps(+e.target.value)}><option value="0">Original quality</option>{[64,128,192,256,320].map(k=><option key={k} value={k}>{k} kbps</option>)}</select></label>}<button className="button button-primary" disabled={!!busy} onClick={exportAudio}>{busy||'Export full edit ↗'}</button></section>
+ <section className="ax-applied-rack"><header><div><small>YOUR EDIT STACK</small><h3>Applied edits</h3></div><p>Remove any change below.</p></header><div className="ax-edit-chips">{(range.start>0||range.end<duration)&&<article><i>↔</i><div><strong>Trim · {range.start.toFixed(2)}–{range.end.toFixed(2)} s</strong></div><button aria-label="Remove trim" onClick={()=>edit({start:0,end:duration})}>×</button></article>}{cuts.map((c,i)=><article key={i}><i>⋈</i><div><strong>Middle cut · {c.start.toFixed(2)}–{c.end.toFixed(2)} s</strong></div><button aria-label={`Restore cut ${i+1}`} onClick={()=>{history.current.push({range,cuts});setCuts(cuts.filter((_,n)=>n!==i))}}>×</button></article>)}{[[gain,'Volume',()=>setGain(0),0],[speed,'Speed',()=>setSpeed(1),1],[fadeIn,'Fade in',()=>setFadeIn(0),0],[fadeOut,'Fade out',()=>setFadeOut(0),0]].filter(([v,, ,base])=>v!==base).map(([v,label,reset])=><article key={String(label)}><i>✦</i><div><strong>{String(label)} · {String(v)}</strong></div><button aria-label={`Remove ${label}`} onClick={()=>{audio.current?.pause();setPlaying(false);(reset as ()=>void)()}}>×</button></article>)}</div></section>
+ <p className="ax-stream-disclosure">Preview streams the original recording with your cuts, level and speed. Fades are applied during export. MP3/WAV edge trims and middle cuts export locally at original quality. MP3 cuts align to audio frames (usually about 26 ms); listen around joins. Re-encoding and fades require a retained section of 10 minutes or less.</p>
+ <audio ref={audio} src={url} preload="metadata" onPause={()=>setPlaying(false)} onTimeUpdate={()=>{const a=audio.current!;if(a.currentTime>=range.end){a.pause();setPlaying(false)}else{const c=cuts.find(c=>a.currentTime>=c.start&&a.currentTime<c.end);if(c)a.currentTime=c.end}setTime(a.currentTime)}}/>
+ {(busy||message)&&<div className="ax-status" role="status">{busy||message}</div>}
+ </div>
+}

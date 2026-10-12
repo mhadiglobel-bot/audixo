@@ -183,3 +183,15 @@ button,select,a,input{touch-action:manipulation}
 .ax39-quality-grid>button.unverified:hover:not(:disabled){border-color:#7869e5;background:#f3f0ff;box-shadow:0 7px 22px rgba(112,89,216,.11)}
 .ax39-quality-grid>button.unverified small{color:#78618e}
 .ax39-quality-warning{background:#fff9ed;border:1px solid #f6e1b6;color:#865b19!important;border-radius:11px;padding:11px 13px;margin:10px 0 0!important}
+
+
+/* v42 polish */
+.ax39-urlbar>div{border:1px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(100deg,rgba(18,235,133,.95),rgba(22,212,240,.95),rgba(170,87,255,.95),rgba(255,73,195,.95),rgba(18,235,133,.95)) border-box;background-size:100% 100%,260% 100%;animation:ax39Rail 8s linear infinite;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 10px 22px rgba(56,76,138,.06)}
+.ax39-urlbar>div:focus-within{box-shadow:0 0 0 3px rgba(151,105,255,.14),0 0 26px rgba(41,220,203,.16),inset 0 1px 0 rgba(255,255,255,.92)}
+.ax39-urlbar input::placeholder{color:#7e88a7}
+.ax39-create{position:relative;overflow:hidden;background:linear-gradient(95deg,#1ce56f 0%,#1ad7d9 28%,#7f5dff 68%,#ff4bc6 100%)!important;background-size:220% 220%!important;color:#fff!important;box-shadow:0 18px 42px rgba(34,212,175,.18),0 10px 28px rgba(140,79,255,.16),inset 0 0 0 1px rgba(255,255,255,.16)!important;animation:ax39Rail 7s ease infinite}
+.ax39-create b{background:rgba(255,255,255,.1)!important}
+.ax39-metric-card{min-height:188px;border-radius:26px!important;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(100deg,rgba(18,235,133,.85),rgba(15,210,240,.85),rgba(166,87,255,.85),rgba(255,72,194,.85),rgba(18,235,133,.85)) border-box!important;background-size:100% 100%,280% 100%!important;animation:ax39Rail 8s linear infinite}
+.ax39-metric-grid{align-items:stretch}
+.ax39-metric-card p{max-width:22ch}
+@keyframes ax39Rail{0%{background-position:0 0,0% 50%}50%{background-position:0 0,100% 50%}100%{background-position:0 0,0% 50%}}

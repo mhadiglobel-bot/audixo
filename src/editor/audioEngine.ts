@@ -88,7 +88,39 @@ function buildClipChain(ctx:BaseAudioContext,clip:AudioClip,track:AudioTrack,des
   if(clip.fx.compressor){const c=makeCompressor(ctx);processed.connect(c);processed=c}
   const sum=ctx.createGain(),dry=ctx.createGain(),delayWet=ctx.createGain(),reverbWet=ctx.createGain();const dw=clamp(clip.fx.delayWet||0,0,1),rw=clamp(clip.fx.reverb||0,0,1)
   dry.gain.value=clamp(1-Math.max(dw,rw)*.42,.28,1);delayWet.gain.value=dw;reverbWet.gain.value=rw;processed.connect(dry);dry.connect(sum)
-  if((clip.fx.delayMs||0)>0&&dw>0){const delay=ctx.createDelay(2);delay.delayTime.value=clamp((clip.fx.delayMs||0)/1000,0,2);const feedback=ctx.createGain();feedback.gain.value=clamp(clip.fx.feedback||0,0,.72);processed.connect(delay);delay.connect(feedback);feedback.connect(delay);delay.connect(delayWet);delayWet.connect(sum)}
+  if((clip.fx.delayMs||0)>0&&dw>0){
+    const seconds=clamp((clip.fx.delayMs||0)/1000,.035,1.2)
+    const amount=clamp(clip.fx.feedback||0,0,.72)
+    const mode=clip.fx.echoMode||'classic'
+    if(mode==='pingpong'){
+      // Actual alternating LEFT / RIGHT delayed repeats in the live and offline paths.
+      const left=ctx.createDelay(2),right=ctx.createDelay(2)
+      left.delayTime.value=seconds;right.delayTime.value=seconds
+      const leftPan=ctx.createStereoPanner(),rightPan=ctx.createStereoPanner()
+      leftPan.pan.value=-.92;rightPan.pan.value=.92
+      const lToR=ctx.createGain(),rToL=ctx.createGain()
+      lToR.gain.value=amount;rToL.gain.value=amount
+      processed.connect(left)
+      left.connect(leftPan);leftPan.connect(delayWet)
+      left.connect(lToR);lToR.connect(right)
+      right.connect(rightPan);rightPan.connect(delayWet)
+      right.connect(rToL);rToL.connect(left)
+    }else if(mode==='wide'){
+      // Two independent echoes at staggered times create a wider halo, not reverb.
+      for(const [factor,pan] of [[1,-.65],[1.28,.65]] as const){
+        const delay=ctx.createDelay(2),feedback=ctx.createGain(),panner=ctx.createStereoPanner(),gain=ctx.createGain()
+        delay.delayTime.value=clamp(seconds*factor,.035,1.8)
+        feedback.gain.value=amount*.76;panner.pan.value=pan;gain.gain.value=.65
+        processed.connect(delay);delay.connect(feedback);feedback.connect(delay)
+        delay.connect(panner);panner.connect(gain);gain.connect(delayWet)
+      }
+    }else{
+      const delay=ctx.createDelay(2),feedback=ctx.createGain()
+      delay.delayTime.value=seconds;feedback.gain.value=amount
+      processed.connect(delay);delay.connect(feedback);feedback.connect(delay);delay.connect(delayWet)
+    }
+    delayWet.connect(sum)
+  }
   if(rw>0){const conv=ctx.createConvolver();conv.buffer=makeImpulse(ctx);processed.connect(conv);conv.connect(reverbWet);reverbWet.connect(sum)}
   let post:AudioNode=sum;if(clip.fx.limiter){const limiter=makeLimiter(ctx,-1.5);post.connect(limiter);post=limiter}
   const oscillators:OscillatorNode[]=[]

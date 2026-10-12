@@ -1,4 +1,5 @@
 export type MotionMode = 'off' | '8d' | '16d'
+export type EchoMode = 'classic' | 'pingpong' | 'wide'
 
 export type ClipFx = {
   gainDb: number
@@ -7,6 +8,7 @@ export type ClipFx = {
   midDb: number
   trebleDb: number
   delayMs: number
+  echoMode: EchoMode
   feedback: number
   delayWet: number
   reverb: number

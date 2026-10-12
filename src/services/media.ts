@@ -56,7 +56,7 @@ export function localMetadata(file:File):Promise<number>{return new Promise((res
  * Do not make users select a number that is silently ignored by the export.
  */
 export async function downloadMp3AtBitrate(file:{url:string;fileName:string},title:string,kbps:number){
- if(![128,192,256].includes(kbps))throw new Error('Invalid MP3 bitrate.')
+ if(![64,192,240].includes(kbps))throw new Error('Invalid MP3 bitrate.')
  const url=new URL(file.url,window.location.href)
  if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='file')throw new Error('Unsafe download URL.')
  const response=await fetch(url.href,{credentials:'same-origin',cache:'no-store'})

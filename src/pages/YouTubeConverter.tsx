@@ -5,14 +5,14 @@ import {downloadFile,downloadMp3AtBitrate,mediaRequest,waitForJob,type MediaPrev
 import {VideoQualityRail,Mp3QualityRail} from '../components/QualityRail'
 
 type Health={ready:boolean;authenticated?:boolean;maxConcurrent?:number;message?:string}
-type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:number}
-const KEY='audixo-conversion-job-v39'
+type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:64|192|240|320}
+const KEY='audixo-conversion-job-v42'
 const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
 function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)?value:null}catch{return null}}
 
 export default function YouTubeConverter(){
  const [url,setUrl]=useState(''),[preview,setPreview]=useState<MediaPreview|null>(null)
- const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState(320)
+ const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState<64|192|240|320>(320)
  const [busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[job,setJob]=useState<MediaJob|null>(null)
  const [permission,setPermission]=useState(false),[health,setHealth]=useState<Health|null>(null)
  const [saved,setSaved]=useState<SavedJob|null>(savedJob)
@@ -64,7 +64,7 @@ export default function YouTubeConverter(){
    if(!created.id)throw Error('API did not return a job ID.')
    if(created.state==='failed')throw Error(created.error||'The server rejected this conversion.')
    setJob(created)
-   const record:SavedJob={id:created.id,title:preview.title,format,quality:format==='mp3'?'320':quality,mp3Bitrate:format==='mp3'?mp3Bitrate:undefined}
+   const record:SavedJob={id:created.id,title:preview.title,format,quality:format==='mp3'?'320':quality,mp3Bitrate:format==='mp3'?effectiveMp3Bitrate:undefined}
    save(record)
    await finish(record,controller)
   }catch(e){if(!(e instanceof DOMException&&e.name==='AbortError'))setNotice(e instanceof Error?e.message:'Conversion failed.')}
@@ -78,6 +78,7 @@ export default function YouTubeConverter(){
   finally{if(running.current===controller){running.current=null;setBusy('')}}
  }
  const stop=()=>{running.current?.abort();running.current=null;setBusy('');setNotice('Stopped checking progress. Your remote job may continue; use Resume previous job to check it later.')}
+ const effectiveMp3Bitrate=mp3Bitrate===320||(preview?.duration||0)>300||!(preview?.duration)?320:mp3Bitrate
  const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'320 kbps default · optional local re-encode',glyph:'♫'},{id:'mp4' as const,title:'MP4 Video',copy:'Video & sound · select resolution',glyph:'▶'}]
  return <SiteShell><Seo title="YouTube to MP3 & MP4 Downloader | AUDIXO" description="Analyze an authorized YouTube video and request an MP3 audio file at a 320 kbps encoding target, or select an API-supported MP4 video resolution." path="/tools/youtube-to-mp3"/>
   <main className="page-shell ax39-converter">
@@ -86,13 +87,13 @@ export default function YouTubeConverter(){
     <div className="ax39-converter-top"><div><small>FORMAT</small><strong>What would you like to save?</strong></div><span>01 / 03</span></div>
     <div className="ax39-format-toggle" role="group" aria-label="Output file format">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={!!busy} onClick={()=>{setFormat(item.id);setNotice('')}}><span className="ax39-format-icon">{item.glyph}</span><span><strong>{item.title}</strong><small>{item.copy}</small></span><span className="ax39-format-selected">{format===item.id?'●':'○'}</span></button>)}</div>
     <div className="ax39-steps">
-     <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste your YouTube link</h2><p>A clean source preview appears after Analyze. Use × to clear the field instantly.</p><div className="ax39-urlbar"><div><span aria-hidden="true">↗</span><input aria-label="YouTube video URL" type="url" placeholder="Paste a YouTube video link…" value={url} disabled={!!busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy&&url.trim())void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear YouTube URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={!!busy||!url.trim()} className="ax39-analyze" onClick={analyze}>{busy.startsWith('Analyzing')?'Checking…':'Analyze'} <span>↗</span></button></div>
+     <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste your YouTube link</h2><p>A clean source preview appears after Analyze. Use × to clear the field instantly.</p><div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="YouTube video URL" type="url" placeholder="Paste a YouTube video link…" value={url} disabled={!!busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy&&url.trim())void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear YouTube URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={!!busy||!url.trim()} className="ax39-analyze" onClick={analyze}>{busy.startsWith('Analyzing')?'Checking…':'Analyze'} <span>↗</span></button></div>
        {preview&&<div className="ax39-preview"><img src={preview.thumbnail} alt="Video thumbnail" loading="lazy" referrerPolicy="no-referrer"/><div><small>VIDEO IDENTIFIED · {shortTime(preview.duration)}</small><strong title={preview.title}>{preview.title}</strong><span>{preview.author||'YouTube source'}</span></div><b>✓</b></div>}
       </div></div>
      <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Set video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={preview?.duration||0} disabled={!!busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={preview?.qualities||[]} analyzed={!!preview} disabled={!!busy}/>}
        <p className="ax39-quality-foot">{format==='mp3'?'All common bitrate points stay selectable in the UI. 320 kbps remains the official server target, while lower bitrates are re-encoded locally after download.':'Every resolution point can be selected from the rail. API-reported qualities are highlighted, while the rest are treated as requested targets that the server will verify.'}</p>
       </div></div>
-     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><label className="ax39-permission"><input type="checkbox" checked={permission} onChange={e=>setPermission(e.target.checked)}/><span>I own this video or have permission to download or transform it.</span></label><button type="button" className="ax39-create" disabled={!preview||!permission||!!busy||(format==='mp4'&&!quality)} onClick={start}><span>{busy||`Download ${format.toUpperCase()}${format==='mp4'&&quality?` · ${quality}p`:format==='mp3'?` · ${mp3Bitrate} kbps`:''}`}</span><b>↓</b></button>
+     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><label className="ax39-permission"><input type="checkbox" checked={permission} onChange={e=>setPermission(e.target.checked)}/><span>I own this video or have permission to download or transform it.</span></label><button type="button" className="ax39-create ax42-download" disabled={!preview||!permission||!!busy||(format==='mp4'&&!quality)} onClick={start}><span>{busy||`Download ${format.toUpperCase()}${format==='mp4'&&quality?` · ${quality}p`:format==='mp3'?` · ${effectiveMp3Bitrate} kbps${effectiveMp3Bitrate!==mp3Bitrate?' server':''}`:''}`}</span><b>↓</b></button>
        {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(3,Number(job?.progress)||3))}%`}}/></span><small>Conversion continues on the remote server. Long videos depend on backend capacity and serverless download limits.</small></div>}
        {saved&&!busy&&<button className="ax39-resume" onClick={resume}>↻ Resume earlier {saved.format.toUpperCase()} job</button>}
        {job?.files?.[0]&&!busy&&<button className="ax39-resume" onClick={()=>{if((job.format||format)==='mp3'&&mp3Bitrate<320){setBusy(`Encoding ${mp3Bitrate} kbps MP3…`);void downloadMp3AtBitrate(job.files![0],preview?.title||saved?.title||job.title||'YouTube video',mp3Bitrate).catch(e=>setNotice(String(e))).finally(()=>setBusy(''))}else downloadFile(job.files![0],preview?.title||saved?.title||job.title||'YouTube video',job.format||format)}}>↓ Download again</button>}

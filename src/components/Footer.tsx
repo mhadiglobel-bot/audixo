@@ -8,7 +8,7 @@ const cols=[
  {name:'Legal',links:[['Privacy Policy','/privacy'],['Terms of Use','/terms'],['Copyright & Media Rights','/copyright']]}
 ]
 export default function Footer(){
- return <footer className="ax30-footer ax40-footer"><div className="ax30-footer-glow" aria-hidden="true"/>
+ return <footer className="ax30-footer ax40-footer" data-audixo-release="v42.0"><div className="ax30-footer-glow" aria-hidden="true"/>
   <div className="page-shell ax40-footer-intro"><div className="ax25-kicker"><i/> AUDIXO / CREATE MORE</div><h2>Make sound your own.<br/><em>Everywhere.</em></h2><p>Your browser audio studio, at home or on the move.</p><Link to="/editor" className="ax40-footer-cta">Open the Studio <span aria-hidden="true">↗</span></Link></div>
   <div className="page-shell ax40-footer-links"><div className="ax40-footer-brand"><Link to="/" aria-label="AUDIXO home"><Logo/></Link><p>Creative, direct audio tools for trimming, mixing and shaping sound. Media downloads require permission from the rights holder.</p><small>BUILT BY <Link to="/nexivo">NEXIVO ↗</Link></small></div>
    {cols.map(col=><section key={col.name}><h3>{col.name}</h3>{col.links.map(([label,href])=><Link key={href} to={href}>{label}</Link>)}</section>)}

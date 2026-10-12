@@ -18,5 +18,10 @@ export default function SiteShell({children}:{children:ReactNode}){
   mutations.observe(document.body,{subtree:true,childList:true})
   return()=>{observer.disconnect();mutations.disconnect()}
  },[])
- return <><div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div><Header/>{children}<Footer/><MobileDock/><div className="ax40-scroll-progress" aria-hidden="true"/></>
+ return <>
+  <div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div>
+  <div className="ax42-viewport-veil top" aria-hidden="true"/>
+  <div className="ax42-viewport-veil bottom" aria-hidden="true"/>
+  <Header/>{children}<Footer/><MobileDock/><div className="ax40-scroll-progress" aria-hidden="true"/>
+ </>
 }

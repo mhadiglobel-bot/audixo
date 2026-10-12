@@ -44,5 +44,5 @@ window.setTimeout(()=>{if(!finished)render(performance.now())},sevenSeconds+50)
 
 // PWA installation is optional; source editors require a network for hosted services.
 if(import.meta.env.PROD&&'serviceWorker' in navigator){
- window.addEventListener('load',()=>{void navigator.serviceWorker.register('/sw.js').catch(()=>{})})
+ window.addEventListener('load',()=>{void navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{})})
 }

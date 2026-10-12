@@ -5,7 +5,7 @@ export const trackColors = ['#39ff14','#43e8ed','#7aafff','#f098de','#b7d5cc','#
 
 export const defaultClipFx: ClipFx = {
   gainDb: 0, pan: 0, bassDb: 0, midDb: 0, trebleDb: 0,
-  delayMs: 0, feedback: 0.2, delayWet: 0, reverb: 0,
+  delayMs: 0, echoMode: 'classic', feedback: 0.2, delayWet: 0, reverb: 0,
   compressor: false, limiter: true, fadeIn: 0, fadeOut: 0,
   reverse: false, speed: 1, preservePitch: false, tapePitchSemitones: 0,
   motionMode: 'off', motionDepth: 0.78, motionHz: 0.16,
@@ -13,7 +13,7 @@ export const defaultClipFx: ClipFx = {
 
 export const soundPresets: SoundPreset[] = [
  {id:'lofi-vocal',name:'Lo-fi Vocal',note:'warm mids · soft highs · intimate space',group:'Vocals',accent:'green',patch:{bassDb:2,midDb:1.5,trebleDb:-8,reverb:.08,compressor:true,limiter:true}},
- {id:'echo-vocal',name:'Echo Vocal',note:'260 ms · controlled repeats',group:'Vocals',accent:'orange',patch:{delayMs:260,delayWet:.22,feedback:.25,reverb:.08,limiter:true}},
+ {id:'echo-vocal',name:'Echo Vocal',note:'260 ms · controlled repeats',group:'Vocals',accent:'orange',patch:{delayMs:260,echoMode:'classic',delayWet:.22,feedback:.25,reverb:.08,limiter:true}},
   { id:'slowed-reverb', name:'Slowed + Reverb', note:'0.86x · tape-style slow', group:'Song edit', accent:'violet', patch:{ speed:.86, preservePitch:false, reverb:.34, delayMs:110, delayWet:.07, feedback:.15, bassDb:1.2, compressor:true } },
   { id:'slowed-reverb-pitch-lock', name:'Slowed + Reverb · Pitch Lock', note:'0.86x · vocal pitch stays close', group:'Song edit', accent:'green', patch:{ speed:.86, preservePitch:true, reverb:.32, delayMs:105, delayWet:.06, feedback:.12, compressor:true, limiter:true } },
   { id:'8d-orbit', name:'8D Orbit', note:'smooth left-right motion', group:'Spatial', accent:'cyan', patch:{ motionMode:'8d', motionDepth:.86, motionHz:.16, reverb:.12, limiter:true } },
@@ -29,7 +29,7 @@ export const soundPresets: SoundPreset[] = [
   { id:'pitch-safe-space', name:'Original Pitch Space', note:'normal speed · wider ambience', group:'Song edit', accent:'green', patch:{ speed:1, preservePitch:true, tapePitchSemitones:0, reverb:.28, delayMs:115, delayWet:.07, feedback:.12, compressor:true, limiter:true } },
   { id:'night-drive', name:'Night Drive', note:'0.92x · wide motion · glow', group:'Spatial', accent:'blue', patch:{ speed:.92, reverb:.20, motionMode:'8d', motionDepth:.72, motionHz:.12, delayMs:180, delayWet:.06, compressor:true, limiter:true } },
   { id:'soft-outro', name:'Soft Outro', note:'fade · reverb · clean ending', group:'Finish', accent:'violet', patch:{ fadeOut:3.2, reverb:.18, delayMs:130, delayWet:.04, feedback:.08, limiter:true } },
-  { id:'wide-echo', name:'Wide Echo', note:'echo / 8D motion / controlled tail', group:'Spatial', accent:'cyan', patch:{ delayMs:340, delayWet:.18, feedback:.24, motionMode:'8d', motionDepth:.64, motionHz:.10, reverb:.14, limiter:true } },
+  {id:'wide-echo',name:'Wide Echo',note:'stereo bounce / controlled echoes',group:'Spatial',accent:'cyan',patch:{delayMs:340,echoMode:'pingpong',delayWet:.22,feedback:.29,motionMode:'8d',motionDepth:.64,motionHz:.10,reverb:.14,limiter:true }},
   { id:'velvet-room', name:'Velvet Room', note:'warm / soft room / smooth', group:'Space', accent:'violet', patch:{ bassDb:1.5,trebleDb:-2,reverb:.22,compressor:true,limiter:true } },
   { id:'neon-air', name:'Neon Air', note:'bright / airy / polished', group:'Tone', accent:'cyan', patch:{ bassDb:-1,midDb:1.2,trebleDb:4,reverb:.1,compressor:true } },
   { id:'pulse-bass', name:'Pulse Bass', note:'deep / punchy / clean', group:'Tone', accent:'green', patch:{ bassDb:5,midDb:1,gainDb:-1.5,compressor:true,limiter:true } },

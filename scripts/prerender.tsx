@@ -13,6 +13,7 @@ import FAQ, {faqs} from '../src/pages/FAQ'
 import Help from '../src/pages/Help'
 import Privacy from '../src/pages/Privacy'
 import Terms from '../src/pages/Terms'
+import Copyright from '../src/pages/Copyright'
 import Editor,{Recording} from '../src/pages/Editor'
 import Library from '../src/pages/Library'
 import Vocals from '../src/pages/Vocals'
@@ -28,5 +29,5 @@ import {audioTools} from '../src/data/tools'
 import NotFound from '../src/pages/NotFound'
 import {blogs} from '../src/data/blogs'
 export {blogs,faqs,audioTools}
-export const pageRoutes:Record<string,React.ComponentType>={'/':Home,'/features':Features,'/how-it-works':HowItWorks,'/about':About,'/nexivo':Nexivo,'/tools/recorder':Recording,'/contact':Contact,'/blog':Blog,'/faq':FAQ,'/help':Help,'/privacy':Privacy,'/terms':Terms,'/editor':Editor,'/library':Library,'/tools/vocals':Vocals,'/tools/mashup':Mashup,'/tools/trim-audio':QuickTrim,'/tools/echo':Echo,'/tools/slowed-reverb':Slowed,'/tools/pitch':Pitch,'/tools/spatial-motion':Spatial,'/tools/youtube-to-mp3':YouTubeConverter}
+export const pageRoutes:Record<string,React.ComponentType>={'/':Home,'/features':Features,'/how-it-works':HowItWorks,'/about':About,'/nexivo':Nexivo,'/tools/recorder':Recording,'/contact':Contact,'/blog':Blog,'/faq':FAQ,'/help':Help,'/privacy':Privacy,'/terms':Terms,'/copyright':Copyright,'/editor':Editor,'/library':Library,'/tools/vocals':Vocals,'/tools/mashup':Mashup,'/tools/trim-audio':QuickTrim,'/tools/echo':Echo,'/tools/slowed-reverb':Slowed,'/tools/pitch':Pitch,'/tools/spatial-motion':Spatial,'/tools/youtube-to-mp3':YouTubeConverter}
 export function pageHtml(path:string){return renderToString(<StaticRouter location={path}><Routes>{Object.entries(pageRoutes).map(([p,C])=><Route key={p} path={p} element={<C/>}/>)}<Route path="/tool/:toolId" element={<Tool/>}/><Route path="/blog/:slug" element={<BlogPost/>}/><Route path="*" element={<NotFound/>}/></Routes></StaticRouter>)}

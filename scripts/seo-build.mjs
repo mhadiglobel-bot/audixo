@@ -27,6 +27,7 @@ const pages={
  '/faq':['Audio Editing FAQ','Answers about direct trimming, middle cuts, AI vocal stems, mashups, export quality and long audio.'],
  '/help':['Audio Editor Help Center','Solve common audio import, preview, export, mashup and local AI problems.'],
  '/privacy':['Privacy Policy','How Audixo handles browser-local audio editing, AI model delivery and local Library storage.'],
+ '/copyright':['Copyright & Media Rights','Copyright and permitted media use guidance for AUDIXO downloads, editing, conversion and intellectual property.'],
  '/terms':['Terms of Use','Terms for Audixo audio editing, mashups, AI separation, export and local Library.'],
  '/editor':['Audixo Studio — Full Audio Editor, Mixer & Export','Trim with integrated clip handles, remove middle sections, mix tracks and export your audio.'],
  '/library':['Your Audio Library','Your saved Audixo exports in this browser profile.'],
@@ -46,7 +47,14 @@ for(const route of paths){
  const article=blogs.find(b=>route==='/blog/'+b.slug),[title,description]=article?[article.title,article.excerpt]:pages[route],url=origin+route
  let schema=route==='/nexivo'?{'@context':'https://schema.org','@type':'Organization',name:'Nexivo',url,description}:article?{'@context':'https://schema.org','@type':'Article',headline:title,description,publisher:{'@type':'Organization',name:'Audixo Studio',parentOrganization:{'@type':'Organization',name:'Nexivo'}},mainEntityOfPage:url}:route==='/faq'?{'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}:{'@context':'https://schema.org','@type':'SoftwareApplication',name:'Audixo',applicationCategory:'MultimediaApplication',operatingSystem:'Web browser',url,description}
  const tags=`<title>${escape(title)} | Audixo</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(title)} | Audixo"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="Audixo"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)} | Audixo"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
- const head=base.replace(/<title>[\s\S]*?<\/title>/,'').replace(/<meta name="(?:description|robots)"[^>]*>/g,'').replace('</head>',tags+'</head>')
+ // Strip generic home-only metadata from the Vite shell first. Every pre-rendered
+ // route gets one canonical, one OG set and one Twitter set rather than duplicates.
+ const head=base
+  .replace(/<title>[\s\S]*?<\/title>/,'')
+  .replace(/<meta name="(?:description|robots|twitter:[^"]+)"[^>]*>/g,'')
+  .replace(/<meta property="og:[^"]+"[^>]*>/g,'')
+  .replace(/<link rel="canonical"[^>]*>/g,'')
+  .replace('</head>',tags+'</head>')
  const html=head.replace('<div id="root"></div>',`<div id="root">${pageHtml(route)}</div>`)
  const target=route==='/'?'dist/index.html':`dist${route}/index.html`;await mkdir(path.dirname(target),{recursive:true});await writeFile(target,html)
 }

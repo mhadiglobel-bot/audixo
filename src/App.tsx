@@ -19,6 +19,7 @@ const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Privacy = lazy(() => import('./pages/Privacy'))
 const Terms = lazy(() => import('./pages/Terms'))
+const Copyright = lazy(() => import('./pages/Copyright'))
 const MashupTool = lazy(() => import('./pages/MashupTool'))
 const YouTubeConverter = lazy(() => import('./pages/YouTubeConverter'))
 const QuickTrim = lazy(() => import('./pages/QuickTrim'))
@@ -53,5 +54,6 @@ export default function App(){return <Suspense fallback={<RouteLoader/>}><Routes
   <Route path="/contact" element={<Contact/>}/>
   <Route path="/privacy" element={<Privacy/>}/>
   <Route path="/terms" element={<Terms/>}/>
+  <Route path="/copyright" element={<Copyright/>}/>
   <Route path="*" element={<NotFound/>}/>
 </Routes></Suspense>}

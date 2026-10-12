@@ -1,7 +1,17 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
-
+const cols=[
+ {name:'Audio tools',links:[['Full Audio Studio','/editor'],['Trim Audio','/tools/trim-audio'],['Vocal Extractor','/tools/vocals'],['Echo & Delay','/tools/echo'],['Slowed + Reverb','/tools/slowed-reverb'],['Mashup Editor','/tools/mashup']]},
+ {name:'More tools',links:[['MP3 / MP4 Downloader','/tools/youtube-to-mp3'],['Pitch Editor','/tools/pitch'],['Spatial 8D / 16D','/tools/spatial-motion'],['Audio Recorder','/tools/recorder'],['Local Library','/library']]},
+ {name:'Explore',links:[['All Features','/features'],['How it Works','/how-it-works'],['Sound Journal','/blog'],['About AUDIXO','/about'],['Nexivo','/nexivo']]},
+ {name:'Help & support',links:[['Help Center','/help'],['Frequently Asked Questions','/faq'],['Contact','/contact']]},
+ {name:'Legal',links:[['Privacy Policy','/privacy'],['Terms of Use','/terms'],['Copyright & Media Rights','/copyright']]}
+]
 export default function Footer(){
- const year=new Date().getFullYear()
- return <footer className="ax30-footer"><div className="ax30-footer-glow" aria-hidden="true"/><div className="page-shell ax30-footer-hero"><div><small>AUDIXO / SOUND STUDIO</small><h2>Build the mix.<br/><em>Keep your signature.</em></h2><p>Trim, layer, separate, mash up and finish audio in one browser studio.</p></div><Link to="/editor">Open Studio <span>↗</span></Link></div><div className="page-shell ax30-footer-grid"><section className="brand"><Logo/><p>Creator-first audio tools with a local library, focused quick editors and a full studio when you need deeper control.</p><span>POWERED BY <Link to="/nexivo">NEXIVO ↗</Link></span></section><section><h3>Create</h3><Link to="/editor">Full Studio</Link><Link to="/tools/mashup">Mashup Songs</Link><Link to="/tools/vocals">Vocals & Stems</Link><Link to="/tools/trim-audio">Trim Audio</Link><Link to="/tools/echo">Echo</Link></section><section><h3>Shape</h3><Link to="/tools/slowed-reverb">Slowed + Reverb</Link><Link to="/tools/pitch">Pitch</Link><Link to="/tools/spatial-motion">8D / 16D Motion</Link><Link to="/tools/youtube-to-mp3">YouTube MP3 / MP4</Link><Link to="/library">Library</Link></section><section><h3>Explore</h3><Link to="/features">Features</Link><Link to="/how-it-works">How It Works</Link><Link to="/blog">Sound Journal</Link><Link to="/faq">FAQ</Link><Link to="/help">Help Center</Link></section><section><h3>Company</h3><Link to="/about">About</Link><Link to="/contact">Contact</Link><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/nexivo">Nexivo</Link></section></div><div className="page-shell ax30-footer-bottom"><span>© {year} Audixo Studio</span><span>Your media. Your permission. Your mix.</span><span>Built for desktop, tablet and mobile.</span></div></footer>
+ return <footer className="ax30-footer ax40-footer"><div className="ax30-footer-glow" aria-hidden="true"/>
+  <div className="page-shell ax40-footer-intro"><div className="ax25-kicker"><i/> AUDIXO / CREATE MORE</div><h2>Make sound your own.<br/><em>Everywhere.</em></h2><p>Your browser audio studio, at home or on the move.</p><Link to="/editor" className="ax40-footer-cta">Open the Studio <span aria-hidden="true">↗</span></Link></div>
+  <div className="page-shell ax40-footer-links"><div className="ax40-footer-brand"><Link to="/" aria-label="AUDIXO home"><Logo/></Link><p>Creative, direct audio tools for trimming, mixing and shaping sound. Media downloads require permission from the rights holder.</p><small>BUILT BY <Link to="/nexivo">NEXIVO ↗</Link></small></div>
+   {cols.map(col=><section key={col.name}><h3>{col.name}</h3>{col.links.map(([label,href])=><Link key={href} to={href}>{label}</Link>)}</section>)}
+  </div><div className="page-shell ax40-footer-bottom"><span>© {new Date().getFullYear()} AUDIXO Studio · Built by Nexivo</span><span>Designed for desktop and mobile · Free browser tools</span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></div>
+ </footer>
 }

@@ -50,3 +50,26 @@ export function localMetadata(file:File):Promise<number>{return new Promise((res
  const finish=(error?:Error)=>{clearTimeout(timer);const duration=a.duration;a.removeAttribute('src');a.load();URL.revokeObjectURL(url);error?reject(error):resolve(duration)}
  a.preload='metadata';a.onloadedmetadata=()=>Number.isFinite(a.duration)?finish():finish(new Error('Unknown duration'));a.onerror=()=>finish(new Error('Unsupported audio format'));a.src=url
 })}
+
+/** Actual output-bitrate selection: the API always produces its 320-kbps MP3 target;
+ * shorter files can be re-encoded locally to the user's chosen LOWER bitrate.
+ * Do not make users select a number that is silently ignored by the export.
+ */
+export async function downloadMp3AtBitrate(file:{url:string;fileName:string},title:string,kbps:number){
+ if(![128,192,256].includes(kbps))throw new Error('Invalid MP3 bitrate.')
+ const url=new URL(file.url,window.location.href)
+ if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='file')throw new Error('Unsafe download URL.')
+ const response=await fetch(url.href,{credentials:'same-origin',cache:'no-store'})
+ if(!response.ok)throw new Error(`MP3 download failed (${response.status}).`)
+ const announced=Number(response.headers.get('content-length')||0)
+ if(announced>24_000_000)throw new Error('This MP3 is too large for on-device transcoding. Select 320 kbps to save the server file directly.')
+ const blob=await response.blob()
+ if(blob.size>24_000_000)throw new Error('This MP3 exceeds the mobile-safe re-encoding limit. Choose 320 kbps.')
+ const audio=new AudioContext()
+ let pcm:AudioBuffer
+ try{pcm=await audio.decodeAudioData(await blob.arrayBuffer())}finally{await audio.close()}
+ if(pcm.duration>300)throw new Error('On-device bitrate export is limited to 5-minute media. Select 320 kbps for longer tracks.')
+ const {encodeMp3,downloadBlob}=await import('../editor/encoder')
+ const result=await encodeMp3(pcm,kbps)
+ downloadBlob(result,`${cleanTitle(title)} (Audixo MP3 ${kbps}kbps).mp3`)
+}

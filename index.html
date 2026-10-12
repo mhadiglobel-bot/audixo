@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#f8fcfb" />
+    <meta name="application-name" content="AUDIXO" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AUDIXO" />
+    <link rel="apple-touch-icon" href="/pwa/icon-192.png" />
+    <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="light" />
+    <meta name="googlebot" content="index,follow,max-image-preview:large" />
     <meta name="description" content="AUDIXO: Online Audio Studio for editing, mixing, vocal separation, creative effects and MP3 or MP4 downloads." />
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
     <meta property="og:site_name" content="Audixo Studio" />
@@ -16,9 +23,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:opsz,wght@6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=39" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=40.0" />
     <link rel="manifest" href="/site.webmanifest" />
-    <title>AUDIXO | Online Audio Studio</title>
+    <title>AUDIXO — Free Online Audio Editor, MP3 & MP4 Converter</title>
+    <style id="audixo-critical-loader">
+      #audixo-loader{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#fafbff;color:#493e7c;font-family:Nunito,system-ui,sans-serif;transition:opacity .5s ease,visibility .5s ease}
+      #audixo-loader.done{opacity:0;visibility:hidden;pointer-events:none}
+      #audixo-loader .ax38-loader-symbol img{width:110px;height:110px;object-fit:contain}
+      #audixo-loader .ax38-loader-wordmark{width:min(255px,73vw);height:auto;max-height:66px;object-fit:contain}
+      #audixo-loader .audixo-loader-slogan{font-size:13px;font-weight:800;letter-spacing:.12em;min-height:24px}
+      #audixo-loader .ax40-loader-progress{width:min(310px,72vw);display:flex;gap:12px;align-items:center;font-size:11px;font-weight:800}
+      #audixo-loader .ax40-loader-track{height:5px;border-radius:99px;background:#e5e4f7;flex:1;overflow:hidden}
+      #audixo-loader .ax40-loader-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#ec25c4,#793cef,#02ceee,#1dd99d);animation:audixo-critical-load 7s linear forwards}
+      @keyframes audixo-critical-load{to{width:100%}}
+    </style>
+
   </head>
   <body>
     <div id="audixo-loader" class="audixo-loader ax33-loader" aria-label="Loading Audixo Studio" aria-live="polite">
@@ -28,6 +47,7 @@
       <img class="ax38-loader-wordmark" src="/audixo-official-name.png" alt="AUDIXO" />
       <span id="audixo-loader-slogan" class="audixo-loader-slogan ax33-loader-slogan" aria-hidden="true"></span>
       <div class="ax37-loader-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="ax40-loader-progress" aria-label="Preparing studio"><div class="ax40-loader-track"><i></i></div><span id="audixo-loader-count" aria-hidden="true">0%</span></div>
       <small>POWERED BY <b>NEXIVO</b></small>
     </div>
     <div id="root"></div>

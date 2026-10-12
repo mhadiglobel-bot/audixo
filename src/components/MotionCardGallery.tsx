@@ -1,4 +1,5 @@
 import { useMemo,useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { CSSProperties,MouseEvent as ReactMouseEvent,ReactNode } from 'react'
 
 type Item={tag:string;title:string;note:string;metric:string;glyph:string}
@@ -20,6 +21,14 @@ const bottom:Item[]=[
  {tag:'EXPORT',title:'MP3 / WAV',note:'Finish at the quality you choose and keep a local library copy.',metric:'Up to 320 kbps',glyph:'export'},
  {tag:'LIBRARY',title:'Saved Mixes',note:'Preview, reopen, remove or download finished audio again.',metric:'Local browser library',glyph:'library'},
 ]
+
+const routes:Record<string,string>={
+ 'Trim Audio':'/tools/trim-audio','Echo & Delay':'/tools/echo','Slowed + Reverb':'/tools/slowed-reverb',
+ 'Vocal Stems':'/tools/vocals','Pitch':'/tools/pitch','Voice Polish':'/editor',
+ '8D / 16D Motion':'/tools/spatial-motion','EQ & Bass':'/editor','Fade Designer':'/editor',
+ 'Speed Control':'/editor','MP3 / WAV':'/editor','Saved Mixes':'/library'
+}
+function toolUrl(item:Item){return routes[item.title]||'/editor'}
 
 function NeonGlyph({name}:{name:string}){
  const common={fill:'none',stroke:'currentColor',strokeWidth:1.9,strokeLinecap:'round' as const,strokeLinejoin:'round' as const}
@@ -43,7 +52,9 @@ function Card({item,cardKey,pinnedKey,onPin}:{item:Item;cardKey:string;pinnedKey
  const index=Number(cardKey.split('-').pop())||0
  const style={'--accent-index':index%4,'--card-w':`${326+(index%3)*34}px`,'--card-h':`${238+(index%3)*14}px`} as CSSProperties
  return <article className={`ax27-motion-card ${pinnedKey===cardKey?'is-pin-source':''}`} style={style} onMouseEnter={e=>onPin(e,item,cardKey)}>
-  <div className="ax27-motion-card-inner"><div className="ax27-motion-glyph ax33-neon-glyph"><NeonGlyph name={item.glyph}/></div><small>{item.tag}</small><h3>{item.title}</h3><p>{item.note}</p><span>{item.metric}</span></div>
+  <Link to={toolUrl(item)} className="ax40-motion-link" aria-label={`Open ${item.title} in AUDIXO`}>
+   <div className="ax27-motion-card-inner"><div className="ax27-motion-glyph ax33-neon-glyph"><NeonGlyph name={item.glyph}/></div><small>{item.tag}</small><h3>{item.title}</h3><p>{item.note}</p><span>{item.metric}</span></div>
+  </Link>
  </article>
 }
 function Lane({items,reverse=false,pin,onPin}:{items:Item[];reverse?:boolean;pin:Pin;onPin:(event:ReactMouseEvent<HTMLElement>,item:Item,key:string)=>void}){
@@ -55,5 +66,5 @@ export default function MotionCardGallery(){
  const [pin,setPin]=useState<Pin>(null)
  const onPin=(event:ReactMouseEvent<HTMLElement>,item:Item,key:string)=>{const r=event.currentTarget.getBoundingClientRect();setPin({item,key,rect:{left:r.left,top:r.top,width:r.width,height:r.height}})}
  const release=()=>{setPin(current=>current?{...current,closing:true}:current);window.setTimeout(()=>setPin(current=>current?.closing?null:current),360)}
- return <section className="ax27-motion-gallery ax33-motion-gallery" aria-label="Audixo tools in motion"><Lane items={top} pin={pin} onPin={onPin}/><Lane items={bottom} reverse pin={pin} onPin={onPin}/>{pin&&<article className={`ax27-pinned-card ${pin.closing?'is-closing':''}`} style={{left:pin.rect.left,top:pin.rect.top,width:pin.rect.width,height:pin.rect.height} as CSSProperties} onMouseLeave={release}><div className="ax27-motion-card-inner"><div className="ax27-motion-glyph ax33-neon-glyph"><NeonGlyph name={pin.item.glyph}/></div><small>{pin.item.tag}</small><h3>{pin.item.title}</h3><p>{pin.item.note}</p><span>{pin.item.metric}</span></div></article>}</section>
+ return <section className="ax27-motion-gallery ax33-motion-gallery" aria-label="Audixo tools in motion"><Lane items={top} pin={pin} onPin={onPin}/><Lane items={bottom} reverse pin={pin} onPin={onPin}/>{pin&&<article className={`ax27-pinned-card ${pin.closing?'is-closing':''}`} style={{left:pin.rect.left,top:pin.rect.top,width:pin.rect.width,height:pin.rect.height} as CSSProperties} onMouseLeave={release}><div className="ax27-motion-card-inner"><div className="ax27-motion-glyph ax33-neon-glyph"><NeonGlyph name={pin.item.glyph}/></div><small>{pin.item.tag}</small><h3>{pin.item.title}</h3><p>{pin.item.note}</p><span>{pin.item.metric}</span><Link to={toolUrl(pin.item)} className="ax40-pin-link">Open tool ↗</Link></div></article>}</section>
 }

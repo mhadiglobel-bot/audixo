@@ -1,8 +1,11 @@
 import { useEffect, type ReactNode } from 'react'
 import Header from './Header'
 import Footer from './Footer'
+import {MobileDock} from './MobileDock'
+import {useMotionGlow} from './useMotionGlow'
 
 export default function SiteShell({children}:{children:ReactNode}){
+ useMotionGlow()
  useEffect(()=>{
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches
   const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
@@ -15,5 +18,5 @@ export default function SiteShell({children}:{children:ReactNode}){
   mutations.observe(document.body,{subtree:true,childList:true})
   return()=>{observer.disconnect();mutations.disconnect()}
  },[])
- return <><div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div><Header/>{children}<Footer/></>
+ return <><div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div><Header/>{children}<Footer/><MobileDock/><div className="ax40-scroll-progress" aria-hidden="true"/></>
 }

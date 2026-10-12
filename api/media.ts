@@ -5,7 +5,7 @@
 import { Readable } from 'node:stream'
 
 const YT_HOSTS=new Set(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be'])
-const MP4_QUALITIES=['240','360','480','720','1080','1440'] as const
+const MP4_QUALITIES=['240','360','480','720','1080','1440','2160'] as const
 const SUPPORTED=new Set<string>(MP4_QUALITIES)
 const JOB_ID=/^[\w-]{1,128}$/
 type Kind='mp3'|'mp4'
@@ -87,10 +87,10 @@ function qualities(payload:any){
    candidate=String(item.value??item.height??item.resolution??item.quality??item.label??'')
   }else return
   // Recognize 1080, 1080p, 1920x1080; do not fabricate unreported qualities.
-  const match=candidate.trim().match(/^(?:(?:\d{2,5}\s*[xX]\s*)?)(240|360|480|720|1080|1440)(?:\s*p)?$/i)
+  const match=candidate.trim().match(/^(?:(?:\d{2,5}\s*[xX]\s*)?)(240|360|480|720|1080|1440|2160)(?:\s*p)?$/i)
   if(!match)return
   const value=match[1]
-  if(SUPPORTED.has(value)&&!result.some(x=>x.value===value))result.push({value,label:`${value}p${value==='1080'?' - Full HD':value==='1440'?' - QHD':''}`})
+  if(SUPPORTED.has(value)&&!result.some(x=>x.value===value))result.push({value,label:`${value}p${value==='1080'?' - Full HD':value==='1440'?' - QHD':value==='2160'?' - 4K':''}`})
  }
  for(const view of views){
   for(const key of ['qualities','supported_qualities','video_qualities','videoQualities','available_qualities','availableQualities','resolutions','available_resolutions','video_formats','videoFormats','formats']){

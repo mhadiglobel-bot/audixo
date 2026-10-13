@@ -1,62 +1,94 @@
 import {useEffect,useMemo,useState} from 'react'
-import {Link} from 'react-router-dom'
 import {soundPresets} from '../editor/project'
+import {soundBank} from '../services/soundBank'
 
-const mp3Rates=['64','192','240','320']
-const videoRates=['240p','360p','480p','720p','1080p','1440p','2160p']
-const stems=[{no:1,name:'Vocals'},{no:2,name:'Music'},{no:3,name:'Drums'},{no:4,name:'Bass'},{no:5,name:'Other'}]
-const stemOrder=[2,4,0,3,1].map(i=>stems[i])
-const orderedPresets=soundPresets.map((item,i)=>({...item,no:i+1})).sort((a,b)=>{
- const hash=(text:string)=>Array.from(text).reduce((v,c)=>(v*31+c.charCodeAt(0))>>>0,17)
- return hash(a.id)-hash(b.id)
-})
+type CycleMetric={
+ title:string
+ value:string
+ unit?:string
+ copy:string
+ href:string
+ cta:string
+ theme:'mp3'|'mp4'|'preset'|'vocal'
+ pulse?:string
+ sequence:{value:string;unit?:string;detail:string;label:string;tag?:string}[]
+ hold?:number
+}
 
-type Cycle={value:string;detail:string}
-function AnimatedMetric({items,offset=0,hold=5000}: {items:Cycle[];offset?:number;hold?:number}){
+const mp3Sequence=[
+ {value:'64',unit:'kbps',detail:'Light preview encode for short audio.',label:'01 / AUDIO',tag:'LOW SIZE'},
+ {value:'192',unit:'kbps',detail:'Balanced export target for everyday listening.',label:'01 / AUDIO',tag:'BALANCED'},
+ {value:'240',unit:'kbps',detail:'High quality with smaller file weight.',label:'01 / AUDIO',tag:'CLEAN MIX'},
+ {value:'320',unit:'kbps MP3',detail:'Server target for the main MP3 workflow.',label:'01 / AUDIO',tag:'FULL QUALITY'},
+]
+
+const mp4Sequence=[
+ {value:'240p',unit:'SD',detail:'Fast fallback when the source is limited.',label:'02 / VIDEO',tag:'SD'},
+ {value:'480p',unit:'SD',detail:'Cleaner playback with a smaller export size.',label:'02 / VIDEO',tag:'480'},
+ {value:'720p',unit:'HD',detail:'HD request from the converter when available.',label:'02 / VIDEO',tag:'HD'},
+ {value:'1080p',unit:'FHD',detail:'Full HD when the source and API both support it.',label:'02 / VIDEO',tag:'FHD'},
+ {value:'2160p',unit:'4K video',detail:'Top-end request path for eligible videos.',label:'02 / VIDEO',tag:'4K'},
+]
+
+const presetSequence=soundPresets.slice(0,30).map((preset,index)=>({
+ value:String(index+1).padStart(2,'0')+'/30',
+ unit:preset.name,
+ detail:'Preset preview opens only the controls that matter for this sound.',
+ label:'03 / PRESETS',
+ tag:preset.name.split(/\s+/).slice(0,2).join(' '),
+}))
+
+const vocalSequence=soundBank.slice(0,60).map((item,index)=>({
+ value:String(index+1).padStart(2,'0')+'/60',
+ unit:item.name.split(' · ')[0],
+ detail:'Creative vocal-support sound bank slot ready for stems, layers and mashups.',
+ label:'04 / VOCALS',
+ tag:item.family.toUpperCase(),
+}))
+
+const metrics:CycleMetric[]=[
+ {title:'Audio output',value:'320',unit:'kbps MP3',copy:'Choose an audio bitrate for eligible, shorter media.',href:'/tools/youtube-to-mp3',cta:'Open converter ↗',theme:'mp3',pulse:'64 · 192 · 240 · 320',sequence:mp3Sequence,hold:5600},
+ {title:'Video output',value:'2160p',unit:'4K video',copy:'Request a resolution supported by the video and API.',href:'/tools/youtube-to-mp3',cta:'Open converter ↗',theme:'mp4',pulse:'240p → 2160p',sequence:mp4Sequence,hold:5600},
+ {title:'Preset library',value:'20/30',unit:'Neon Air',copy:'Thirty real editor presets. Preview each name before editing.',href:'/editor',cta:'Open studio ↗',theme:'preset',pulse:'Preset cycle',sequence:presetSequence,hold:5200},
+ {title:'Vocal sound bank',value:'04/60',unit:'Guitar',copy:'Creative sound layers for stem work, hooks and mashup sections.',href:'/tools/vocals',cta:'Explore vocals ↗',theme:'vocal',pulse:'60 entries',sequence:vocalSequence,hold:5200},
+]
+
+function useCyclingMetric(sequence:CycleMetric['sequence'],hold=5600){
  const [index,setIndex]=useState(0)
- const [count,setCount]=useState(0)
- const [phase,setPhase]=useState<'typing'|'hold'|'burst'>('typing')
- const [ready,setReady]=useState(offset===0)
- const [reduced,setReduced]=useState(false)
  useEffect(()=>{
-  const prefers=window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  setReduced(prefers)
-  if(prefers){setReady(true);return}
-  if(offset===0)return
-  const id=window.setTimeout(()=>setReady(true),offset)
-  return()=>window.clearTimeout(id)
- },[offset])
- const current=items[index%items.length]||{value:'',detail:''}
+  if(sequence.length<=1)return
+  const timer=window.setInterval(()=>setIndex(current=>(current+1)%sequence.length),hold)
+  return()=>window.clearInterval(timer)
+ },[sequence,hold])
+ return sequence[index]??sequence[0]
+}
+
+function AnimatedMetric({metric}:{metric:CycleMetric}){
+ const active=useCyclingMetric(metric.sequence,metric.hold)
+ const [burstKey,setBurstKey]=useState(0)
  useEffect(()=>{
-  if(!ready||reduced||items.length<2)return
-  let timeout:number
-  if(phase==='typing'){
-   timeout=window.setTimeout(()=>{
-    if(count<current.value.length)setCount(n=>n+1)
-    else setPhase('hold')
-   },52)
-  }else if(phase==='hold')timeout=window.setTimeout(()=>setPhase('burst'),hold)
-  else timeout=window.setTimeout(()=>{setIndex(i=>(i+1)%items.length);setCount(0);setPhase('typing')},470)
-  return()=>window.clearTimeout(timeout)
- },[items,index,count,phase,ready,reduced,hold,current.value.length])
- const visible=!ready?'':reduced?current.value:current.value.slice(0,count)
- return <div className={`ax44-metric-scene ${phase==='burst'?'is-burst':''}`} aria-label={`${current.value} ${current.detail}`}>
-  <strong className="ax44-metric-value" aria-hidden="true">{visible}<span className="ax44-type-caret"/></strong>
-  <span className="ax44-metric-detail" aria-hidden="true">{current.detail}</span>
- </div>
+  setBurstKey(value=>value+1)
+ },[active])
+ const digits=active.value.split('')
+ return <article className={`ax39-metric-card ax44-metric-card is-${metric.theme}`}>
+  <b>{active.label}</b>
+  <div className="ax44-metric-head"><span>{metric.title}</span><i>{active.tag??metric.pulse}</i></div>
+  <strong className="ax44-metric-value" aria-label={`${active.value} ${active.unit??''}`.trim()}>
+   <span className="ax44-metric-scene" key={burstKey}>{digits.map((char,i)=><span key={`${char}-${i}-${burstKey}`} className={`ax44-type-char ${char==='/'?'slash':''}`}>{char}</span>)}</span>
+   {active.unit&&<small>{active.unit}</small>}
+  </strong>
+  <p>{active.detail||metric.copy}</p>
+  <div className="ax44-metric-mini-rail" aria-hidden="true">
+   {metric.sequence.slice(0,Math.min(metric.sequence.length,6)).map((item,i)=><span key={`${metric.title}-${item.value}-${i}`} className={item.value===active.value?'active':''}>{item.value.replace('/','')}</span>)}
+  </div>
+  <a href={metric.href}>{metric.cta}</a>
+ </article>
 }
 
 export default function TrustMetrics(){
- const presetItems=useMemo<Cycle[]>(()=>orderedPresets.map(x=>({value:`${String(x.no).padStart(2,'0')}/${soundPresets.length}`,detail:x.name})),[])
- const stemsItems=useMemo<Cycle[]>(()=>stemOrder.map(x=>({value:`0${x.no}/05`,detail:x.name})),[])
- return <section className="ax39-metrics ax44-metrics" aria-label="Audixo tools at a glance">
-  <header><div className="ax25-kicker"><i/> AUDIXO / FAST FACTS</div><h2>Small steps. <em>Big sound.</em></h2><p>Find a tool for your next creative step.</p></header>
-  <div className="ax39-metric-grid">
-   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp3"><span>01 / AUDIO</span><AnimatedMetric items={mp3Rates.map(v=>({value:v,detail:'kbps MP3'}))} hold={5000}/><p>Choose an audio bitrate for eligible, shorter media.</p><b>Open converter ↗</b></Link>
-   <Link to="/tools/youtube-to-mp3" className="ax39-metric-card mp4"><span>02 / VIDEO</span><AnimatedMetric items={videoRates.map(v=>({value:v,detail:v==='2160p'?'4K video':v==='1440p'?'2K video':v==='1080p'?'Full HD video':'Video resolution'}))} offset={1200} hold={5200}/><p>Request a resolution supported by the video and API.</p><b>Open converter ↗</b></Link>
-   <Link to="/tools/vocals" className="ax39-metric-card stems"><span>03 / SEPARATE</span><AnimatedMetric items={stemsItems} offset={2700} hold={5400}/><p>Five named stem groups, each on its own track.</p><b>Explore stems ↗</b></Link>
-   <Link to="/editor" className="ax39-metric-card effects"><span>04 / PRESETS</span><AnimatedMetric items={presetItems} offset={3800} hold={5600}/><p>{soundPresets.length} real editor presets. Preview each name before editing.</p><b>Open studio ↗</b></Link>
-  </div>
-  <p className="ax39-metrics-foot">* These animated previews show choices, not guaranteed download quality. The server verifies requested MP4 resolutions.</p>
+ const note=useMemo(()=>'* Animated previews show choices, not guaranteed download quality. The converter API verifies video resolutions and keeps 320 kbps as the default server MP3 target.',[])
+ return <section className="ax39-metric-grid ax44-metrics" aria-label="Audixo quick capability cards">
+  {metrics.map(metric=><AnimatedMetric key={metric.title} metric={metric}/>)}
+  <small className="ax39-metric-footnote">{note}</small>
  </section>
 }

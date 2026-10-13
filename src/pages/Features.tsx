@@ -10,6 +10,17 @@ const featureGroups=[
  {n:'04',tag:'LIBRARY',title:'Finish it now. Find it again.',body:'Keep your exports available on this device without forcing a new account.',points:['Local saved recordings','Preview before download','Reopen in the editor'],link:'/library',cta:'Open Local Library'},
 ] as const
 
+
+const focusedTools=[
+ {name:'Trim Audio',url:'/tools/trim-audio',tag:'PRECISION EDIT',description:'Trim the beginning, ending or exact middle section.',symbol:'↔'},
+ {name:'Echo & Delay',url:'/tools/echo',tag:'REFLECTION DESIGN',description:'Build repeating depth with timing and feedback.',symbol:'◉'},
+ {name:'Slowed + Reverb',url:'/tools/slowed-reverb',tag:'ATMOSPHERE',description:'Slow the pace and add a controlled room tail.',symbol:'◌'},
+ {name:'Pitch Editor',url:'/tools/pitch',tag:'TONAL SHAPING',description:'Shift the tone and preview before exporting.',symbol:'♫'},
+ {name:'Spatial Motion',url:'/tools/spatial-motion',tag:'STEREO ORBIT',description:'Move sound through headphone-focused space.',symbol:'◎'},
+ {name:'Vocal Extractor',url:'/tools/vocals',tag:'STEM SEPARATION',description:'Inspect vocals, drums, bass and music layers.',symbol:'☷'},
+ {name:'Mashup Editor',url:'/tools/mashup',tag:'ARRANGEMENT',description:'Split and align clips across multiple tracks.',symbol:'▤'},
+] as const
+
 function FeatureVisual({kind}:{kind:string}){
  return <div className={`ax44-feature-preview is-${kind.toLowerCase()}`} aria-label={`${kind.toLowerCase()} interface illustration`}>
   <header><div><i/><i/><i/></div><span>AUDIXO / {kind}</span></header>
@@ -42,6 +53,6 @@ export default function Features(){return <SiteShell><Seo title="AUDIXO Features
    </article>)}
   </section>
   <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Only what you need.</h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
-   <div>{[['Trim Audio','/tools/trim-audio'],['Echo & Delay','/tools/echo'],['Slowed + Reverb','/tools/slowed-reverb'],['Pitch Editor','/tools/pitch'],['Spatial Motion','/tools/spatial-motion'],['Vocal Extractor','/tools/vocals'],['Mashup Editor','/tools/mashup']].map(([name,url],i)=><Link to={url} key={url}><span>{String(i+1).padStart(2,'0')}</span><strong>{name}</strong><b>↗</b></Link>)}</div>
+   <div className="ax46-focused-grid">{focusedTools.map((tool,i)=><Link to={tool.url} className="ax46-focused-card" key={tool.url}><span className="ax46-tool-index">{String(i+1).padStart(2,'0')} / {tool.tag}</span><div className="ax46-tool-icon" aria-hidden="true">{tool.symbol}</div><h3>{tool.name}</h3><p>{tool.description}</p><span className="ax46-tool-arrow">Explore tool ↗</span></Link>)}</div>
   </section>
  </main></SiteShell>}

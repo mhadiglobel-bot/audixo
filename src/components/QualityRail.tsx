@@ -2,52 +2,49 @@ import type {CSSProperties} from 'react'
 
 export const bitrateSteps=[64,192,240,320] as const
 export type Mp3Bitrate=(typeof bitrateSteps)[number]
-const mp4Steps=[
- {value:'240',name:'240p',detail:'SD'},
- {value:'360',name:'360p',detail:'SD'},
- {value:'480',name:'480p',detail:'SD'},
- {value:'720',name:'720p',detail:'HD'},
- {value:'1080',name:'1080p',detail:'FHD'},
- {value:'1440',name:'1440p',detail:'2K'},
- {value:'2160',name:'2160p',detail:'4K'}
+const videoSteps=[
+ {value:'240',title:'240p',quality:'SD'},
+ {value:'360',title:'360p',quality:'SD'},
+ {value:'480',title:'480p',quality:'SD'},
+ {value:'720',title:'720p',quality:'HD'},
+ {value:'1080',title:'1080p',quality:'Full HD'},
+ {value:'1440',title:'1440p',quality:'2K'},
+ {value:'2160',title:'2160p',quality:'4K'},
 ] as const
 
+type Selection={label:string;name:string;detail?:string}
+
+function QualitySlider({items,index,onChange,disabled=false,ariaLabel}:{items:Selection[];index:number;onChange:(index:number)=>void;disabled?:boolean;ariaLabel:string}){
+ const fill=items.length>1?index/(items.length-1)*100:0
+ const css={'--ax46-progress':`${fill}%`} as CSSProperties
+ return <div className={`ax46-slider ${disabled?'is-disabled':''}`} style={css}>
+  <div className="ax46-slider-track" aria-hidden="true"><span className="ax46-slider-fill"/></div>
+  <input className="ax46-slider-input" type="range" min={0} max={items.length-1} step={1} value={index} disabled={disabled} aria-label={ariaLabel} aria-valuetext={items[index]?.label||''} onChange={e=>onChange(Number(e.currentTarget.value))}/>
+  <div className="ax46-slider-options" role="group" aria-label={`${ariaLabel} shortcuts`}>
+   {items.map((item,i)=><button type="button" key={item.name} disabled={disabled} aria-pressed={index===i} className={index===i?'selected':''} title={item.detail||item.name} onClick={()=>onChange(i)}><strong>{item.label}</strong>{item.detail&&<small>{item.detail}</small>}</button>)}
+  </div>
+ </div>
+}
+
 export function VideoQualityRail({quality,onChange,available,analyzed,disabled=false}:{quality:string;onChange:(v:string)=>void;available:{value:string;label:string}[];analyzed:boolean;disabled?:boolean}){
- const supported=new Set(available.map(a=>String(a.value).replace(/p$/i,'')))
- const known=supported.size>0
- const index=Math.max(0,mp4Steps.findIndex(s=>s.value===quality))
- const selected=mp4Steps[index]
- const reported=known&&supported.has(selected.value)
- const select=(v:string)=>{if(analyzed&&!disabled)onChange(v)}
- return <section className="ax42-quality-panel" aria-label="MP4 resolution selector">
-  <div className="ax42-quality-head">
-   <div><span className="ax42-eyebrow">VIDEO OUTPUT</span><h3>{selected.name} <small>{selected.detail}</small></h3><p>{!analyzed?'Analyze the video to unlock selections.':reported?'Reported by your conversion API.':'Custom request. The server will confirm this quality.'}</p></div>
-   <span className="ax42-quality-status">{!analyzed?'AWAITING VIDEO':reported?'AVAILABLE':known?`${supported.size} VERIFIED`:'SERVER CHECK'}</span>
-  </div>
-  <div className="ax42-segmented-rail seven" role="group" aria-label="Choose MP4 resolution" style={{'--ax42-fill':`${(index/(mp4Steps.length-1))*100}%`} as CSSProperties}>
-   <div className="ax42-rail-line" aria-hidden="true"><i/></div>
-   {mp4Steps.map(item=><button type="button" key={item.value} aria-label={`${item.name}, ${supported.has(item.value)?'reported available by API':'server verification required'}`} aria-pressed={item.value===quality} disabled={!analyzed||disabled} className={`ax42-rail-choice${item.value===quality?' selected':''}${supported.has(item.value)?' verified':''}`} onClick={()=>select(item.value)}>
-     <span className="ax42-rail-circle" aria-hidden="true"><i/></span><span className="ax42-rail-label">{item.name}</span><small>{item.detail}</small>
-    </button>)}
-  </div>
-  <div className="ax42-quality-legend"><span><i className="verified"/> API-reported</span><span><i/> Unverified request</span></div>
-  <p className="ax42-quality-foot">Every point is selectable. A selected resolution is a request, not a guarantee. Unsupported resolutions may be rejected by the server rather than substituted silently.</p>
+ const index=Math.max(0,videoSteps.findIndex(step=>step.value===quality))
+ const selected=videoSteps[index]
+ const supported=new Set(available.map(q=>String(q.value).replace(/p$/i,'')))
+ const hasMetadata=supported.size>0
+ const supportedHere=supported.has(selected.value)
+ const detail=!analyzed?'Analyze a link to choose resolution.':!hasMetadata?'Your video quality will be checked when downloading.':supportedHere?'Available in the analyzed video.':'This resolution may not be available for this video.'
+ return <section className="ax46-quality-panel" aria-label="MP4 video quality">
+  <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">VIDEO RESOLUTION</span><h3>{selected.title} <small>{selected.quality}</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP4 VIDEO</span></div>
+  <QualitySlider items={videoSteps.map(step=>({label:step.title,name:step.value,detail:step.quality}))} index={index} disabled={!analyzed||disabled} onChange={i=>onChange(videoSteps[i].value)} ariaLabel="Video resolution"/>
  </section>
 }
 
 export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
- const canEncode=duration>0&&duration<=300
- const actual=bitrate===320||!canEncode?320:bitrate
- const index=Math.max(0,bitrateSteps.findIndex(s=>s===bitrate))
- return <section className="ax42-quality-panel" aria-label="MP3 bitrate selector">
-  <div className="ax42-quality-head">
-   <div><span className="ax42-eyebrow">MP3 AUDIO OUTPUT</span><h3>{bitrate} <small>kbps selected</small></h3><p>{canEncode&&bitrate<320?`On-device ${bitrate} kbps encode for a short video.`:bitrate<320?'Selection preview — long or unknown videos are delivered at 320 kbps.':'The conversion server is asked for 320 kbps.'}</p></div>
-   <span className="ax42-quality-status">{actual===320?'SERVER: 320':'LOCAL ENCODE'}</span>
-  </div>
-  <div className="ax42-segmented-rail four" role="group" aria-label="Choose MP3 bitrate" style={{'--ax42-fill':`${(index/(bitrateSteps.length-1))*100}%`} as CSSProperties}>
-   <div className="ax42-rail-line" aria-hidden="true"><i/></div>
-   {bitrateSteps.map(item=><button type="button" key={item} aria-label={`${item} kbps${!canEncode&&item<320?', visual selection only; output stays 320 kbps':''}`} aria-pressed={item===bitrate} disabled={disabled} className={`ax42-rail-choice${item===bitrate?' selected':''}`} onClick={()=>onChange(item)}><span className="ax42-rail-circle" aria-hidden="true"><i/></span><span className="ax42-rail-label">{item}</span><small>kbps</small></button>)}
-  </div>
-  <p className="ax42-quality-foot">{!canEncode&&bitrate<320?'Your chosen point changes the UI selection only. This video still downloads with the 320 kbps server encoding target.':'The displayed bitrate is an encoding target. Re-encoding cannot improve the fidelity of the original recording.'} Local re-encoding for lower bitrates requires a short, small file.</p>
+ const index=Math.max(0,bitrateSteps.indexOf(bitrate))
+ const local=duration>0&&duration<=300
+ const detail=bitrate===320?'Default server output target.':local?'Lower bitrate uses local encoding for short files.':'Long or unrecognized videos use the 320 kbps server target.'
+ return <section className="ax46-quality-panel" aria-label="MP3 audio quality">
+  <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">AUDIO BITRATE</span><h3>{bitrate} <small>kbps</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP3 AUDIO</span></div>
+  <QualitySlider items={bitrateSteps.map(value=>({label:String(value),name:String(value),detail:'kbps'}))} index={index} disabled={disabled} onChange={i=>onChange(bitrateSteps[i])} ariaLabel="MP3 bitrate"/>
  </section>
 }

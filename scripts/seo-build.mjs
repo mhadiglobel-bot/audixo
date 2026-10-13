@@ -18,7 +18,7 @@ const base=await readFile('dist/index.html','utf8'),escape=s=>String(s).replace(
 const pages={
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
  '/tools/recorder':['Audixo Audio Recorder — Record and Edit Audio Online','Record microphone audio in your browser, pause and resume, preview the recording and open it in Audixo Studio.'],
- '/':['Online Audio Studio','Make sound your own in AUDIXO. Trim and remix audio, separate vocals, use effects and download permitted YouTube MP3 and MP4 media.'],
+ '/':['Free Online Audio Studio & Sound Playground','Try AUDIXO’s interactive sound playground with Echo, Reverb, Pitch and Slowed audio previews, then trim, mix, separate vocals and export your sound online.'],
  '/features':['Audixo Features — Trim, Mashup, Stems, Effects & Export','Explore direct audio trimming, AI stem separation, vocal effects, creative presets and MP3 export.'],
  '/how-it-works':['How Audixo Works — From Audio Import to Final Export','Follow the Audixo workflow from importing audio through trimming, vocal separation, effects and download.'],
  '/about':['About Audixo','Meet Audixo: a creative audio studio with focused tools, a full waveform editor and vocal stem workflows.'],

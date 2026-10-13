@@ -1,3 +1,4 @@
+import {emitAudixoSuccess} from '../components/SoundExperience'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatTime } from './utils'
@@ -33,7 +34,7 @@ export default function StreamingStudio({file,duration,onBack}:{file:File;durati
     clip.fx={...clip.fx,gainDb:gain,speed,fadeIn,fadeOut,limiter:false};track.clips=[clip];project.tracks=[track];project.master={...project.master,limiter:false,normalizeOnExport:false,stereoRepair:false}
     const rendered=await renderProject(project,new Map([['long-selection',buffer]]),{normalize:false,stereoRepair:false});blob=format==='wav'?encodeWav(rendered.buffer):await encodeMp3(rendered.buffer,kbps||320)
    }
-   downloadBlob(blob,file.name.replace(/\.[^.]+$/,'')+'-edited.'+format);setMessage('Your edited audio is ready. The file was processed on this device.')
+   downloadBlob(blob,file.name.replace(/\.[^.]+$/,'')+'-edited.'+format);emitAudixoSuccess();setMessage('Your edited audio is ready. The file was processed on this device.')
   }catch(e){setMessage(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}
  }
 

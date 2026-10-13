@@ -1,15 +1,32 @@
-# AUDIXO Studio V46
+# AUDIXO Studio V48
 
 Frontend Vite/React/TypeScript application with Vercel serverless proxy for REST YTDL API.
 
-## V46 interface updates
+## V48 — Interactive Sonic Experience (October 2026)
+
+- New opt-in ambient sound mode for the homepage with no auto-play; when you navigate to an editor, background music stops. Default sound mode OFF.
+- Original synthesized audio demonstration, built in Web Audio API and played locally after pressing Play.
+- Sound Playground: live Echo, Reverb, Pitch and Slowed processing, Before/After crossfade, adjustable intensity and short-file upload for private comparison.
+- Dynamic preset browser reads the existing `soundPresets` library; click any preset to audition a preview of its supported Web Audio parameters. Full editor remains authoritative for advanced effects.
+- Responsive audio-reactive waveform and AUDIXO disc; real analysis only runs during demo playback. Reduced-motion settings respected.
+- Rotating original AUDIXO logo and visualizer added to empty audio-upload states in Full Editor, Trim, Echo, Pitch, Slowed + Reverb, Spatial 8D/16D, Mashup and Vocal Extractor.
+- Optional short interaction clicks and export-success chimes only when sound mode is manually switched ON; no sound is played on failed exports.
+- Branded loader remains available for a first visit with a Skip intro control; repeat visits in the same tab session skip the 7-second wait.
+- No new cloud API, streaming service, subscription, user login, copyrighted background recording or new environment variable is required.
+- Removed an unused duplicate old logo file to remain below 100 project files for GitHub web upload.
+
+**Audio demo limitations:** This demo is synthesized and runs on your device. Pitch-lock, some motion/reverse preset modes and custom studio DSP may be approximated in the lightweight preview; export from the Full Editor for the full processing chain. No user-uploaded sound is transmitted by the playground.
+
+**Acceptance:** Run `npm ci && npm run build`, test on a mobile/desktop browser with actual audio playback permissions and verify MP3/MP4 backend downloads before calling the release production-verified.
+
+## Older V46 interface updates
 
 - Native-input continuous MP3/MP4 quality sliders: one white thumb, moving neon fill, click/touch/keyboard support.
 - Independent MP3/MP4 format controls with smoothly blended micro-switches.
 - Homepage preview cards: horizontal values, 5+ second hold and burst, true shuffled previews of 30 editor presets and 60 sound-bank layers.
 - Twelve distinct scene-specific motion loops for How It Works (import, trim, select, stems, pitch, speed, echo, motion, mashup, presets, library, export), without pause toggle.
 - Richer animated Features cards and simplified converter copy.
-- PWA cache version v46, to refresh older frontend assets.
+- PWA cache version v48, to refresh older frontend assets.
 
 ## Setup
 

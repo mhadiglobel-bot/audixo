@@ -11,16 +11,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
  <React.StrictMode><BrowserRouter><App/></BrowserRouter></React.StrictMode>
 )
 
-// One startup intro per full page load, not on each in-app navigation.
-// The 7-second minimum is intentional per the studio owner's requested brand experience.
+// Branded 7-second first-visit intro with a Skip control. Returning visits open fast.
+// Never block the actual React bundle or editor initialization on the animation.
 const loader=document.getElementById('audixo-loader')
 const label=document.getElementById('audixo-loader-slogan')
 const count=document.getElementById('audixo-loader-count')
 const phrases=['MAKE EVERY BEAT COUNT','SHAPE SOUND YOUR WAY','CREATE IN YOUR RHYTHM','YOUR STUDIO IS READY']
 const start=performance.now()
-const sevenSeconds=7000
+let seenIntro=false
+try{seenIntro=window.sessionStorage.getItem('audixo-intro-v48')==='1'}catch{}
+const sevenSeconds=seenIntro?350:7000
 let last=-1
 let finished=false
+const finish=()=>{
+ if(finished)return
+ finished=true
+ try{window.sessionStorage.setItem('audixo-intro-v48','1')}catch{}
+ loader?.classList.add('done')
+ document.documentElement.dataset.audixoReady='true'
+ window.dispatchEvent(new Event('audixo:loader-complete'))
+ window.setTimeout(()=>loader?.remove(),560)
+}
+const skip=document.getElementById('audixo-loader-skip')
+if(seenIntro)skip?.remove()
+else skip?.addEventListener('click',finish,{once:true})
 const render=(now:number)=>{
  if(finished)return
  const elapsed=Math.min(sevenSeconds,now-start)
@@ -28,14 +42,7 @@ const render=(now:number)=>{
  if(count)count.textContent=`${percent}%`
  const idx=Math.min(phrases.length-1,Math.floor(elapsed/(sevenSeconds/phrases.length)))
  if(idx!==last){last=idx;if(label){label.classList.remove('is-active');label.textContent=phrases[idx];void label.offsetWidth;label.classList.add('is-active')}}
- if(elapsed>=sevenSeconds){
-  finished=true
-  loader?.classList.add('done')
-  document.documentElement.dataset.audixoReady='true'
-  window.dispatchEvent(new Event('audixo:loader-complete'))
-  window.setTimeout(()=>loader?.remove(),560)
-  return
- }
+ if(elapsed>=sevenSeconds){finish();return}
  window.requestAnimationFrame(render)
 }
 // If a device throttles animation frames, timer still guarantees completion.

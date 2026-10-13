@@ -3,6 +3,7 @@ import Header from './Header'
 import Footer from './Footer'
 import {MobileDock} from './MobileDock'
 import {useMotionGlow} from './useMotionGlow'
+import {SoundModeControl} from './SoundExperience'
 
 export default function SiteShell({children}:{children:ReactNode}){
  useMotionGlow()
@@ -20,6 +21,6 @@ export default function SiteShell({children}:{children:ReactNode}){
  },[])
  return <>
   <div className="ax25-page-aura" aria-hidden="true"><i/><i/><i/></div>
-  <Header/>{children}<Footer/><MobileDock/><div className="ax40-scroll-progress" aria-hidden="true"/>
+  <Header/>{children}<Footer/><MobileDock/><SoundModeControl/><div className="ax40-scroll-progress" aria-hidden="true"/>
  </>
 }

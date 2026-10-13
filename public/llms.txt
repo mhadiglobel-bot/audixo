@@ -3,6 +3,11 @@
 Website: https://audixo.vercel.app/
 Brand: AUDIXO, a creator-focused, free browser-based audio editor.
 
+## Interactive Sound Playground
+- Play an original synthesized AUDIXO demo after clicking Play; background audio never auto-plays.
+- Hear real-time Echo, Reverb, Pitch and Slowed effects and compare original versus processed audio via a Before/After slider.
+- Optionally preview your own short uploaded audio locally and browse the studio preset gallery.
+
 ## What AUDIXO does
 - Trim, split, fade and mix audio in the browser.
 - Use a full multitrack editor with independent echo, delay, reverb, pitch and stereo motion controls.

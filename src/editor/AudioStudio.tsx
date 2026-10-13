@@ -1,3 +1,4 @@
+import {emitAudixoSuccess} from '../components/SoundExperience'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Timeline from './Timeline'
 import Transport from './Transport'
@@ -91,7 +92,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
  },[])
 
  const resetSound=()=>{if(!hit)return;stop();const origin=hit.clip.sourceId||hit.clip.id;commit(p=>{p.edits=(p.edits||[]).filter(op=>!(op.kind==='effect'&&op.targets.some(t=>t.trackId===hit.track.id&&t.sourceId===origin)));rebuildEdits(p)})}
- const exportAudio=async(s:Settings)=>{if(!duration)return;await stop();setBusy('Rendering your mix…');try{const {buffer}=await renderProject(projectRef.current,buffers.current,{normalize:s.normalize,stereoRepair:s.stereoRepair});setBusy(`Encoding ${s.format.toUpperCase()}…`);const blob=s.format==='mp3'?await encodeMp3(buffer,s.kbps):encodeWav(buffer);downloadBlob(blob,`${safeFileName(project.name)}.${s.format}`);if(s.saveToLibrary)await saveMixToLibrary({name:s.libraryName||project.name,blob,format:s.format,kbps:s.kbps,duration:buffer.duration});setExportOpen(false);toast('Your audio download is ready.')}catch(e){toast(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}}
+ const exportAudio=async(s:Settings)=>{if(!duration)return;await stop();setBusy('Rendering your mix…');try{const {buffer}=await renderProject(projectRef.current,buffers.current,{normalize:s.normalize,stereoRepair:s.stereoRepair});setBusy(`Encoding ${s.format.toUpperCase()}…`);const blob=s.format==='mp3'?await encodeMp3(buffer,s.kbps):encodeWav(buffer);downloadBlob(blob,`${safeFileName(project.name)}.${s.format}`);if(s.saveToLibrary)await saveMixToLibrary({name:s.libraryName||project.name,blob,format:s.format,kbps:s.kbps,duration:buffer.duration});setExportOpen(false);emitAudixoSuccess();toast('Your audio download is ready.')}catch(e){toast(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}}
  useEffect(()=>()=>{stop();clearTimeout(messageTimer.current)},[stop])
  useEffect(()=>{const fn=(e:KeyboardEvent)=>{if(['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.code==='Space'){e.preventDefault();togglePlay()}if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();travel(e.shiftKey?'future':'past')}};window.addEventListener('keydown',fn);return()=>window.removeEventListener('keydown',fn)})
  void revision;void focusToolId

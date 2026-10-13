@@ -17,7 +17,7 @@ const {pageRoutes,pageHtml,blogs,faqs,audioTools}=await import(path.resolve('.bu
 const base=await readFile('dist/index.html','utf8'),escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 const pages={
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
- '/tools/recorder':['Online Audio Recorder','Record your microphone in your browser, pause and resume, preview your take and add it to the audio timeline.'],
+ '/tools/recorder':['Audixo Audio Recorder — Record and Edit Audio Online','Record microphone audio in your browser, pause and resume, preview the recording and open it in Audixo Studio.'],
  '/':['Online Audio Studio','Make sound your own in AUDIXO. Trim and remix audio, separate vocals, use effects and download permitted YouTube MP3 and MP4 media.'],
  '/features':['Audixo Features — Trim, Mashup, Stems, Effects & Export','Explore direct audio trimming, AI stem separation, vocal effects, creative presets and MP3 export.'],
  '/how-it-works':['How Audixo Works — From Audio Import to Final Export','Follow the Audixo workflow from importing audio through trimming, vocal separation, effects and download.'],
@@ -34,11 +34,11 @@ const pages={
  '/tools/youtube-to-mp3':['YouTube MP3 and MP4 Downloader','Analyze a YouTube link where you have download rights. Request 320 kbps MP3 or select a supported MP4 video resolution.'],
  '/tools/vocals':['Audixo Vocal Extractor — Voice, Music, Drums & Bass','Separate vocals, drums, bass and other instruments into individual audio tracks. Mix, mute, trim and apply vocal effects.'],
  '/tools/mashup':['Audixo Mashup Studio — Multitrack Song & Verse Editor','Layer multiple audio files, trim each section, create crossfades and export one finished mashup.'],
- '/tools/trim-audio':['Audixo Trim Audio — Precision Online Audio Cutter','Cut audio with draggable handles or precise source times. Export MP3 or WAV.'],
- '/tools/echo':['Add Echo to Audio','Shape repeat timing, echo amount and feedback, then preview and export your sound.'],
- '/tools/slowed-reverb':['Slowed + Reverb Audio','Slow your audio, preserve pitch when needed, and blend reverb or soft echo.'],
- '/tools/pitch':['Audio Pitch Changer','Change tape-style audio pitch in semitone steps and download your creative edit.'],
- '/tools/spatial-motion':['8D & 16D Audio Motion','Create stylized stereo headphone movement with controlled depth and orbit speed.']
+ '/tools/trim-audio':['Audixo Trim Audio — Free Online Audio Cutter','Trim MP3 or WAV using drag handles and exact timestamps, add fades and export audio in your browser.'],
+ '/tools/echo':['Audixo Echo — Add Echo and Delay to Audio Online','Add echo to voice and music online with delay time, feedback and wet mix. Preview and export your edited audio.'],
+ '/tools/slowed-reverb':['Audixo Slowed + Reverb — Slow Audio Online','Slow music or vocal recordings online, preserve pitch when needed and add a controlled reverb tail.'],
+ '/tools/pitch':['Audixo Pitch Shifter — Change Audio Pitch Online','Shift audio pitch in semitones, preview the tone and download your result as MP3 or WAV.'],
+ '/tools/spatial-motion':['Audixo 8D / 16D Audio Motion — Spatial Sound Tool','Add stereo orbit and motion effects to audio, customize depth and speed and preview in headphones.']
 }
 for(const tool of audioTools)pages['/tool/'+tool.id]=[tool.name+' Audio Tool',tool.short]
 const paths=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id)]

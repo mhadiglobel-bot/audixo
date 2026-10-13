@@ -55,7 +55,7 @@ export const productTools: ProductTool[] = [
     id: 'echo',
     name: 'Echo',
     route: '/tools/echo',
-    short: 'Add a simple echo with clear repeat time, amount and feedback controls.',
+    short: 'Create rhythmic reflections with clean timing and feedback controls.',
     group: 'Space',
     icon: '◌',
     bullets: ['Delay time', 'Wet mix', 'Feedback control'],

@@ -10,7 +10,7 @@ import { formatTime, safeFileName } from '../editor/utils'
 import type { ClipFx } from '../editor/types'
 
 type QuickMode='trim'|'echo'|'slowed'|'pitch'|'spatial'
-type Props={mode:QuickMode;title:string;eyebrow:string;description:string}
+type Props={mode:QuickMode;title:string;eyebrow:string;description:string;tagline?:string}
 type QuickPreset={name:string;note:string;apply:()=>void}
 
 const defaults={gainDb:0,speed:1,fadeIn:0,fadeOut:0,delayMs:240,delayWet:.18,feedback:.24,reverb:.28,pitch:0,motionMode:'8d' as '8d'|'16d',motionDepth:.78,motionHz:.18}
@@ -45,7 +45,7 @@ function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer){
   ctx.strokeStyle='rgba(10,26,18,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,center+.5);ctx.lineTo(rect.width,center+.5);ctx.stroke()
 }
 
-export default function QuickAudioWorkbench({mode,title,eyebrow,description}:Props){
+export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagline}:Props){
   const inputRef=useRef<HTMLInputElement|null>(null);const canvasRef=useRef<HTMLCanvasElement|null>(null);const waveRef=useRef<HTMLDivElement|null>(null);const workbenchRef=useRef<HTMLElement|null>(null)
   const bufferRef=useRef<AudioBuffer|null>(null);const [fileName,setFileName]=useState('');const [duration,setDuration]=useState(0);const [trimStart,setTrimStart]=useState(0);const [trimEnd,setTrimEnd]=useState(0)
   const [gainDb,setGainDb]=useState(defaults.gainDb);const [speed,setSpeed]=useState(defaults.speed);const [fadeIn,setFadeIn]=useState(defaults.fadeIn);const [fadeOut,setFadeOut]=useState(defaults.fadeOut)
@@ -140,7 +140,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description}:Pro
   if(longFile)return <StreamingStudio file={longFile} duration={longDuration} onBack={()=>setLongFile(null)}/>
   const ruler=[0,.25,.5,.75,1]
   return <div className={`v13-quick-page ax27-quick-page mode-${mode}`}>
-    <section className="page-shell v13-tool-hero ax27-tool-hero"><div><div className="eyebrow"><span/> {eyebrow}</div><h1>{title}</h1><p>{description}</p></div><div className="v13-beginner-flow ax27-beginner-flow"><span><b>01 · Upload</b><small>choose audio</small></span><i>→</i><span><b>02 · Adjust</b><small>{title} only</small></span><i>→</i><span><b>03 · Preview</b><small>listen first</small></span><i>→</i><span><b>04 · Download</b><small>MP3 / WAV</small></span></div></section>
+    <section className="page-shell v13-tool-hero ax27-tool-hero"><div><div className="eyebrow"><span/> {eyebrow}</div><h1 className="ax47-tool-heading">{title}</h1>{tagline&&<p className="ax47-tool-tagline">{tagline}</p>}<p>{description}</p></div><div className="v13-beginner-flow ax27-beginner-flow"><span><b>01 · Upload</b><small>choose audio</small></span><i>→</i><span><b>02 · Adjust</b><small>{title} only</small></span><i>→</i><span><b>03 · Preview</b><small>listen first</small></span><i>→</i><span><b>04 · Download</b><small>MP3 / WAV</small></span></div></section>
 
     <section ref={workbenchRef} className={`page-shell v13-workbench v13-neon-frame ax27-workbench ${controlsCollapsed?'is-controls-collapsed':''} ${isFullscreen?'is-fullscreen':''} ${isPseudoFullscreen?'is-pseudo-fullscreen':''}`}>
       <div className="ax27-workbench-intro"><div><span>FOCUSED WORKSPACE</span><strong>{guide.plain}</strong><p>{guide.tip}</p></div><aside><small>RESULT</small><b>{guide.result}</b></aside></div>

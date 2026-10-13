@@ -2,7 +2,7 @@ import {useEffect} from 'react'
 /** One passive shared cursor/scroll listener with RAF coalescing; no React rerenders. */
 export function useMotionGlow(){
  useEffect(()=>{
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches || matchMedia('(pointer:coarse)').matches)return
   let frame=0, x=-100,y=-100,scroll=0
   const paint=()=>{
    frame=0

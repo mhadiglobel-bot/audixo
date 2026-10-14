@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Logo from './components/Logo'
+import {SoundExperienceProvider} from './components/SoundExperience'
 
 const Vocals = lazy(() => import('./pages/Vocals'))
 const Home = lazy(() => import('./pages/Home'))
@@ -31,7 +32,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteLoader(){return <div className="route-loader ax28-route-loader ax33-route-loader"><div className="ax28-route-aura"/><div className="ax28-route-logo"><div className="ax28-route-rings"><i/><i/><i/></div><Logo compact/></div><img className="ax39-route-name" src="/audixo-official-name.png" alt="AUDIXO"/><span>Opening your creative workspace…</span><div className="ax33-route-tools" aria-hidden="true"><i>↔</i><i>▦</i><i>◌</i><i>↓</i></div></div>}
 
-export default function App(){return <Suspense fallback={<RouteLoader/>}><Routes>
+export default function App(){return <SoundExperienceProvider><Suspense fallback={<RouteLoader/>}><Routes>
   <Route path="/" element={<Home/>}/>
   <Route path="/tools/vocals" element={<Vocals/>}/>
   <Route path="/editor" element={<Editor/>}/>
@@ -56,4 +57,4 @@ export default function App(){return <Suspense fallback={<RouteLoader/>}><Routes
   <Route path="/terms" element={<Terms/>}/>
   <Route path="/copyright" element={<Copyright/>}/>
   <Route path="*" element={<NotFound/>}/>
-</Routes></Suspense>}
+</Routes></Suspense></SoundExperienceProvider>}

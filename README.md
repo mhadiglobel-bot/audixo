@@ -1,18 +1,36 @@
-# AUDIXO Studio V48
+# AUDIXO Studio V49
 
 Frontend Vite/React/TypeScript application with Vercel serverless proxy for REST YTDL API.
+
+## V49 — User music reel + uninterrupted live effects (October 2026)
+
+- Integrated all **10 user-provided cropped MP3 recordings** into a single 160 kbps CBR audio reel, with timing metadata for individual-track selection and looping. This is a space-efficient **demonstration** audio asset, not full originals.
+- Compact horizontally scrollable thumbnail track selector. Thumbnail images are AUDIXO-branded **generated placeholders based on each audio track's waveform**, NOT verified official YouTube thumbnails. Provide exact verified official video IDs or licensed artwork to replace these in a later revision.
+- Click any song to start playback; clicking the same song restarts it **without effects** and restores the neutral values. No Reset / Clear button.
+- Real-time Web Audio DSP for gain, bass, mids, treble, 8D/16D-style stereo orbit, delay, feedback, reverb, speed and tape-style pitch. React parameters update audio nodes without pausing/restarting. Compare Original vs Processed works as a live blend.
+- 30 studio presets read directly from `soundPresets`; presets with unsupported advanced operations such as reverse playback are explicitly labeled as approximations (remaining supported controls still apply).
+- A persistent AudioContext and HTMLAudioElement live **above the router**: navigation to content pages does not interrupt playback. Navigation to `/editor`, `/library`, and all `/tools/*` or `/tool/*` routes **pauses** user-selected demo audio.
+- Volume, seek and play/pause on a compact floating player when a track is selected. Music is never autoplayed on landing; it begins on explicit song click. Optional UI success cues remain off by default.
+- Homepage AUDIXO brand disc is larger and rotates clockwise. No changes to existing YTDL server or actual editor DSP/API contracts.
+- MP3 clips and cover sprite are static local assets (`public/demo/`); the service worker intentionally does not cache the MP3 as an offline file.
+
+**LEGAL/PUBLIC DEPLOYMENT:** These ten recordings were supplied by the user, but uploading/possessing MP3 files does NOT prove rights to publish, stream or redistribute them on a public website. Before deploying this release publicly, secure permission/license for the audio and any official YouTube artwork. For a rights-safe public launch, replace the demo reel with music you own or have explicit permission to embed. Third-party software notices remain below.
+
+**Technical limitation:** `preservesPitch` support varies by browser, tape-style pitch changes can also change tempo, and full-editor operations such as reverse/time-stretch are not reproduced exactly in this lightweight playground.
+
+**Production QA status:** A full npm/Vite build was NOT performed in this offline environment because npm cache lacks `yallist@3.1.1`; GitHub/Vercel CI must execute `npm ci && npm run build` and perform actual audio acceptance testing.
 
 ## V48 — Interactive Sonic Experience (October 2026)
 
 - New opt-in ambient sound mode for the homepage with no auto-play; when you navigate to an editor, background music stops. Default sound mode OFF.
-- Original synthesized audio demonstration, built in Web Audio API and played locally after pressing Play.
+- Original synthesized audio demonstration in V48; replaced by the user-selected audio reel in V49.
 - Sound Playground: live Echo, Reverb, Pitch and Slowed processing, Before/After crossfade, adjustable intensity and short-file upload for private comparison.
 - Dynamic preset browser reads the existing `soundPresets` library; click any preset to audition a preview of its supported Web Audio parameters. Full editor remains authoritative for advanced effects.
 - Responsive audio-reactive waveform and AUDIXO disc; real analysis only runs during demo playback. Reduced-motion settings respected.
 - Rotating original AUDIXO logo and visualizer added to empty audio-upload states in Full Editor, Trim, Echo, Pitch, Slowed + Reverb, Spatial 8D/16D, Mashup and Vocal Extractor.
 - Optional short interaction clicks and export-success chimes only when sound mode is manually switched ON; no sound is played on failed exports.
 - Branded loader remains available for a first visit with a Skip intro control; repeat visits in the same tab session skip the 7-second wait.
-- No new cloud API, streaming service, subscription, user login, copyrighted background recording or new environment variable is required.
+- No new cloud API, streaming service, subscription, user login or new environment variable is required. V49 now includes user-supplied excerpts; public use requires appropriate music rights.
 - Removed an unused duplicate old logo file to remain below 100 project files for GitHub web upload.
 
 **Audio demo limitations:** This demo is synthesized and runs on your device. Pitch-lock, some motion/reverse preset modes and custom studio DSP may be approximated in the lightweight preview; export from the Full Editor for the full processing chain. No user-uploaded sound is transmitted by the playground.
@@ -84,3 +102,89 @@ This is the **V47 source release**, not a claim of completed browser acceptance 
 5. Confirm accessible pointer/touch behavior, PWA install prompt/fallback and service-worker update.
 6. Test a rights-cleared MP3/MP4 YouTube link and verify actual file qualities; the API may not support every requested resolution.
 
+
+
+---
+
+# Third-party components
+
+Audixo Studio V49 uses the following third-party software through its package dependencies or optional browser/runtime integrations. Keep upstream notices and license obligations when distributing compiled builds.
+
+## Frontend and audio
+
+- React 18.3.1 / React DOM 18.3.1
+- React Router DOM 6.30.1
+- Vite 5.4.21 and TypeScript 5.6.3 for build tooling
+- `@breezystack/lamejs` 1.2.7 for browser MP3 work. Review the upstream LAME/LGPL-related distribution terms for compiled redistribution.
+
+## Local source separation
+
+- `demucs-web` 1.0.2
+- ONNX Runtime Web 1.24.3
+- HTDemucs ONNX model converted by timcsy
+
+The model is downloaded on demand from a pinned Hugging Face revision and is not bundled in this ZIP:
+
+https://huggingface.co/timcsy/demucs-web-onnx/resolve/92e33df61cfc9eb820272aaa62d2ef6dcf4d950d/htdemucs_embedded.onnx
+
+Pinned model SHA-256 used by the worker:
+
+`e5e425c17683f163a472462eb5f5a4ffcd11c31858d57fbd0833b012d8b88077`
+
+Relevant upstream projects:
+
+- https://github.com/timcsy/demucs-web
+- https://github.com/microsoft/onnxruntime
+- https://github.com/facebookresearch/demucs
+
+## Fonts
+
+AUDIXO requests Nunito and Nunito Sans from Google Fonts in `index.html`; font binaries are not bundled in this source package. The CSS includes system-font fallbacks if the remote font request is unavailable.
+
+## Optional media conversion provider
+
+The YouTube-to-MP3 API can call an operator-configured Cobalt-compatible HTTPS endpoint or discover compatible community instances. No third-party converter webpage, executable, FFmpeg binary, yt-dlp binary, AI weight file or downloaded media is bundled in this ZIP.
+
+Only process media you are permitted to use. Source-media rights remain with their owners.
+
+
+---
+
+## AI-friendly project summary (previously llms.txt)
+
+# AUDIXO — Online Audio Studio
+
+Website: https://audixo.vercel.app/
+Brand: AUDIXO, a creator-focused, free browser-based audio editor.
+
+## Interactive Sound Playground
+- Play an original synthesized AUDIXO demo after clicking Play; background audio never auto-plays.
+- Hear real-time Echo, Reverb, Pitch and Slowed effects and compare original versus processed audio via a Before/After slider.
+- Optionally preview your own short uploaded audio locally and browse the studio preset gallery.
+
+## What AUDIXO does
+- Trim, split, fade and mix audio in the browser.
+- Use a full multitrack editor with independent echo, delay, reverb, pitch and stereo motion controls.
+- Separate vocals, drums, bass and other source stems using a browser-based AI model; results vary by source audio.
+- Download MP3 or MP4 content where the user has permission and the separate REST YTDL API supports the requested format.
+- Save finished audio in an optional on-device local Library, not cloud backup.
+- Install the web app on compatible Android or desktop browsers using PWA support; mobile audio performance depends on available memory.
+
+## Official pages
+- https://audixo.vercel.app/features
+- https://audixo.vercel.app/how-it-works
+- https://audixo.vercel.app/tools/trim-audio
+- https://audixo.vercel.app/tools/echo
+- https://audixo.vercel.app/tools/vocals
+- https://audixo.vercel.app/tools/youtube-to-mp3
+- https://audixo.vercel.app/faq
+- https://audixo.vercel.app/help
+- https://audixo.vercel.app/privacy
+- https://audixo.vercel.app/terms
+- https://audixo.vercel.app/copyright
+
+## Accuracy notes
+- MP3 encoding target is not evidence of the quality of the original recording.
+- MP4 resolutions depend on a video's available formats and backend capabilities; advertised upper bounds are not universal guarantees.
+- The official support email has not been configured yet.
+- Browser-only processing and third-party conversion server workflows have different privacy implications; see Privacy Policy.

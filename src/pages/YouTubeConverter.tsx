@@ -11,17 +11,48 @@ const KEY='audixo-conversion-job-v51'
 const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
 function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)?value:null}catch{return null}}
 function chooseDefaultMp4Quality(qualities:{value:string;label:string}[]=[]){
- const choices=new Set(qualities.map(item=>item.value.replace(/p$/i,'')))
- const preferred=mediaUiConfig.defaultMp4Quality
- return choices.has(preferred)?preferred:Array.from(choices).filter(v=>Number(v)<=Number(preferred)).sort((a,b)=>Number(b)-Number(a))[0]||Array.from(choices).sort((a,b)=>Number(a)-Number(b))[0]||preferred
+ const valid=qualities.map(item=>item.value.replace(/p$/i,'')).filter(v=>mediaUiConfig.allMp4Qualities.includes(v as never))
+ // Start at the highest quality the preview actually reports. 1080p is not fixed.
+ return valid.sort((a,b)=>Number(b)-Number(a))[0]||mediaUiConfig.defaultMp4Quality
 }
+const turnstileSiteKey=import.meta.env.VITE_AUDIXO_TURNSTILE_SITE_KEY?.trim()||''
+type TurnstileWidget={render:(container:HTMLElement,config:Record<string,unknown>)=>string;reset:(id:string)=>void;remove:(id:string)=>void}
+function HumanCheck({onVerified,resetKey}:{onVerified:(token:string)=>void;resetKey:number}){
+ const root=useRef<HTMLDivElement|null>(null),widget=useRef<string|null>(null)
+ useEffect(()=>{
+  if(!turnstileSiteKey||!root.current)return
+  let cancelled=false
+  const win=window as unknown as {turnstile?:TurnstileWidget}
+  const render=()=>{
+   if(cancelled||!root.current||!win.turnstile||widget.current!==null)return
+   widget.current=win.turnstile.render(root.current,{
+    sitekey:turnstileSiteKey,theme:'light',size:'compact',appearance:'always',
+    callback:(token:string)=>onVerified(token),
+    'expired-callback':()=>onVerified(''),
+    'error-callback':()=>onVerified('')
+   })
+  }
+  const existing=document.querySelector<HTMLScriptElement>('script[data-audixo-turnstile]')
+  const script=existing||document.createElement('script')
+  script.addEventListener('load',render)
+  if(!existing){script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.defer=true;script.dataset.audixoTurnstile='true';document.head.append(script)}
+  render()
+  return()=>{cancelled=true;script.removeEventListener('load',render);if(widget.current&&win.turnstile){win.turnstile.remove(widget.current);widget.current=null}}
+ },[onVerified])
+ useEffect(()=>{
+  if(resetKey&&widget.current){const win=window as unknown as {turnstile?:TurnstileWidget};win.turnstile?.reset(widget.current)}
+ },[resetKey])
+ if(!turnstileSiteKey)return null
+ return <div className="ax52-bot-row"><span>Security check</span><div ref={root}/></div>
+}
+
 const aborted=(error:unknown)=>error instanceof DOMException&&error.name==='AbortError'
 
 export default function YouTubeConverter(){
  const [url,setUrl]=useState(''),[preview,setPreview]=useState<MediaPreview|null>(null)
  const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(mediaUiConfig.defaultMp4Quality),[mp3Bitrate,setMp3Bitrate]=useState<Mp3Bitrate>(320)
  const [busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[job,setJob]=useState<MediaJob|null>(null)
- const [permission,setPermission]=useState(false),[health,setHealth]=useState<Health|null>(null)
+ const [humanToken,setHumanToken]=useState(''),[humanReset,setHumanReset]=useState(0),[health,setHealth]=useState<Health|null>(null)
  const [saved,setSaved]=useState<SavedJob|null>(savedJob),[completed,setCompleted]=useState<SavedJob|null>(null)
  const change=useRef(0),running=useRef<AbortController|null>(null)
  const effectiveMp3Bitrate=mp3Bitrate
@@ -71,7 +102,7 @@ export default function YouTubeConverter(){
   dropSaved();setCompleted(record);setNotice(`Download started. ${detail}`)
  }
  const start=async()=>{
-  if(!preview||!permission||busy)return
+  if(!preview||busy||(turnstileSiteKey&&!humanToken))return
   const recordFormat=format,recordQuality=quality
   if(recordFormat==='mp4'&&preview.qualities?.length&&!preview.qualities.some(item=>item.value.replace(/p$/i,'')===recordQuality)){
    setNotice(`${recordQuality}p is not listed for this video. Select one of: ${preview.qualities.map(item=>item.value+'p').join(', ')}.`);return
@@ -83,13 +114,13 @@ export default function YouTubeConverter(){
   setNotice('');setCompleted(null);setJob(null);setBusy(`Starting ${recordFormat.toUpperCase()}...`)
   try{
    // Exactly the selected quality; never silently create a lower-quality job.
-   const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{})},controller.signal)
+   const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{}),...(turnstileSiteKey?{turnstileToken:humanToken}:{})},controller.signal)
    if(created.state==='failed')throw new MediaServiceError(created.error||'Conversion rejected.',created.errorCode||'JOB_FAILED')
    if(!created.id)throw new Error('The API did not return a job ID.')
    const record:SavedJob={id:created.id,title:preview.title,format:recordFormat,quality:recordFormat==='mp3'?'320':recordQuality,mp3Bitrate:recordFormat==='mp3'?mp3Bitrate:undefined,duration:preview.duration}
    save(record);setJob(created);await finish(record,controller)
   }catch(e){if(!aborted(e)){setNotice(explainMediaError(e));setCompleted(null);if(e instanceof MediaServiceError&&['JOB_FAILED','SOURCE_FORBIDDEN','SERVICE_AUTH'].includes(e.code))dropSaved()}}
-  finally{if(running.current===controller){running.current=null;setBusy('')}}
+  finally{if(turnstileSiteKey){setHumanToken('');setHumanReset(n=>n+1)}if(running.current===controller){running.current=null;setBusy('')}}
  }
  const continueRecord=async(record:SavedJob)=>{
   if(busy)return
@@ -113,7 +144,7 @@ export default function YouTubeConverter(){
       </div></div>
      <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Set video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={preview?.duration||0} disabled={!!busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={preview?.qualities||[]} analyzed={!!preview} disabled={!!busy}/>}
       </div></div>
-     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><label className="ax39-permission"><input type="checkbox" checked={permission} onChange={e=>setPermission(e.target.checked)}/><span>I own this video or have permission to download or transform it.</span></label><button type="button" className="ax39-create ax42-download" disabled={!preview||!permission||!!busy||(format==='mp4'&&!quality)} onClick={start}><span>{busy||`Download ${format.toUpperCase()}${format==='mp4'&&quality?` · ${quality}p`:format==='mp3'?` · ${effectiveMp3Bitrate} kbps${effectiveMp3Bitrate!==mp3Bitrate?' server':''}`:''}`}</span><b>↓</b></button>
+     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><HumanCheck onVerified={setHumanToken} resetKey={humanReset}/><p className="ax52-usage-note">Use media you are permitted to download or transform.</p><button type="button" className="ax39-create ax42-download" disabled={!preview||!!busy||(turnstileSiteKey&&!humanToken)||(format==='mp4'&&!quality)} onClick={start}><span>{busy||`Download ${format.toUpperCase()}${format==='mp4'&&quality?` · ${quality}p`:format==='mp3'?` · ${effectiveMp3Bitrate} kbps${effectiveMp3Bitrate!==mp3Bitrate?' server':''}`:''}`}</span><b>↓</b></button>
        {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>Conversion continues on the remote server. Long videos depend on backend capacity and serverless download limits.</small></div>}
        {saved&&!busy&&<button className="ax39-resume" onClick={resume}>↻ Resume earlier {saved.format.toUpperCase()} job</button>}
        {completed&&!busy&&<button className="ax39-resume" onClick={downloadAgain}>Download again</button>}

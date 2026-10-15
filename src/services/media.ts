@@ -12,7 +12,7 @@ export class MediaServiceError extends Error{
 }
 export async function mediaRequest<T=any>(action:string,body:Record<string,unknown>={},signal?:AbortSignal):Promise<T>{
  const res=await fetch(`/api/media?action=${encodeURIComponent(action)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal,cache:'no-store'})
- const data=await res.json().catch(()=>({error:'The conversion server returned an unreadable response.',code:'INVALID_RESPONSE'}))
+ const data=await res.json().catch(()=>({error:res.status>=520?'Cloudflare could not reach the conversion origin. Check the REST YTDL host and logs.':'The conversion server returned an unreadable response.',code:res.status>=520?'ORIGIN_UNAVAILABLE':'INVALID_RESPONSE'}))
  if(!data||typeof data!=='object')throw new MediaServiceError('Invalid conversion response.','INVALID_RESPONSE')
  if(!res.ok||data.error&&data.state!=='failed')throw new MediaServiceError(data.error||`Media API failed (${res.status}).`,data.code,res.status)
  return data
@@ -20,6 +20,9 @@ export async function mediaRequest<T=any>(action:string,body:Record<string,unkno
 export function explainMediaError(error:unknown){
  const message=error instanceof Error?error.message:String(error)
  const code=error instanceof MediaServiceError?error.code:''
+ if(code==='ORIGIN_UNAVAILABLE'||/Cloudflare HTTP 52\d|origin.*unavailable|invalid or incomplete response/i.test(message))return 'The remote YTDL server is unavailable behind Cloudflare (520/522/524 or similar). The server owner must check origin health and logs. Your quality selection is not the cause.'
+ if(code==='BOT_CHECK_FAILED'||code==='BOT_CHECK_REQUIRED')return 'Human verification expired or failed. Complete the security check again.'
+ if(code==='BOT_CHECK_CONFIG')return 'Cloudflare Turnstile setup is incomplete. Add AUDIXO_TURNSTILE_SECRET_KEY on the server or remove the site key until setup is finished.'
  if(code==='SOURCE_FORBIDDEN'||/unable to download (?:video |audio )?data.*403/i.test(message))return 'YouTube refused the conversion server (403). The server owner must repair source access; changing resolution or a Vercel quality setting will not fix this.'
  if(code==='SERVICE_AUTH')return 'The conversion API rejected access. Check the service token or service login on the backend.'
  if(code==='FILE_FORBIDDEN')return 'The conversion finished, but its file endpoint denied access. Check the backend file-download permissions.'

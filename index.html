@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#f8fcfb" />
     <meta name="application-name" content="AUDIXO" />
-    <meta name="audixo-release" content="v51.0" />
+    <meta name="audixo-release" content="v52.0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="AUDIXO" />
@@ -18,13 +18,13 @@
     <meta property="og:site_name" content="Audixo Studio" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="AUDIXO | Online Audio Studio" />
-    <meta property="og:description" content="Play 10 user-selected clips, shape sound in real time with EQ, echo and motion, and edit, mix and export with AUDIXO." />
+    <meta property="og:description" content="Play 13 user-selected clips, shape sound in real time with EQ, echo and motion, and edit, mix and export with AUDIXO." />
     <meta property="og:image" content="/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:opsz,wght@6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=49.1" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=52" />
     <link rel="manifest" href="/site.webmanifest" />
     <title>AUDIXO — Free Online Audio Editor, MP3 & MP4 Converter</title>
     <style id="audixo-critical-loader">
@@ -35,9 +35,8 @@
       #audixo-loader .audixo-loader-slogan{font-size:13px;font-weight:800;letter-spacing:.12em;min-height:24px}
       #audixo-loader .ax40-loader-progress{width:min(310px,72vw);display:flex;gap:12px;align-items:center;font-size:11px;font-weight:800}
       #audixo-loader .ax40-loader-track{height:5px;border-radius:99px;background:#e5e4f7;flex:1;overflow:hidden}
-      #audixo-loader .ax40-loader-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#ec25c4,#793cef,#02ceee,#1dd99d);animation:audixo-critical-load 7s linear forwards}
+      #audixo-loader .ax40-loader-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#ec25c4,#793cef,#02ceee,#1dd99d);transition:width .09s linear}
       @keyframes audixo-critical-load{to{width:100%}}
-      #audixo-loader-skip{border:1px solid #dcd5f5;background:#fff;border-radius:999px;padding:9px 16px;font:800 11px Nunito,system-ui,sans-serif;color:#7450bd;cursor:pointer}
     </style>
 
   </head>
@@ -49,8 +48,7 @@
       <img class="ax38-loader-wordmark" src="/audixo-official-name.png" alt="AUDIXO" />
       <span id="audixo-loader-slogan" class="audixo-loader-slogan ax33-loader-slogan" aria-hidden="true"></span>
       <div class="ax37-loader-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div class="ax40-loader-progress" aria-label="Preparing studio"><div class="ax40-loader-track"><i></i></div><span id="audixo-loader-count" aria-hidden="true">0%</span></div>
-      <button type="button" id="audixo-loader-skip" aria-label="Skip intro animation">Skip intro →</button>
+      <div class="ax40-loader-progress" aria-label="Preparing studio"><div class="ax40-loader-track"><i id="audixo-loader-progress"></i></div><span id="audixo-loader-count" aria-hidden="true">0%</span></div>
       <small>POWERED BY <b>NEXIVO</b></small>
     </div>
     <div id="root"></div>

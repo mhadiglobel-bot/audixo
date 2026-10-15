@@ -17,7 +17,7 @@ const normalizeMp4Quality=(value:unknown)=>{
  const match=String(value??'').trim().match(/^(240|360|480|720|1080|1440|2160)(?:p)?$/i)
  return match?match[1]:''
 }
-const configuredDefaultQuality=normalizeMp4Quality(import.meta.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY)||'1080'
+const configuredDefaultQuality=normalizeMp4Quality(import.meta.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY)||'720'
 
 export const site = {
  name:'Audixo',shortName:'Audixo',

@@ -1,25 +1,14 @@
-import { useEffect,useRef,type CSSProperties } from 'react'
+import {type CSSProperties} from 'react'
 import Logo from './Logo'
 
 const bars=Array.from({length:58},(_,i)=>18+((i*41)%72))
 
 export default function HeroAudioVisual({front=false}:{front?:boolean}){
- const ref=useRef<HTMLDivElement>(null)
- useEffect(()=>{
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches || matchMedia('(pointer:coarse)').matches)return
-  const el=ref.current
-  const move=(e:PointerEvent)=>{if(!el)return;const box=el.getBoundingClientRect(),x=(e.clientX-(box.left+box.width/2))/box.width,y=(e.clientY-(box.top+box.height/2))/box.height;el.style.setProperty('--rx',`${(-y*1.8).toFixed(2)}deg`);el.style.setProperty('--ry',`${(x*2.1).toFixed(2)}deg`)}
-  const leave=()=>{el?.style.setProperty('--rx','0deg');el?.style.setProperty('--ry','0deg')}
-  el?.addEventListener('pointermove',move);el?.addEventListener('pointerleave',leave)
-  return()=>{el?.removeEventListener('pointermove',move);el?.removeEventListener('pointerleave',leave)}
- },[])
- if(!front)return <div ref={ref} className="ax47-hero-visual" aria-hidden="true">
-   <div className="ax47-hero-halo"/>
-   <div className="ax47-hero-audio-disc"><div className="ax47-hero-disc-grooves"/><img src="/audixo-official-symbol.png" alt=""/><span className="ax47-disc-core"/></div>
-   <div className="ax47-hero-waveform">{bars.slice(0,28).map((h,i)=><i key={i} style={{'--h':`${h}%`,'--delay':`${(i%7)*-.14}s`} as CSSProperties}/>)}</div>
-   <div className="ax47-hero-caption"><strong>AUDIXO / CREATIVE AUDIO</strong><small>One track. Infinite possibilities.</small></div>
+ if(!front)return <div className="ax47-hero-visual ax52-hero-visual" aria-label="Rotating AUDIXO logo and animated sound waveform" role="img">
+   <div className="ax52-hero-mark"><img src="/audixo-official-symbol.png" alt="" width="430" height="430" draggable={false}/></div>
+   <div className="ax47-hero-waveform ax52-hero-waveform" aria-hidden="true">{bars.slice(0,34).map((h,i)=><i key={i} style={{'--h':`${h}%`,'--delay':`${(i%7)*-.14}s`} as CSSProperties}/>)}</div>
   </div>
- return <div ref={ref} className={`ax34-hero-machine ${front?'front-view':''}`} aria-hidden="true">
+ return <div className="ax34-hero-machine front-view" aria-hidden="true">
    <div className="ax34-machine-aura"/>
    <div className="ax34-machine-shell">
     <header><Logo compact/><div><small>AUDIXO / LIVE AUDIO FLOW</small><strong>Bring in audio. Shape it. Finish and export.</strong></div><span>READY</span></header>

@@ -1422,3 +1422,157 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .ax49-track-marquee{position:relative}
 .ax49-track-item .ax49-track-label strong{font-weight:800}
 @media(prefers-reduced-motion:reduce){.ax49-track-marquee{scrollbar-width:thin}.ax49-track-lane[data-strip-lane="clone"]{display:none}}
+
+/* AUDIXO V52 — precise hero mark, understated marquee, spacious four-card rhythm */
+.ax52-hero-visual{
+  width:min(100%,500px)!important;
+  height:clamp(290px,33vw,440px)!important;
+  min-height:290px!important;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:0;
+  margin-inline:auto;
+  perspective:none!important;
+  transform:none!important;
+  overflow:visible;
+}
+.ax52-hero-mark{
+  width:clamp(220px,27vw,385px);
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  margin:-10px auto 0;
+  padding:0;
+  border:none;
+  background:none;
+  box-shadow:none;
+  filter:drop-shadow(0 18px 26px rgba(105,92,172,.14));
+  will-change:transform;
+}
+.ax52-hero-mark img{
+  display:block;
+  width:100%;height:100%;
+  object-fit:contain;
+  animation:ax52-hero-spin 22s linear infinite;
+  transform-origin:50% 50%;
+}
+@keyframes ax52-hero-spin{to{transform:rotate(360deg)}}
+.ax52-hero-visual .ax52-hero-waveform{
+  position:relative!important;
+  inset:auto!important;
+  width:min(76%,340px);
+  height:53px!important;
+  min-height:53px;
+  flex:0 0 53px;
+  margin:-16px auto 0;
+  border:0!important;
+  border-radius:19px!important;
+  padding:9px 17px!important;
+  background:rgba(255,255,255,.93)!important;
+  box-shadow:0 13px 30px rgba(95,91,177,.12),0 0 0 1px rgba(159,143,214,.08)!important;
+}
+.ax52-hero-visual .ax52-hero-waveform i{
+  max-height:32px!important;
+  background:linear-gradient(180deg,#f734c8,#9056f6,#18c7f1)!important;
+}
+
+.ax52-metrics-shell{margin-bottom:42px!important}
+.ax52-metrics-shell .ax46-metric-grid{gap:18px!important}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card{
+  border-radius:25px!important;
+  box-shadow:0 17px 39px rgba(49,82,143,.075)!important;
+  margin:0!important;
+}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a{
+  background:transparent!important;
+  border:0!important;
+  border-top:1px solid rgba(154,175,215,.17)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline-offset:4px;
+  padding-top:14px!important;
+  margin-top:auto!important;
+}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a::before,
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a::after{content:none!important;display:none!important}
+.ax48-playground-shell{margin-top:0!important;margin-bottom:44px!important}
+
+.ax49-strip-section{
+  position:relative;
+  border:0!important;
+  border-radius:24px!important;
+  padding:17px 14px 12px!important;
+  background:linear-gradient(125deg,rgba(255,255,255,.96),rgba(247,246,255,.89) 48%,rgba(243,253,255,.93))!important;
+  box-shadow:0 17px 39px rgba(75,89,151,.10),0 0 0 1px rgba(161,176,214,.12)!important;
+  overflow:visible!important;
+  isolation:isolate;
+}
+.ax49-strip-section::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:8px 10%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,rgba(250,68,210,.22),rgba(118,86,248,.17),rgba(37,220,244,.16),rgba(23,215,169,.20));
+  filter:blur(19px);
+  opacity:.58;
+  pointer-events:none;
+  animation:ax52-marquee-glow 7s ease-in-out infinite alternate;
+}
+@keyframes ax52-marquee-glow{50%{opacity:.94;transform:scale(1.02)}}
+.ax49-strip-head{padding:0 10px;margin-bottom:7px!important}
+.ax49-track-marquee{
+  overflow-y:visible!important;
+  overflow-x:auto!important;
+  padding:12px 24px 17px!important;
+  margin:0 -13px -6px;
+  border-radius:18px;
+  mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%);
+  scroll-snap-type:none!important;
+}
+.ax49-track-lane{gap:10px!important}
+.ax49-track-item{
+  flex-basis:184px!important;
+  border:0!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(249,249,255,.92))!important;
+  box-shadow:0 9px 23px rgba(66,80,140,.09),0 0 0 1px rgba(153,165,205,.10)!important;
+  border-radius:17px!important;
+  transition:background .27s ease,box-shadow .27s ease!important;
+  transform:none!important;
+  will-change:auto!important;
+}
+.ax49-track-item:hover,
+.ax49-track-item.active{
+  transform:none!important;
+  background:linear-gradient(125deg,#fff7fe,#f3f8ff 62%,#effffd)!important;
+  box-shadow:0 13px 27px rgba(94,92,165,.14),0 0 0 1px rgba(142,108,223,.20)!important;
+}
+.ax49-track-item.active .ax49-track-art{animation:none!important;box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(160,112,238,.22),0 5px 15px rgba(45,52,117,.14)!important}
+.ax49-track-item:hover .ax49-track-art img,
+.ax49-track-item.active .ax49-track-art img{transform:scale(1.015)!important}
+
+.ax52-usage-note{margin:3px 0 13px!important;font-size:11px!important;color:#7c879e!important}
+.ax52-bot-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:5px 0 15px;color:#73819d;font-size:11px;font-weight:800}
+.ax52-bot-row>div{min-height:65px}
+
+@media(max-width:850px){
+ .ax52-hero-visual{height:365px!important;min-height:315px!important}
+ .ax52-hero-mark{width:min(65vw,290px)}
+ .ax52-metrics-shell{margin-bottom:28px!important}
+}
+@media(max-width:520px){
+ .ax52-hero-visual{height:305px!important;min-height:305px!important}
+ .ax52-hero-mark{width:min(75vw,260px)}
+ .ax52-hero-visual .ax52-hero-waveform{width:min(80%,300px);height:48px!important;min-height:48px}
+ .ax49-strip-section{border-radius:19px!important;padding:12px 9px 10px!important}
+ .ax49-track-item{flex-basis:166px!important}
+ .ax49-track-marquee{padding:13px 18px 17px!important;margin:0 -7px -7px}
+ .ax52-metrics-shell{margin-bottom:24px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax52-hero-mark{will-change:auto;filter:none}
+ .ax52-hero-mark img,.ax49-strip-section::before{animation:none!important}
+}

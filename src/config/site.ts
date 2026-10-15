@@ -12,6 +12,23 @@ const manualSupportEmail=''
 const envEmailEnabled=import.meta.env.VITE_SUPPORT_EMAIL_ENABLED==='true'
 const envEmail=envEmailEnabled?(import.meta.env.VITE_SUPPORT_EMAIL||''):''
 
+const MP4_QUALITIES=['240','360','480','720','1080','1440','2160'] as const
+const normalizeMp4Quality=(value:unknown)=>{
+ const match=String(value??'').trim().match(/^(240|360|480|720|1080|1440|2160)(?:p)?$/i)
+ return match?match[1]:''
+}
+const parseMp4Fallbacks=(raw:unknown,fallbacks:string[])=>{
+ const unique:string[]=[]
+ for(const piece of String(raw??'').split(/[\s,|>]+/)){
+  const value=normalizeMp4Quality(piece)
+  if(value&&!unique.includes(value))unique.push(value)
+ }
+ return unique.length?unique:fallbacks
+}
+const configuredDefaultQuality=normalizeMp4Quality(import.meta.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY)||'1080'
+const configuredFallbacks=parseMp4Fallbacks(import.meta.env.VITE_AUDIXO_MP4_FALLBACKS,['1080','720','480','360','240'])
+if(!configuredFallbacks.includes(configuredDefaultQuality))configuredFallbacks.unshift(configuredDefaultQuality)
+
 export const site = {
  name:'Audixo',shortName:'Audixo',
  url:configured || (typeof window!=='undefined'?window.location.origin:''),
@@ -20,9 +37,10 @@ export const site = {
  description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted MP3 or MP4 downloads.'
 }
 export const contactEmailReady=Boolean(site.email)
+export const mediaUiConfig={defaultMp4Quality:configuredDefaultQuality,mp4Fallbacks:configuredFallbacks,allMp4Qualities:[...MP4_QUALITIES]}
 
 
-// V49.1: paste the exact YouTube upload used for each cropped excerpt.
+// V50: paste the exact YouTube upload used for each cropped excerpt.
 // Empty means NOT VERIFIED. Do not substitute a guessed video or unrelated art.
 // The thumbnail renderer accepts watch, youtu.be, shorts, live and embed URLs.
 export const demoYoutubeSources: Record<string,string> = {

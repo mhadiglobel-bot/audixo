@@ -266,9 +266,32 @@ function TrackArt({index}:{index:number}){
  </span>
 }
 
-function MusicStrip(){const {trackIndex,isPlaying,selectTrack}=useSound()
+function MusicStrip(){
+ const {trackIndex,isPlaying,selectTrack}=useSound()
+ const stripRef=useRef<HTMLDivElement|null>(null)
+ useEffect(()=>{
+  const node=stripRef.current
+  if(!node)return
+  let frame=0,last=performance.now()
+  const step=(now:number)=>{
+   const lane=node.querySelector<HTMLElement>('[data-strip-lane="primary"]')
+   if(lane){
+    const cycle=lane.scrollWidth+18
+    if(cycle>node.clientWidth){
+     const delta=(now-last)/1000
+     node.scrollLeft+=delta*(window.innerWidth<820?22:30)
+     if(node.scrollLeft>=cycle)node.scrollLeft-=cycle
+    }
+   }
+   last=now
+   frame=window.requestAnimationFrame(step)
+  }
+  frame=window.requestAnimationFrame(step)
+  return()=>window.cancelAnimationFrame(frame)
+ },[])
+ const renderLane=(copy:number,hidden=false)=><div className="ax49-track-lane" data-strip-lane={copy===0?'primary':'clone'} aria-hidden={hidden||undefined}>{DEMO_TRACKS.map((track,i)=><button key={`${copy}-${track.id}`} className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i} tabIndex={hidden?-1:0} onClick={()=>selectTrack(i)}><TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span><i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i></button>)}</div>
  return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>10 ORIGINAL USER-SUPPLIED CLIPS · TAP TO PREVIEW</small></div>
-  <div className="ax49-track-strip" role="group" aria-label="Choose a track to preview">{DEMO_TRACKS.map((track,i)=><button key={track.title} className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i} onClick={()=>selectTrack(i)}><TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span><i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i></button>)}</div>
+  <div ref={stripRef} className="ax49-track-marquee" role="group" aria-label="Choose a track to preview">{renderLane(0)}{renderLane(1,true)}</div>
  </div>
 }
 

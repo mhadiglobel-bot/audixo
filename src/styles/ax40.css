@@ -1329,3 +1329,90 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .ax49-track-art.has-youtube-cover{position:relative;overflow:hidden;isolation:isolate}
 .ax49-track-art.has-youtube-cover::before,.ax49-track-art.has-youtube-cover::after{display:none}
 .ax49-track-art.has-youtube-cover>img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover;object-position:center;border-radius:inherit;position:absolute;inset:0}
+
+/* V50 media + strip + neon card polish */
+.ax49-track-marquee{
+  display:flex;
+  gap:18px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-behavior:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  padding-bottom:6px;
+}
+.ax49-track-marquee::-webkit-scrollbar{display:none}
+.ax49-track-lane{display:flex;gap:18px;flex:0 0 auto;min-width:max-content}
+.ax49-track-lane[aria-hidden="true"] .ax49-track-item{opacity:.99}
+.ax49-track-item{flex:0 0 184px}
+.ax49-track-item .ax49-track-thumb{overflow:hidden}
+.ax49-track-item img{transition:transform .35s ease,filter .35s ease}
+.ax49-track-item:hover img,.ax49-track-item.active img{transform:scale(1.04);filter:saturate(1.06)}
+
+.ax49-record-ring{
+  border:none!important;
+  background:conic-gradient(from 0deg,#ff4fd8,#24d7ff,#8b66ff,#2ce6a6,#ff4fd8)!important;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
+  box-shadow:0 0 0 1px rgba(255,255,255,.45),0 0 22px rgba(132,102,255,.22);
+  animation:ax49-ring-rotate 4.8s linear infinite!important;
+}
+.ax49-record-ring.two{
+  opacity:.58;
+  animation-duration:7.2s!important;
+  animation-direction:reverse;
+}
+.ax47-hero-audio-disc::after{
+  content:"";
+  position:absolute;
+  inset:-10px;
+  border-radius:50%;
+  padding:2px;
+  background:conic-gradient(from 0deg,rgba(255,79,216,.95),rgba(36,215,255,.95),rgba(139,102,255,.95),rgba(44,230,166,.95),rgba(255,79,216,.95));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  opacity:.7;
+  animation:ax49-ring-rotate 5.4s linear infinite;
+  filter:drop-shadow(0 0 18px rgba(120,98,255,.18));
+}
+
+.ax39-metric-card.ax46-metric-card{
+  background:linear-gradient(#fff,#fff) padding-box,linear-gradient(120deg,#ff57cf,#27e4ff,#9b72ff,#23ef9c,#ff57cf) border-box!important;
+  background-size:100% 100%,320% 320%!important;
+  animation:ax49-card-border-flow 8.5s linear infinite!important;
+}
+.ax39-metric-card.ax46-metric-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(120deg,rgba(255,87,207,.42),rgba(39,228,255,.42),rgba(155,114,255,.42),rgba(35,239,156,.42),rgba(255,87,207,.42));
+  background-size:280% 280%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+  animation:ax49-card-border-flow 8.5s linear infinite;
+  opacity:.92;
+}
+.ax39-metric-card.ax46-metric-card.is-audio::before{background:linear-gradient(120deg,rgba(255,87,207,.54),rgba(39,228,255,.28),rgba(155,114,255,.18),rgba(35,239,156,.18),rgba(255,87,207,.54))}
+.ax39-metric-card.ax46-metric-card.is-video::before{background:linear-gradient(120deg,rgba(39,228,255,.56),rgba(155,114,255,.34),rgba(35,239,156,.2),rgba(255,87,207,.18),rgba(39,228,255,.56))}
+.ax39-metric-card.ax46-metric-card.is-presets::before{background:linear-gradient(120deg,rgba(155,114,255,.58),rgba(255,87,207,.28),rgba(39,228,255,.2),rgba(35,239,156,.2),rgba(155,114,255,.58))}
+.ax39-metric-card.ax46-metric-card.is-sounds::before{background:linear-gradient(120deg,rgba(35,239,156,.56),rgba(39,228,255,.26),rgba(155,114,255,.18),rgba(255,87,207,.18),rgba(35,239,156,.56))}
+
+@keyframes ax49-card-border-flow{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+@keyframes ax49-ring-rotate{to{transform:rotate(360deg)}}
+
+@media(max-width:760px){
+  .ax49-track-item{flex-basis:168px}
+  .ax49-track-lane{gap:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ax49-record-ring,.ax47-hero-audio-disc::after,.ax39-metric-card.ax46-metric-card,.ax39-metric-card.ax46-metric-card::before{animation:none!important}
+}
+
+.ax49-track-art{overflow:hidden}
+.ax49-track-art img{transition:transform .35s ease,filter .35s ease}
+.ax49-track-item:hover .ax49-track-art img,.ax49-track-item.active .ax49-track-art img{transform:scale(1.04);filter:saturate(1.06)}

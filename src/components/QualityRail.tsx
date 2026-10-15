@@ -32,7 +32,13 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
  const supported=new Set(available.map(q=>String(q.value).replace(/p$/i,'')))
  const hasMetadata=supported.size>0
  const supportedHere=supported.has(selected.value)
- const detail=!analyzed?'Analyze a link to choose resolution.':!hasMetadata?'Your video quality will be checked when downloading.':supportedHere?'Available in the analyzed video.':'This resolution may not be available for this video.'
+ const detail=!analyzed
+  ?'Analyze a link to choose resolution.'
+  :!hasMetadata
+   ?'Your video quality will be checked when downloading. AUDIXO can retry lower resolutions automatically if the source rejects the first choice.'
+   :supportedHere
+    ?'Available in the analyzed video. If the server rejects this size, AUDIXO will retry lower supported resolutions automatically.'
+    :'This resolution may not be available for this video. AUDIXO will step down to a lower supported quality if needed.'
  return <section className="ax46-quality-panel" aria-label="MP4 video quality">
   <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">VIDEO RESOLUTION</span><h3>{selected.title} <small>{selected.quality}</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP4 VIDEO</span></div>
   <QualitySlider items={videoSteps.map(step=>({label:step.title,name:step.value,detail:step.quality}))} index={index} disabled={!analyzed||disabled} onChange={i=>onChange(videoSteps[i].value)} ariaLabel="Video resolution"/>

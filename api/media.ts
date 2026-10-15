@@ -1,8 +1,9 @@
-/** AUDIXO V39 — Vercel Node.js server-only adapter for the owner's REST YTDL API.
+/** AUDIXO V51 — Vercel Node.js server-only adapter for the owner's REST YTDL API.
  * Convert URLs only when the user has the right to download/transform the media.
  * Keep AUDIXO_YTDL_AUTH_TOKEN private; no VITE_ prefixed secret.
  */
 import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 
 const YT_HOSTS=new Set(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be'])
 const MP4_QUALITIES=['240','360','480','720','1080','1440','2160'] as const
@@ -10,7 +11,7 @@ const SUPPORTED=new Set<string>(MP4_QUALITIES)
 const JOB_ID=/^[\w-]{1,128}$/
 type Kind='mp3'|'mp4'
 const text=(v:unknown,max=150)=>String(v??'').replace(/[\u0000-\u001f\u007f<>\\/|:*?"']/g,' ').replace(/\s+/g,' ').trim().slice(0,max)
-const kind=(v:unknown):Kind=>v==='mp4'?'mp4':'mp3'
+const kind=(v:unknown):Kind=>{if(v!==undefined&&v!==''&&v!=='mp3'&&v!=='mp4')throw Error('Invalid media format.');return v==='mp4'?'mp4':'mp3'}
 const niceName=(title:unknown,format:Kind)=>{
  const cleaned=text(title||'YouTube audio',145).replace(/\s*\(Audixo (?:MP3|MP4)\)\s*$/i,'').replace(/\.(?:mp3|mp4)$/i,'').replace(/[. ]+$/,'')||'YouTube audio'
  return `${cleaned} (Audixo ${format.toUpperCase()}).${format}`
@@ -48,6 +49,30 @@ async function request(path:string,options:RequestInit={},timeout=30000){
   return res
  }finally{clearTimeout(timer)}
 }
+export function classifyMediaError(message:string){
+ if(/403|forbidden/i.test(message)&&/unable to download (?:video |audio )?data|googlevideo|source/i.test(message))return {code:'SOURCE_FORBIDDEN',status:502}
+ if(/requested format.*not available|quality.*not available|unsupported resolution/i.test(message))return {code:'QUALITY_UNAVAILABLE',status:422}
+ if(/401|403|forbidden|unauthorized|authentication|login page|redirected/i.test(message))return {code:'SERVICE_AUTH',status:502}
+ if(/missing|base URL|public HTTPS/i.test(message))return {code:'SERVICE_CONFIG',status:503}
+ if(/invalid|paste a valid|select a valid|video URL|video ID/i.test(message))return {code:'INVALID_REQUEST',status:400}
+ return {code:'UPSTREAM_ERROR',status:502}
+}
+export function buildDownloadBody(url:string,format:Kind,quality:string){
+ if(format==='mp4'){
+  if(!SUPPORTED.has(quality))throw Error('Select a valid MP4 resolution.')
+  return {url,format:'mp4',quality}
+ }
+ // Documented MP3 contract. The owner's service sets its own default encoder rate.
+ return {url,format:'mp3'}
+}
+function outputDimensions(value:any){
+ const v=unwrap(value)||{}
+ const output=v.output??v.output_info??v.file_info??v.ffprobe??{}
+ const stream=Array.isArray(output.streams)?output.streams.find((x:any)=>x.codec_type==='video'):undefined
+ const w=Number(v.actual_width??v.output_width??output.width??stream?.width)
+ const h=Number(v.actual_height??v.output_height??output.height??stream?.height)
+ return {reportedWidth:Number.isFinite(w)&&w>0?w:undefined,reportedHeight:Number.isFinite(h)&&h>0?h:undefined}
+}
 async function json(path:string,body?:Record<string,unknown>,timeout=30000){
  const res=await request(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{method:'GET'},timeout)
  const type=res.headers.get('content-type')||''
@@ -83,8 +108,8 @@ function qualities(payload:any){
   if(typeof raw==='string'||typeof raw==='number')candidate=String(raw)
   else if(raw&&typeof raw==='object'){
    const item=raw as Record<string,unknown>
-   if(item.available===false||item.supported===false) return
-   candidate=String(item.value??item.height??item.resolution??item.quality??item.label??'')
+   if(item.available===false||item.supported===false||item.vcodec==='none') return
+   candidate=String(item.value??item.quality??item.resolution??(Number(item.width)>0&&Number(item.height)>0?Math.min(Number(item.width),Number(item.height)):item.height)??item.label??'')
   }else return
   // Recognize 1080, 1080p, 1920x1080; do not fabricate unreported qualities.
   const match=candidate.trim().match(/^(?:(?:\d{2,5}\s*[xX]\s*)?)(240|360|480|720|1080|1440|2160)(?:\s*p)?$/i)
@@ -99,9 +124,9 @@ function qualities(payload:any){
    else if(value&&typeof value==='object'){
     const video=(value as any).mp4??(value as any).video
     if(Array.isArray(video))video.forEach(add)
-    else if(video&&typeof video==='object')Object.keys(video).forEach(add)
+    else if(video&&typeof video==='object')Object.entries(video).forEach(([key,entry]:[string,any])=>{if(entry!==false&&entry?.available!==false&&entry?.supported!==false)add(key)})
     // Quality maps can also be {"720": {...}, "1080": {...}}.
-    Object.keys(value).forEach(add)
+    Object.entries(value).forEach(([key,entry]:[string,any])=>{if(entry!==false&&entry?.available!==false&&entry?.supported!==false)add(key)})
    }
   }
  }
@@ -115,13 +140,17 @@ function actualBitrate(v:any){
 function normalizeJob(value:any,idFallback='',format:Kind='mp3'){
  const v=unwrap(value)||{}, raw=String(v.status||v.state||v.phase||'queued').toLowerCase()
  const state=/^(completed|complete|done|ready|finished|success|succeeded)$/.test(raw)?'complete':/^(failed|failure|error|cancelled|canceled|rejected)$/.test(raw)?'failed':/^(processing|running|downloading|converting|working|in_progress)$/.test(raw)?'processing':'queued'
- const id=String(v.job_id||v.jobId||v.id||idFallback)
+ const pathId=String(v.status_url||'').match(/\/api\/download\/status\/([\w-]+)(?:[?#]|$)/)?.[1]
+ const id=String(v.job_id||v.jobId||v.id||pathId||idFallback)
  let p=Number(v.progress??v.percent??0);p=Number.isFinite(p)?Math.min(100,Math.max(0,p>0&&p<1?p*100:p)):0
  const requestedKind=format // Trust the requested mode, not inconsistent upstream format labels.
- return {id,format:requestedKind,state,progress:p,title:text(v.title||v.video_title||'',160),error:text(v.error||v.detail||'',240),message:text(v.message||'',180),reportedKbps:actualBitrate(v),files:state==='complete'&&JOB_ID.test(id)?[{name:requestedKind.toUpperCase(),url:`/api/media?action=file&id=${encodeURIComponent(id)}&format=${requestedKind}`,fileName:niceName(v.title,requestedKind)}]:[]}
+ return {id,format:requestedKind,state,progress:p,title:text(v.title||v.video_title||'',160),error:text(v.error||v.detail||'',240),message:text(v.message||'',180),errorCode:state==='failed'?classifyMediaError(String(v.error||v.detail||'')).code:undefined,...outputDimensions(value),reportedKbps:actualBitrate(v),files:state==='complete'&&JOB_ID.test(id)?[{name:requestedKind.toUpperCase(),url:`/api/media?action=file&id=${encodeURIComponent(id)}&format=${requestedKind}`,fileName:niceName(v.title,requestedKind)}]:[]}
 }
-const errorStatus=(msg:string)=>/URL|YouTube|quality|resolution|video ID|format|Invalid job/.test(msg)?400:/missing|base URL|public HTTPS/.test(msg)?503:/401|403|authentication|Unauthorized|unauthorized/.test(msg)?401:502
-const fail=(res:any,error:unknown)=>{const msg=error instanceof Error?error.message:'Media service unavailable.';return res.status(errorStatus(msg)).json({error:msg})}
+const fail=(res:any,error:unknown)=>{
+ const msg=error instanceof Error?error.message:'Media service unavailable.'
+ const info=classifyMediaError(msg)
+ return res.status(info.status).json({error:text(msg,360),code:info.code})
+}
 
 export default async function handler(req:any,res:any){
  res.setHeader('Cache-Control','private, no-store, max-age=0')
@@ -130,21 +159,32 @@ export default async function handler(req:any,res:any){
  const action=String(req.query?.action||'')
  try{
   if(action==='file'){
-   if(req.method!=='GET')return res.status(405).json({error:'Use GET to download.'})
+   if(!['GET','HEAD'].includes(req.method))return res.status(405).json({error:'Use GET or HEAD to download.'})
    const id=String(req.query?.id||'');if(!JOB_ID.test(id))return res.status(400).json({error:'Invalid job ID.'})
    const format=kind(req.query?.format),fileName=niceName(req.query?.title,format)
-   const upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,{headers:{Accept:format==='mp4'?'video/mp4, application/octet-stream':'audio/mpeg, application/octet-stream'}},480000)
-   if(!upstream.ok||!upstream.body)return res.status(upstream.status||502).json({error:'The file is not available from the conversion API.'})
+   const range=String(req.headers?.range||'')
+   if(range&&!/^bytes=\d*-\d*$/.test(range))return res.status(416).json({error:'Invalid byte range.'})
+   const accept=format==='mp4'?'video/mp4, application/octet-stream':'audio/mpeg, application/octet-stream'
+   const headers:Record<string,string>={Accept:accept}
+   if(range)headers.Range=range
+   let upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,{method:req.method==='HEAD'?'HEAD':'GET',headers},55000)
+   if(req.method==='HEAD'&&[405,501].includes(upstream.status)){
+    await upstream.body?.cancel()
+    upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,{method:'GET',headers:{Accept:accept,Range:'bytes=0-0'}},55000)
+   }
+   if(!upstream.ok){await upstream.body?.cancel();return res.status(upstream.status).json({error:`Conversion file endpoint returned HTTP ${upstream.status}.`,code:upstream.status===403?'FILE_FORBIDDEN':'FILE_UNAVAILABLE'})}
    const responseType=(upstream.headers.get('content-type')||'').toLowerCase()
-   if(responseType.startsWith('text/')||responseType.includes('json')||responseType.includes('xml')||responseType.includes('html'))return res.status(502).json({error:'Media API returned JSON/text rather than a media file.'})
-   if(format==='mp4'&&responseType.startsWith('audio/'))return res.status(502).json({error:'The media API returned audio instead of the requested MP4.'})
-   if(format==='mp3'&&responseType.startsWith('video/'))return res.status(502).json({error:'The media API returned video instead of the requested MP3.'})
+   const rejectType=responseType.startsWith('text/')||/json|xml|html/.test(responseType)||(format==='mp4'&&responseType.startsWith('audio/'))||(format==='mp3'&&responseType.startsWith('video/'))
+   if(rejectType){await upstream.body?.cancel();return res.status(502).json({error:'The conversion server returned the wrong file type.',code:'WRONG_FILE_TYPE'})}
    res.setHeader('Content-Type',format==='mp4'?'video/mp4':'audio/mpeg')
-   const escaped=encodeURIComponent(fileName).replace(/['()*]/g, c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())
-   res.setHeader('Content-Disposition',`attachment; filename="${format==='mp4'?'Audixo-video.mp4':'Audixo-audio.mp3'}"; filename*=UTF-8''${escaped}`)
-   const size=upstream.headers.get('content-length');if(size&&/^\d+$/.test(size))res.setHeader('Content-Length',size)
-   // Serverless streaming may be capped by the deployment provider for long videos.
-   return await new Promise<void>((resolve,reject)=>{Readable.fromWeb(upstream.body as any).on('error',reject).pipe(res).on('finish',resolve).on('error',reject)})
+   const escaped=encodeURIComponent(fileName).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())
+   res.setHeader('Content-Disposition',`attachment; filename="Audixo.${format}"; filename*=UTF-8''${escaped}`)
+   for(const h of ['content-length','content-range','accept-ranges']){const value=upstream.headers.get(h);if(value)res.setHeader(h,value)}
+   res.status(upstream.status)
+   if(req.method==='HEAD'){await upstream.body?.cancel();return res.end()}
+   if(!upstream.body)return res.status(502).json({error:'Empty conversion file.'})
+   await pipeline(Readable.fromWeb(upstream.body as any),res)
+   return
   }
   if(req.method!=='POST')return res.status(405).json({error:'Use POST.'})
   if(action==='health'){
@@ -161,13 +201,8 @@ export default async function handler(req:any,res:any){
    const url=youtube(req.body?.url),format=kind(req.body?.format)
    const quality=String(req.body?.quality||'')
    if(format==='mp4'&&!SUPPORTED.has(quality))return res.status(400).json({error:'Select a valid MP4 resolution.'})
-   const body:Record<string,unknown>=format==='mp4'?{url,format:'mp4',quality}:{url,format:'mp3',bitrate:320}
-   let v:any
-   try{v=await json('/api/download',body,55000)}catch(e){
-    // Only retry with the documented MP3 body when the service rejects extra fields.
-    if(format==='mp3'&&/422|unexpected|extra|not permitted|unknown field|invalid bitrate|unrecognized/i.test((e as Error).message)){v=await json('/api/download',{url,format:'mp3'},55000)}
-    else throw e
-   }
+   const body=buildDownloadBody(url,format,quality)
+   const v=await json('/api/download',body,55000)
    const job=normalizeJob(v,'',format)
    if(!JOB_ID.test(job.id))return res.status(502).json({error:'Media API did not return a valid job_id.'})
    return res.status(200).json({...job,requestedQuality:format==='mp4'?quality:'320'})
@@ -177,5 +212,5 @@ export default async function handler(req:any,res:any){
    return res.status(200).json(normalizeJob(await json(`/api/download/status/${encodeURIComponent(id)}`,undefined,24000),id,kind(req.body?.format)))
   }
   return res.status(400).json({error:'Unknown media action.'})
- }catch(e){return fail(res,e)}
+ }catch(e){if(res.headersSent){res.destroy?.(e instanceof Error?e:undefined);return}return fail(res,e)}
 }

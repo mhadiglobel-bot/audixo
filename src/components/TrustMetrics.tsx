@@ -6,9 +6,9 @@ import {soundBank} from '../services/soundBank'
 type MetricOption={value:string;unit:string;description:string}
 type Metric={label:string;category:string;href:string;action:string;options:MetricOption[];delay:number;offset:number}
 
-const bitrateOptions:MetricOption[]=[64,192,240,320].map(n=>({value:String(n),unit:'kbps',description:n===320?'Maximum MP3 encoding target':n===64?'Compact audio':n===192?'Balanced listening':'Detailed sound'}))
+const bitrateOptions:MetricOption[]=[64,128,192,256,320].map(n=>({value:String(n),unit:'kbps',description:n===320?'Maximum MP3 encoding target':n===64?'Compact audio':n===192?'Balanced listening':'Detailed sound'}))
 const videoOptions:MetricOption[]=[
- ['240p','Compact video'],['360p','Quick preview'],['480p','Smooth mobile'],['720p','HD clarity'],['1080p','Full HD'],['1440p','2K clarity'],['2160p','Ultra HD'],
+ ['240p','Compact video'],['360p','Quick preview'],['480p','Smooth mobile'],['720p','HD clarity'],['1080p','Full HD'],['1440p','QHD clarity'],['2160p','Ultra HD'],
 ].map(([value,unit])=>({value,unit,description:'Video quality preview'}))
 const presetOptions:MetricOption[]=soundPresets.map((preset,i)=>({value:String(i+1).padStart(2,'0'),unit:preset.name,description:'Shape your sound'}))
 const soundOptions:MetricOption[]=soundBank.map((sound,i)=>({value:String(i+1).padStart(2,'0'),unit:sound.name,description:`${sound.family} · layer into your mix`}))

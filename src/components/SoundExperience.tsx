@@ -2,24 +2,131 @@ import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState,t
 import {Link,useLocation} from 'react-router-dom'
 import {defaultClipFx,soundPresets} from '../editor/project'
 import type {ClipFx,SoundPreset} from '../editor/types'
-import {demoYoutubeSources} from '../config/site'
+
 
 // V49: One persistent media element and one Web Audio graph. Effects change node
 // parameters in place; React route changes never re-create the music player.
-// The supplied ten audio excerpts were combined into ONE seekable MP3 reel.
-const REEL='/demo/audixo-sample-reel.mp3'
-type DemoTrack={id:string;title:string;by:string;from:number;duration:number;tag:string}
+// The supplied audio excerpts were combined into ONE seekable MP3 reel.
+const REEL='/demo/audixo-sample-reel.mp3?v=51'
+export type DemoTrack={id:string;title:string;by:string;from:number;duration:number;coverIndex:number;tag:string}
 export const DEMO_TRACKS:DemoTrack[]=[
- {id:'teu-perfume',title:'Teu Perfume',by:'Orch Mix',from:0,duration:79.3611,tag:'ORCH MIX'},
- {id:'te-conoci',title:'Te Conocí',by:'bxkq × PXLWYSE · Remix',from:79.3611,duration:29.8329,tag:'REMIX'},
- {id:'aura-farming',title:'Aura Farming',by:'Funk / Phonk',from:109.194,duration:34.7398,tag:'AURA'},
- {id:'montagem-ahora',title:'Montagem Ahora',by:'NUEKI × QMIIR',from:143.9338,duration:31.797,tag:'MONTAGEM'},
- {id:'montagem-illuminal',title:'Montagem Illuminal',by:'Funk / Phonk',from:175.7308,duration:37.241,tag:'NIGHT'},
- {id:'montagem-royal',title:'Montagem Royal',by:'Slowed',from:212.9718,duration:48.393,tag:'SLOWED'},
- {id:'baila-lento',title:'Baila Lento',by:'Funk / Phonk',from:261.3648,duration:29.613,tag:'FUNK'},
- {id:'tiki-tiki',title:'Tiki Tiki',by:'Funk / Phonk',from:290.9778,duration:87.085,tag:'TIKI'},
- {id:'funk-sigilo',title:'Funk Sigilo',by:'Funk / Phonk',from:378.0628,duration:23.158,tag:'DARK'},
- {id:'funk-power',title:'Funk Power',by:'Funk / Phonk',from:401.2208,duration:35.195,tag:'POWER'}
+ {
+  "id": "teu-perfume",
+  "title": "Teu Perfume",
+  "by": "Orch Mix",
+  "from": 0.0,
+  "duration": 79.36106576,
+  "coverIndex": 0,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "te-conoci",
+  "title": "Te Conoc\u00ed",
+  "by": "bxkq x PXLWYSE - Remix",
+  "from": 79.51106576,
+  "duration": 29.83290249,
+  "coverIndex": 1,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "aura-farming",
+  "title": "Aura Farming",
+  "by": "Mustafa Saboori",
+  "from": 109.49396825,
+  "duration": 34.73979592,
+  "coverIndex": 2,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "montagem-ahora",
+  "title": "Montagem Ahora",
+  "by": "NUEKI x QMIIR",
+  "from": 144.38376417,
+  "duration": 31.79698413,
+  "coverIndex": 3,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "montagem-illuminal",
+  "title": "Montagem Illuminal",
+  "by": "Funk / Phonk",
+  "from": 176.3307483,
+  "duration": 37.24099773,
+  "coverIndex": 4,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "montagem-royal",
+  "title": "Montagem Royal",
+  "by": "Slowed",
+  "from": 213.72174603,
+  "duration": 48.3929932,
+  "coverIndex": 5,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "baila-lento",
+  "title": "Baila Lento",
+  "by": "Funk / Phonk",
+  "from": 262.26473923,
+  "duration": 29.6129932,
+  "coverIndex": 6,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "tiki-tiki",
+  "title": "Tiki Tiki",
+  "by": "Funk / Phonk",
+  "from": 292.02773243,
+  "duration": 87.08501134,
+  "coverIndex": 7,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "funk-sigilo",
+  "title": "Funk Sigilo",
+  "by": "Funk / Phonk",
+  "from": 379.26274376,
+  "duration": 23.15800454,
+  "coverIndex": 8,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "funk-power",
+  "title": "Funk Power",
+  "by": "Funk / Phonk",
+  "from": 402.5707483,
+  "duration": 35.19501134,
+  "coverIndex": 9,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "veki-veki",
+  "title": "VEKI VEKI",
+  "by": "DJZRX",
+  "from": 437.91575964,
+  "duration": 42.9921542,
+  "coverIndex": 10,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "siento-conmigo",
+  "title": "SIENTO CONMIGO",
+  "by": "Slowed TikTok",
+  "from": 481.05791383,
+  "duration": 48.26356009,
+  "coverIndex": 11,
+  "tag": "USER CLIP"
+ },
+ {
+  "id": "montagem-alquimia",
+  "title": "MONTAGEM ALQUIMIA",
+  "by": "Funk / Phonk",
+  "from": 529.47147392,
+  "duration": 66.5476644,
+  "coverIndex": 12,
+  "tag": "USER CLIP"
+ }
 ]
 
 type FxTab='Clip'|'Tone'|'Space'|'Echo'|'Motion'|'Style'
@@ -253,17 +360,12 @@ export function youtubeVideoId(source:string):string|null{
 
 function TrackArt({index}:{index:number}){
  const track=DEMO_TRACKS[index]
- const id=youtubeVideoId(demoYoutubeSources[track?.id]||'')
- const [failedSource,setFailedSource]=useState('')
- const src=id?`https://i.ytimg.com/vi/${id}/hqdefault.jpg`:''
- const showOriginal=!!src&&failedSource!==src
- return <span className={`ax49-track-art${showOriginal?' has-youtube-cover':''}`}
-  data-cover-source={showOriginal?'youtube':'audixo-placeholder'}
-  style={{'--cover-x':`${(index%5)*25}%`,'--cover-y':`${index>=5?100:0}%`} as CSSProperties} aria-hidden="true">
-  {showOriginal&&<img src={src} alt="" width={64} height={64} loading="lazy" decoding="async" referrerPolicy="no-referrer"
-    onLoad={event=>{if(event.currentTarget.naturalWidth<160)setFailedSource(src)}}
-    onError={()=>setFailedSource(src)}/>}
- </span>
+ const cell=track?.coverIndex??0
+ // Locally bundled, user-supplied original cover art. No external lookup/hotlink.
+ return <span className="ax49-track-art ax51-supplied-cover"
+  data-cover-source="user-supplied" data-cover-id={track?.id}
+  style={{'--cover-x':`${(cell%5)*25}%`,'--cover-y':`${Math.floor(cell/5)*50}%`} as CSSProperties}
+  aria-hidden="true"/>
 }
 
 function MusicStrip(){
@@ -271,27 +373,43 @@ function MusicStrip(){
  const stripRef=useRef<HTMLDivElement|null>(null)
  useEffect(()=>{
   const node=stripRef.current
-  if(!node)return
-  let frame=0,last=performance.now()
+  if(!node||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
+  let frame=0,last=0,position=0,cycle=0
+  const measure=()=>{
+   const primary=node.querySelector<HTMLElement>('[data-strip-lane="primary"]')
+   const clone=node.querySelector<HTMLElement>('[data-strip-lane="clone"]')
+   if(primary&&clone)cycle=clone.offsetLeft-primary.offsetLeft
+  }
+  measure()
+  const observer=typeof ResizeObserver!=='undefined'?new ResizeObserver(measure):null
+  observer?.observe(node)
   const step=(now:number)=>{
-   const lane=node.querySelector<HTMLElement>('[data-strip-lane="primary"]')
-   if(lane){
-    const cycle=lane.scrollWidth+18
-    if(cycle>node.clientWidth){
-     const delta=(now-last)/1000
-     node.scrollLeft+=delta*(window.innerWidth<820?22:30)
-     if(node.scrollLeft>=cycle)node.scrollLeft-=cycle
-    }
-   }
-   last=now
+   const delta=last?Math.min((now-last)/1000,.05):0;last=now
+   // Accumulate sub-pixel movement instead of losing it to scrollLeft rounding.
+   // Do not move a focused control out from under keyboard users.
+   if(cycle>0&&!document.hidden&&!node.contains(document.activeElement)){
+    position=(position+delta*(window.innerWidth<820?22:30))%cycle
+    node.scrollLeft=position
+   }else position=node.scrollLeft
    frame=window.requestAnimationFrame(step)
   }
+  const manual=()=>{position=node.scrollLeft}
+  node.addEventListener('touchend',manual,{passive:true})
+  node.addEventListener('wheel',manual,{passive:true})
   frame=window.requestAnimationFrame(step)
-  return()=>window.cancelAnimationFrame(frame)
+  return()=>{window.cancelAnimationFrame(frame);observer?.disconnect();node.removeEventListener('touchend',manual);node.removeEventListener('wheel',manual)}
  },[])
- const renderLane=(copy:number,hidden=false)=><div className="ax49-track-lane" data-strip-lane={copy===0?'primary':'clone'} aria-hidden={hidden||undefined}>{DEMO_TRACKS.map((track,i)=><button key={`${copy}-${track.id}`} className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i} tabIndex={hidden?-1:0} onClick={()=>selectTrack(i)}><TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span><i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i></button>)}</div>
- return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>10 ORIGINAL USER-SUPPLIED CLIPS · TAP TO PREVIEW</small></div>
-  <div ref={stripRef} className="ax49-track-marquee" role="group" aria-label="Choose a track to preview">{renderLane(0)}{renderLane(1,true)}</div>
+ const renderLane=(copy:'primary'|'clone')=><div className="ax49-track-lane" data-strip-lane={copy} aria-hidden={copy==='clone'||undefined}>
+  {DEMO_TRACKS.map((track,i)=><button key={`${copy}-${track.id}`} data-demo-track-id={track.id} data-demo-copy={copy}
+   className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i}
+   aria-label={`Play ${track.title}`} tabIndex={copy==='clone'?-1:0}
+   onClick={event=>{selectTrack(i);if(event.detail>0)event.currentTarget.blur()}}>
+   <TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span>
+   <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i>
+  </button>)}
+ </div>
+ return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · TAP TO PREVIEW</small></div>
+  <div ref={stripRef} className="ax49-track-marquee" role="group" aria-label="Choose a track to preview">{renderLane('primary')}{renderLane('clone')}</div>
  </div>
 }
 
@@ -323,12 +441,12 @@ export function SoundPlayground(){
  const {trackIndex,isPlaying,toggle,volume,setVolume,progress,seek,compare,setCompare,error,meterRef}=useSound()
  const track=trackIndex!==null?DEMO_TRACKS[trackIndex]:null
  return <section className="ax49-sound-playground" aria-labelledby="audixo-playground-title">
-  <header className="ax49-play-head"><div className="ax25-kicker"><i/> AUDIXO / LIVE SOUND LAB</div><h2 id="audixo-playground-title">Hear the beat.<br/><em>Shape it live.</em></h2><p>Pick one of your ten tracks. Every effect responds while the music keeps playing.</p></header>
+  <header className="ax49-play-head"><div className="ax25-kicker"><i/> AUDIXO / LIVE SOUND LAB</div><h2 id="audixo-playground-title">Hear the beat.<br/><em>Shape it live.</em></h2><p>Choose a track and shape its sound while it plays.</p></header>
   <MusicStrip/>
   <div className="ax49-workspace">
    <div className="ax49-player-card">
     <div className="ax49-record-zone"><div className={`ax49-record ${isPlaying?'playing':''}`}><div className="ax49-record-ring"/><img src="/audixo-official-symbol.png" alt="AUDIXO audio disc"/></div><div className="ax49-live-meter" ref={meterRef} aria-hidden="true">{Array.from({length:38},(_,i)=><i key={i}/>)}</div></div>
-    <div className="ax49-player-info"><span>NOW PLAYING <i/></span><strong>{track?.title??'Pick a song above'}</strong><small>{track?.by??'10 hand-picked cropped tracks'}</small></div>
+    <div className="ax49-player-info"><span>NOW PLAYING <i/></span><strong>{track?.title??'Pick a song above'}</strong><small>{track?.by??`${DEMO_TRACKS.length} hand-picked clips`}</small></div>
     <div className="ax49-transport"><button type="button" className="ax49-main-play" onClick={toggle} aria-label={isPlaying?'Pause music':'Play music'}>{isPlaying?'Ⅱ':'▶'}</button><div className="ax49-progress"><input type="range" aria-label="Seek within the selected audio clip" min={0} max={Math.max(1,track?.duration??1)} value={Math.min(progress,track?.duration??1)} step={.1} onChange={e=>seek(+e.target.value)} disabled={!track}/><span>{formatTime(progress)} <b>/</b> {formatTime(track?.duration??0)}</span></div></div>
     <LiveRange name="Volume" value={volume} min={0} max={100} unit="%" onChange={setVolume}/>
     <div className="ax49-player-hint">Click any song above—even the same one—to replay its clean, unfiltered original.</div>

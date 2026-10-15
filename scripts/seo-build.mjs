@@ -1,8 +1,45 @@
-import {build} from 'esbuild'
 import assert from 'node:assert/strict'
 import {readFile,writeFile,mkdir,rm} from 'node:fs/promises'
 import path from 'node:path'
-import {loadEnv} from 'vite'
+
+/** Count logical tracks separately from the visual clone used for the marquee.
+ * The production build and --self-test call this exact same assertion function.
+ */
+export function checkTrackMarkup(html,tracks){
+ const ids=tracks.map(t=>t.id)
+ assert.ok(ids.length>0,'The demo catalog must not be empty')
+ assert.equal(new Set(ids).size,ids.length,'Catalog track IDs must be unique')
+ const audio=html.match(/<audio\b[^>]*src="\/demo\/audixo-sample-reel\.mp3(?:\?v=[\w.-]+)?"[^>]*>/g)||[]
+ assert.equal(audio.length,1,'Home must render one persistent demo player')
+ assert.ok(!/\bautoplay\b/i.test(audio[0]),'Initial audio autoplay is not permitted')
+ const buttons=(html.match(/<button\b[^>]*data-demo-track-id="[^"]+"[^>]*>/g)||[])
+ const attr=(tag,key)=>tag.match(new RegExp(key+'="([^"]*)"'))?.[1]
+ for(const lane of ['primary','clone']){
+  const items=buttons.filter(tag=>attr(tag,'data-demo-copy')===lane)
+  assert.deepEqual(items.map(tag=>attr(tag,'data-demo-track-id')),ids,`${lane}: each catalog track must render once in order`)
+  if(lane==='clone')assert.ok(items.every(tag=>attr(tag,'tabindex')==='-1'),'Clones must not enter keyboard tab order')
+ }
+ assert.equal(buttons.length,ids.length*2,'Only primary and clone rows may contain track buttons')
+ assert.match(html,/<div\b[^>]*data-strip-lane="clone"[^>]*aria-hidden="true"/,'Clone lane must be hidden from assistive technology')
+ return {uniqueTracks:ids.length,renderedTiles:buttons.length}
+}
+export function runTrackRegression(){
+ const fixture=n=>{
+  const tracks=Array.from({length:n},(_,i)=>({id:'track-'+i}))
+  const lane=copy=>`<div data-strip-lane="${copy}"${copy==='clone'?' aria-hidden="true"':''}>`+tracks.map(t=>`<button data-demo-track-id="${t.id}" data-demo-copy="${copy}" tabindex="${copy==='clone'?-1:0}"></button>`).join('')+'</div>'
+  return {tracks,html:'<audio src="/demo/audixo-sample-reel.mp3" preload="metadata"></audio>'+lane('primary')+lane('clone')}
+ }
+ let count=0
+ for(const n of [1,10,13,20]){const f=fixture(n);assert.equal(checkTrackMarkup(f.html,f.tracks).renderedTiles,n*2);count++}
+ const {html,tracks}=fixture(13)
+ for(const bad of [html.replace('data-demo-track-id="track-0"','data-demo-track-id="wrong"'),html.replace('<audio ','<audio autoplay="" '),html.replace('tabindex="-1"','tabindex="0"'),html.replace('aria-hidden="true"','aria-hidden="false"'),html.replace('data-demo-copy="clone"','data-demo-copy="primary"')]){assert.throws(()=>checkTrackMarkup(bad,tracks));count++}
+ assert.throws(()=>checkTrackMarkup(html,[...tracks,tracks[0]]));count++
+ console.log(`Track-markup regression passed: ${count} cases (including 10/20 and 13/26).`)
+}
+if(process.argv.includes('--self-test')){runTrackRegression();process.exit(0)}
+
+const {build}=await import('esbuild')
+const {loadEnv}=await import('vite')
 Object.assign(process.env,loadEnv('production',process.cwd(),''))
 // A new Vercel project does not know its final production domain on its first build.
 // Prefer Vercel's real system URL; otherwise let the FIRST build succeed and ask
@@ -13,8 +50,8 @@ const origin=new URL(configured).origin
 if(!['http:','https:'].includes(new URL(origin).protocol))throw new Error('VITE_SITE_URL must be HTTP or HTTPS.')
 if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SITE_URL to your production HTTPS domain.')
 await mkdir('.build',{recursive:true})
-await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||''})}})
-const {pageRoutes,pageHtml,blogs,faqs,audioTools}=await import(path.resolve('.build/prerender.mjs'))
+await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||'',VITE_SUPPORT_EMAIL_ENABLED:process.env.VITE_SUPPORT_EMAIL_ENABLED||'',VITE_AUDIXO_DEFAULT_MP4_QUALITY:process.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY||'1080'})}})
+const {pageRoutes,pageHtml,blogs,faqs,audioTools,DEMO_TRACKS}=await import(path.resolve('.build/prerender.mjs'))
 function renderPage(route){
  try{
   const html=pageHtml(route)
@@ -28,17 +65,15 @@ function renderPage(route){
 // This runs even on the normal production build; it cannot be bypassed silently.
 function checkSoundProvider(){
  const html=renderPage('/')
- const reelTags=html.match(/<audio\b[^>]*src="\/demo\/audixo-sample-reel\.mp3"[^>]*>/g)||[]
- assert.equal(reelTags.length,1,'Home must render exactly one persistent demo player')
- assert.ok(!/\bautoplay\b/i.test(reelTags[0]),'Demo audio must not autoplay during a page load')
- assert.equal((html.match(/class="ax49-track-item /g)||[]).length,10,'All ten supplied tracks must render')
+ checkTrackMarkup(html,DEMO_TRACKS)
 }
+
 checkSoundProvider()
 if(process.argv.includes('--check')){
  const routes=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),'/__ssr-not-found-check__']
  for(const route of routes)renderPage(route)
  await rm('.build',{recursive:true,force:true})
- console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; 10 tracks; no autoplay.`)
+ console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; ${DEMO_TRACKS.length} unique tracks and one hidden clone lane; no autoplay.`)
  process.exit(0)
 }
 

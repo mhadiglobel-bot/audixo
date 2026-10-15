@@ -1,6 +1,6 @@
 import type {CSSProperties} from 'react'
 
-export const bitrateSteps=[64,192,240,320] as const
+export const bitrateSteps=[64,128,192,256,320] as const
 export type Mp3Bitrate=(typeof bitrateSteps)[number]
 const videoSteps=[
  {value:'240',title:'240p',quality:'SD'},
@@ -8,7 +8,7 @@ const videoSteps=[
  {value:'480',title:'480p',quality:'SD'},
  {value:'720',title:'720p',quality:'HD'},
  {value:'1080',title:'1080p',quality:'Full HD'},
- {value:'1440',title:'1440p',quality:'2K'},
+ {value:'1440',title:'1440p',quality:'QHD'},
  {value:'2160',title:'2160p',quality:'4K'},
 ] as const
 
@@ -32,13 +32,7 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
  const supported=new Set(available.map(q=>String(q.value).replace(/p$/i,'')))
  const hasMetadata=supported.size>0
  const supportedHere=supported.has(selected.value)
- const detail=!analyzed
-  ?'Analyze a link to choose resolution.'
-  :!hasMetadata
-   ?'Your video quality will be checked when downloading. AUDIXO can retry lower resolutions automatically if the source rejects the first choice.'
-   :supportedHere
-    ?'Available in the analyzed video. If the server rejects this size, AUDIXO will retry lower supported resolutions automatically.'
-    :'This resolution may not be available for this video. AUDIXO will step down to a lower supported quality if needed.'
+ const detail=!analyzed?'Analyze a link to choose resolution.':!hasMetadata?'The server will check this resolution.':supportedHere?'Available for this video.':'Not listed for this video. Select an available resolution.'
  return <section className="ax46-quality-panel" aria-label="MP4 video quality">
   <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">VIDEO RESOLUTION</span><h3>{selected.title} <small>{selected.quality}</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP4 VIDEO</span></div>
   <QualitySlider items={videoSteps.map(step=>({label:step.title,name:step.value,detail:step.quality}))} index={index} disabled={!analyzed||disabled} onChange={i=>onChange(videoSteps[i].value)} ariaLabel="Video resolution"/>
@@ -48,7 +42,7 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
 export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
  const index=Math.max(0,bitrateSteps.indexOf(bitrate))
  const local=duration>0&&duration<=300
- const detail=bitrate===320?'Default server output target.':local?'Lower bitrate uses local encoding for short files.':'Long or unrecognized videos use the 320 kbps server target.'
+ const detail=local?'Short clips are encoded on this device at the selected bitrate.':bitrate===320?'Long files use the server MP3 encoder.':'Local encoding supports clips up to five minutes.'
  return <section className="ax46-quality-panel" aria-label="MP3 audio quality">
   <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">AUDIO BITRATE</span><h3>{bitrate} <small>kbps</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP3 AUDIO</span></div>
   <QualitySlider items={bitrateSteps.map(value=>({label:String(value),name:String(value),detail:'kbps'}))} index={index} disabled={disabled} onChange={i=>onChange(bitrateSteps[i])} ariaLabel="MP3 bitrate"/>

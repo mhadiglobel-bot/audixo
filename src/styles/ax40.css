@@ -1416,3 +1416,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .ax49-track-art{overflow:hidden}
 .ax49-track-art img{transition:transform .35s ease,filter .35s ease}
 .ax49-track-item:hover .ax49-track-art img,.ax49-track-item.active .ax49-track-art img{transform:scale(1.04);filter:saturate(1.06)}
+
+/* V51: supplied cover atlas (5 columns x 3 rows); crisp at all DP sizes. */
+.ax49-track-art.ax51-supplied-cover{background-image:url('/demo/audixo-cover-sprite.webp?v=51');background-size:500% 300%;background-position:var(--cover-x) var(--cover-y);filter:none}
+.ax49-track-marquee{position:relative}
+.ax49-track-item .ax49-track-label strong{font-weight:800}
+@media(prefers-reduced-motion:reduce){.ax49-track-marquee{scrollbar-width:thin}.ax49-track-lane[data-strip-lane="clone"]{display:none}}

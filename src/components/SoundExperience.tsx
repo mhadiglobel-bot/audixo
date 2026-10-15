@@ -2,23 +2,24 @@ import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState,t
 import {Link,useLocation} from 'react-router-dom'
 import {defaultClipFx,soundPresets} from '../editor/project'
 import type {ClipFx,SoundPreset} from '../editor/types'
+import {demoYoutubeSources} from '../config/site'
 
 // V49: One persistent media element and one Web Audio graph. Effects change node
 // parameters in place; React route changes never re-create the music player.
 // The supplied ten audio excerpts were combined into ONE seekable MP3 reel.
 const REEL='/demo/audixo-sample-reel.mp3'
-type DemoTrack={title:string;by:string;from:number;duration:number;tag:string}
+type DemoTrack={id:string;title:string;by:string;from:number;duration:number;tag:string}
 export const DEMO_TRACKS:DemoTrack[]=[
- {title:'Teu Perfume',by:'Orch Mix',from:0,duration:79.3611,tag:'ORCH MIX'},
- {title:'Te Conocí',by:'bxkq × PXLWYSE · Remix',from:79.3611,duration:29.8329,tag:'REMIX'},
- {title:'Aura Farming',by:'Funk / Phonk',from:109.194,duration:34.7398,tag:'AURA'},
- {title:'Montagem Ahora',by:'NUEKI × QMIIR',from:143.9338,duration:31.797,tag:'MONTAGEM'},
- {title:'Montagem Illuminal',by:'Funk / Phonk',from:175.7308,duration:37.241,tag:'NIGHT'},
- {title:'Montagem Royal',by:'Slowed',from:212.9718,duration:48.393,tag:'SLOWED'},
- {title:'Baila Lento',by:'Funk / Phonk',from:261.3648,duration:29.613,tag:'FUNK'},
- {title:'Tiki Tiki',by:'Funk / Phonk',from:290.9778,duration:87.085,tag:'TIKI'},
- {title:'Funk Sigilo',by:'Funk / Phonk',from:378.0628,duration:23.158,tag:'DARK'},
- {title:'Funk Power',by:'Funk / Phonk',from:401.2208,duration:35.195,tag:'POWER'}
+ {id:'teu-perfume',title:'Teu Perfume',by:'Orch Mix',from:0,duration:79.3611,tag:'ORCH MIX'},
+ {id:'te-conoci',title:'Te Conocí',by:'bxkq × PXLWYSE · Remix',from:79.3611,duration:29.8329,tag:'REMIX'},
+ {id:'aura-farming',title:'Aura Farming',by:'Funk / Phonk',from:109.194,duration:34.7398,tag:'AURA'},
+ {id:'montagem-ahora',title:'Montagem Ahora',by:'NUEKI × QMIIR',from:143.9338,duration:31.797,tag:'MONTAGEM'},
+ {id:'montagem-illuminal',title:'Montagem Illuminal',by:'Funk / Phonk',from:175.7308,duration:37.241,tag:'NIGHT'},
+ {id:'montagem-royal',title:'Montagem Royal',by:'Slowed',from:212.9718,duration:48.393,tag:'SLOWED'},
+ {id:'baila-lento',title:'Baila Lento',by:'Funk / Phonk',from:261.3648,duration:29.613,tag:'FUNK'},
+ {id:'tiki-tiki',title:'Tiki Tiki',by:'Funk / Phonk',from:290.9778,duration:87.085,tag:'TIKI'},
+ {id:'funk-sigilo',title:'Funk Sigilo',by:'Funk / Phonk',from:378.0628,duration:23.158,tag:'DARK'},
+ {id:'funk-power',title:'Funk Power',by:'Funk / Phonk',from:401.2208,duration:35.195,tag:'POWER'}
 ]
 
 type FxTab='Clip'|'Tone'|'Space'|'Echo'|'Motion'|'Style'
@@ -231,7 +232,40 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
 }
 function playChime(){try{const a=new AudioContext(),t=a.currentTime;[740,950].forEach((freq,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.0001,t+i*.095);g.gain.exponentialRampToValueAtTime(.028,t+i*.095+.012);g.gain.exponentialRampToValueAtTime(.0001,t+i*.095+.21);o.connect(g);g.connect(a.destination);o.start(t+i*.095);o.stop(t+i*.095+.24)});window.setTimeout(()=>void a.close().catch(()=>{}),700)}catch{}}
 
-function TrackArt({index}:{index:number}){return <span className="ax49-track-art" style={{'--cover-x':`${(index%5)*25}%`,'--cover-y':`${index>=5?100:0}%`} as CSSProperties} aria-hidden="true"/>}
+// Resolve only explicit YouTube links. Never search by title at runtime: remixes
+// and different uploads can share a name but use completely different cover art.
+export function youtubeVideoId(source:string):string|null{
+ try{
+  const url=new URL(source.trim())
+  if(url.protocol!=='https:'&&url.protocol!=='http:')return null
+  if(url.username||url.password)return null
+  const host=url.hostname.toLowerCase()
+  const parts=url.pathname.split('/').filter(Boolean)
+  let id:string|null=null
+  if(host==='youtu.be')id=parts[0]||null
+  else if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','www.youtube-nocookie.com','youtube-nocookie.com'].includes(host)){
+   if(url.pathname==='/watch')id=url.searchParams.get('v')
+   else if(['shorts','embed','live'].includes(parts[0]))id=parts[1]||null
+  }
+  return id&&/^[A-Za-z0-9_-]{11}$/.test(id)?id:null
+ }catch{return null}
+}
+
+function TrackArt({index}:{index:number}){
+ const track=DEMO_TRACKS[index]
+ const id=youtubeVideoId(demoYoutubeSources[track?.id]||'')
+ const [failedSource,setFailedSource]=useState('')
+ const src=id?`https://i.ytimg.com/vi/${id}/hqdefault.jpg`:''
+ const showOriginal=!!src&&failedSource!==src
+ return <span className={`ax49-track-art${showOriginal?' has-youtube-cover':''}`}
+  data-cover-source={showOriginal?'youtube':'audixo-placeholder'}
+  style={{'--cover-x':`${(index%5)*25}%`,'--cover-y':`${index>=5?100:0}%`} as CSSProperties} aria-hidden="true">
+  {showOriginal&&<img src={src} alt="" width={64} height={64} loading="lazy" decoding="async" referrerPolicy="no-referrer"
+    onLoad={event=>{if(event.currentTarget.naturalWidth<160)setFailedSource(src)}}
+    onError={()=>setFailedSource(src)}/>}
+ </span>
+}
+
 function MusicStrip(){const {trackIndex,isPlaying,selectTrack}=useSound()
  return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>10 ORIGINAL USER-SUPPLIED CLIPS · TAP TO PREVIEW</small></div>
   <div className="ax49-track-strip" role="group" aria-label="Choose a track to preview">{DEMO_TRACKS.map((track,i)=><button key={track.title} className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i} onClick={()=>selectTrack(i)}><TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span><i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i></button>)}</div>

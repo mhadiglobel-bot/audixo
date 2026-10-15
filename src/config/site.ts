@@ -20,3 +20,20 @@ export const site = {
  description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted MP3 or MP4 downloads.'
 }
 export const contactEmailReady=Boolean(site.email)
+
+
+// V49.1: paste the exact YouTube upload used for each cropped excerpt.
+// Empty means NOT VERIFIED. Do not substitute a guessed video or unrelated art.
+// The thumbnail renderer accepts watch, youtu.be, shorts, live and embed URLs.
+export const demoYoutubeSources: Record<string,string> = {
+  'teu-perfume': '',
+  'te-conoci': '',
+  'aura-farming': '',
+  'montagem-ahora': '',
+  'montagem-illuminal': '',
+  'montagem-royal': '',
+  'baila-lento': '',
+  'tiki-tiki': '',
+  'funk-sigilo': '',
+  'funk-power': '',
+}

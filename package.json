@@ -1,13 +1,14 @@
 {
   "name": "audixo-studio",
   "private": true,
-  "version": "49.0.0",
+  "version": "49.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "node scripts/prepare-ort-runtime.mjs && tsc --noEmit && vite build && node scripts/seo-build.mjs",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:ssr": "node scripts/seo-build.mjs --check"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

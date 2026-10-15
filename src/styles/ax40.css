@@ -1324,3 +1324,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .ax49-track-item.active .ax49-track-pulse{animation:ax49-note-pulse 1.65s ease-in-out infinite}
 @keyframes ax49-note-pulse{50%{opacity:.55;transform:translateY(-2px)}}
 @media(prefers-reduced-motion:reduce){.ax49-track-item.active .ax49-track-art,.ax49-track-item.active .ax49-track-pulse{animation:none!important}}
+
+/* V49.1: exact YouTube thumbnail, cropped only by the existing circular frame. */
+.ax49-track-art.has-youtube-cover{position:relative;overflow:hidden;isolation:isolate}
+.ax49-track-art.has-youtube-cover::before,.ax49-track-art.has-youtube-cover::after{display:none}
+.ax49-track-art.has-youtube-cover>img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover;object-position:center;border-radius:inherit;position:absolute;inset:0}

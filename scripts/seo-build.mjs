@@ -1,4 +1,5 @@
 import {build} from 'esbuild'
+import assert from 'node:assert/strict'
 import {readFile,writeFile,mkdir,rm} from 'node:fs/promises'
 import path from 'node:path'
 import {loadEnv} from 'vite'
@@ -14,6 +15,33 @@ if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SI
 await mkdir('.build',{recursive:true})
 await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||''})}})
 const {pageRoutes,pageHtml,blogs,faqs,audioTools}=await import(path.resolve('.build/prerender.mjs'))
+function renderPage(route){
+ try{
+  const html=pageHtml(route)
+  assert.ok(typeof html==='string'&&html.length>100,`Empty HTML: ${route}`)
+  return html
+ }catch(error){
+  throw new Error(`AUDIXO prerender failed for ${route}: ${error instanceof Error?error.message:String(error)}`,{cause:error})
+ }
+}
+// Regression: the old standalone SEO tree omitted SoundExperienceProvider.
+// This runs even on the normal production build; it cannot be bypassed silently.
+function checkSoundProvider(){
+ const html=renderPage('/')
+ const reelTags=html.match(/<audio\b[^>]*src="\/demo\/audixo-sample-reel\.mp3"[^>]*>/g)||[]
+ assert.equal(reelTags.length,1,'Home must render exactly one persistent demo player')
+ assert.ok(!/\bautoplay\b/i.test(reelTags[0]),'Demo audio must not autoplay during a page load')
+ assert.equal((html.match(/class="ax49-track-item /g)||[]).length,10,'All ten supplied tracks must render')
+}
+checkSoundProvider()
+if(process.argv.includes('--check')){
+ const routes=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),'/__ssr-not-found-check__']
+ for(const route of routes)renderPage(route)
+ await rm('.build',{recursive:true,force:true})
+ console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; 10 tracks; no autoplay.`)
+ process.exit(0)
+}
+
 const base=await readFile('dist/index.html','utf8'),escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 const pages={
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
@@ -55,7 +83,7 @@ for(const route of paths){
   .replace(/<meta property="og:[^"]+"[^>]*>/g,'')
   .replace(/<link rel="canonical"[^>]*>/g,'')
   .replace('</head>',tags+'</head>')
- const html=head.replace('<div id="root"></div>',`<div id="root">${pageHtml(route)}</div>`)
+ const html=head.replace('<div id="root"></div>',`<div id="root">${renderPage(route)}</div>`)
  const target=route==='/'?'dist/index.html':`dist${route}/index.html`;await mkdir(path.dirname(target),{recursive:true});await writeFile(target,html)
 }
 console.error=originalError

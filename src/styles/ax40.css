@@ -1581,3 +1581,21 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .ax46-slider.is-single .ax46-slider-track,.ax46-slider.is-single .ax46-slider-input{display:none!important}
 .ax46-slider.is-single .ax46-slider-options{justify-content:center;min-height:44px}
 .ax46-slider.is-single .ax46-slider-options button{flex-basis:auto;min-width:72px;padding:8px 16px!important;border-radius:999px;background:rgba(137,97,232,.08)!important}
+
+/* V54 - AUDIXO's full MP4 quality rail restored; source maximum stays locked. */
+.ax54-video-scale{margin-top:18px}
+.ax54-video-scale .ax54-unavailable-band{position:absolute;top:0;bottom:0;left:var(--ax54-maximum);right:0;border-radius:0 99px 99px 0;background:repeating-linear-gradient(135deg,#e8ebf3,#e8ebf3 7px,#f1f2f8 7px,#f1f2f8 13px);pointer-events:none;z-index:1;opacity:.9}
+.ax54-video-scale .ax46-slider-fill{position:relative;z-index:2}
+.ax54-video-scale .ax46-slider-options button{position:relative}
+.ax54-video-scale .ax46-slider-options button::before{content:"";position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#d1d7e6;box-shadow:0 0 0 3px #fff;z-index:2;pointer-events:none}
+.ax54-video-scale .ax46-slider-options button.is-offered::before{background:linear-gradient(135deg,#29dcb4,#26d9e5,#9260eb);box-shadow:0 0 0 3px #fff,0 0 8px rgba(107,107,224,.25)}
+.ax54-video-scale .ax46-slider-options button.selected::before{opacity:0}
+.ax54-video-scale .ax46-slider-options button:disabled:not(.selected){opacity:.44}
+.ax54-video-scale .ax46-slider-options button.is-over-limit{opacity:.3!important}
+.ax54-video-scale .ax46-slider-options button.is-over-limit::before{background:#c4c8d3}
+.ax54-video-scale.is-unavailable .ax46-slider-track{opacity:.5}
+.ax54-video-scale.is-unavailable .ax54-unavailable-band{left:0;border-radius:99px}
+.ax54-video-scale.is-unavailable .ax46-slider-options button{opacity:.46}
+.ax54-quality-hint{color:#7c8ba6;font-size:11px;line-height:1.5;margin:8px 0 0;text-align:center}
+@media(max-width:520px){.ax54-video-scale .ax46-slider-options button strong{font-size:9px}.ax54-video-scale .ax46-slider-options button small{font-size:8px}.ax54-quality-hint{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.ax54-video-scale .ax46-slider-fill{animation:none!important}}

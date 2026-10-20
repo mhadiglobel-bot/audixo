@@ -117,35 +117,78 @@ function duration(v:unknown){
  return Number.isFinite(Number(v))?Math.max(0,Number(v)):0
 }
 const QUALITY_LABELS:Record<string,string>={'240':'SD','360':'SD','480':'SD','720':'HD','1080':'Full HD','1440':'QHD','2160':'4K'}
-/** Canonical authoritative entries only. The upstream must attest to downloadability
- * after checking video stream + separate audio and ffmpeg mux/encode support.
- * In particular, `acodec:'none'` on a video-only stream is allowed.
+/** MP4 source availability is supplied only by /api/preview; never by
+ * the application's global resolution scale or generic yt-dlp `formats`.
+ *
+ * New origin API: available_qualities entries with downloadable:true and
+ * verified video/merge metadata. Older origin API: explicit `qualities` or
+ * `supported_qualities` lists (e.g. ["360", "720"] or [{value:"720",label:"720p"}]).
+ * The older shape is an upstream DECLARATION, not proof that a stream can be
+ * fetched; /api/download still has to validate the exact requested height.
+ * We don't infer availability from max_height, raw formats, or labels alone.
  */
 export function confirmedMp4Qualities(payload:any):Quality[]{
  const candidates:any[]=[payload,unwrap(payload),unwrap(unwrap(payload))]
  let entries:any[]|undefined
+ let authoritative=false
+ // If canonical list exists, it wins even if it is empty. No fallback to a
+ // stale, generic legacy field when the origin reports zero real formats.
  for(const obj of candidates){
   if(!obj||typeof obj!=='object')continue
-  if(Array.isArray(obj.available_qualities)){entries=obj.available_qualities;break}
-  if(Array.isArray(obj.availableQualities)){entries=obj.availableQualities;break}
+  if(Array.isArray(obj.available_qualities)){entries=obj.available_qualities;authoritative=true;break}
+  if(Array.isArray(obj.availableQualities)){entries=obj.availableQualities;authoritative=true;break}
  }
  if(!entries){
-  for(const obj of candidates){if(Array.isArray(obj?.qualities)){entries=obj.qualities;break}}
+  for(const obj of candidates){
+   if(!obj||typeof obj!=='object')continue
+   for(const field of ['qualities','supported_qualities','video_qualities','available_resolutions']){
+    if(Array.isArray(obj[field])){entries=obj[field];break}
+    if(Array.isArray(obj[field]?.mp4)){entries=obj[field].mp4;break}
+   }
+   if(entries)break
+  }
  }
  if(!entries)return []
  const found=new Set<string>()
  for(const raw of entries){
-  if(!raw||typeof raw!=='object'||Array.isArray(raw))continue
-  if(raw.downloadable!==true||raw.available===false||raw.supported===false||raw.drm===true||raw.has_drm===true||raw.is_drm===true||raw.unusable===true||raw.audio_downloadable===false||raw.audio_available===false)continue
+  if(raw===null||raw===undefined)continue
+  if(typeof raw==='string'||typeof raw==='number'){
+   const value=String(raw).trim().replace(/p$/i,'')
+   // A value from the origin's declared resolutions IS a format claim;
+   // a number in generic yt-dlp metadata is NOT, and isn't scanned here.
+   if(SUPPORTED.has(value))found.add(value)
+   continue
+  }
+  if(typeof raw!=='object'||Array.isArray(raw))continue
+  if(raw.downloadable===false||raw.available===false||raw.supported===false||raw.drm===true||raw.has_drm===true||raw.is_drm===true||raw.unusable===true||raw.audio_downloadable===false||raw.audio_available===false)continue
   if(String(raw.vcodec??'').toLowerCase()==='none'||String(raw.type??raw.stream_type??'').toLowerCase()==='audio')continue
+  const field=raw.quality??raw.value??raw.resolution??raw.height
+  const value=String(field??'').trim().replace(/p$/i,'')
+  if(!SUPPORTED.has(value))continue
+  const hasRawHeight=raw.height!==undefined&&raw.height!==null&&raw.height!==''
+  const hasRawWidth=raw.width!==undefined&&raw.width!==null&&raw.width!==''
   const height=Number(raw.height),width=Number(raw.width)
-  if(!Number.isInteger(height)||!Number.isInteger(width)||height<=0||width<=0)continue
-  const value=String(raw.quality??raw.value??height).replace(/p$/i,'')
-  if(!SUPPORTED.has(value)||Number(value)!==height)continue
+  if(hasRawHeight&&(!Number.isInteger(height)||height!==Number(value)))continue
+  if(hasRawWidth&&(!Number.isInteger(width)||width<=0))continue
   const container=String(raw.output_container??raw.container??raw.ext??'').toLowerCase()
-  if(container!=='mp4'&&container!=='video/mp4')continue
-  const hasVideoEvidence=Boolean(String(raw.format_id??raw.formatId??'').trim())||String(raw.vcodec??'').length>0||raw.type==='video'
-  if(!hasVideoEvidence)continue
+  if(container&&!['mp4','video/mp4'].includes(container))continue
+  if(authoritative){
+   // Detailed canonical formats MUST explicitly guarantee usability, but
+   // compact old-style {value,label} canonical lists are kept compatible.
+   const hasFormatEvidence=hasRawHeight||hasRawWidth||Boolean(raw.format_id??raw.formatId??raw.vcodec??raw.type)
+   if(hasFormatEvidence){
+    if(raw.downloadable!==true||!hasRawHeight||!hasRawWidth||!container)continue
+    if(!String(raw.format_id??raw.formatId??raw.vcodec??'').trim()&&String(raw.type??'').toLowerCase()!=='video')continue
+   }
+  }else{
+   // A raw extractor format object lacking a confirmed downloadable flag
+   // is not a selectable quality. A short {value,label} preview entry is.
+   const looksLikeExtractorFormat=hasRawHeight||hasRawWidth||Boolean(raw.format_id??raw.formatId??raw.vcodec??raw.acodec??raw.type)
+   if(looksLikeExtractorFormat){
+    if(raw.downloadable!==true||!hasRawHeight||!hasRawWidth||!container)continue
+    if(!String(raw.format_id??raw.formatId??raw.vcodec??'').trim()&&String(raw.type??'').toLowerCase()!=='video')continue
+   }
+  }
   found.add(value)
  }
  return [...found].sort((a,b)=>Number(a)-Number(b)).map(value=>({value,label:`${value}p${Number(value)>=720?` - ${QUALITY_LABELS[value]}`:''}`}))
@@ -208,7 +251,9 @@ export async function probeOutput(id:string,format:Kind){
  let response=await request(path,{method:'HEAD',headers:{Accept:format==='mp4'?'video/mp4, application/octet-stream':'audio/mpeg, application/octet-stream'}},18000)
  let rangeFallback=false
  const headSize=Number(response.headers.get('content-length')??NaN)
- if([405,501].includes(response.status)||(response.ok&&(!Number.isFinite(headSize)||headSize<=0))){
+ // Some older YTDL servers expose GET files but respond 404/403 to HEAD.
+ // Confirm with a tiny Range GET before concluding that a completed job is gone.
+ if([403,404,405,501].includes(response.status)||(response.ok&&(!Number.isFinite(headSize)||headSize<=0))){
   await response.body?.cancel().catch(()=>{})
   response=await request(path,{method:'GET',headers:{Range:'bytes=0-0',Accept:format==='mp4'?'video/mp4, application/octet-stream':'audio/mpeg, application/octet-stream'}},18000)
   rangeFallback=true
@@ -288,7 +333,7 @@ export default async function handler(req:any,res:any){
    let upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,{method:req.method==='HEAD'?'HEAD':'GET',headers:{Accept:accept,...(range?{Range:range}:{})}},55000)
    let headRangeFallback=false
    const knownHeadSize=Number(upstream.headers.get('content-length')??NaN)
-   if(req.method==='HEAD'&&([405,501].includes(upstream.status)||(upstream.ok&&(!Number.isFinite(knownHeadSize)||knownHeadSize<=0)))){
+   if(req.method==='HEAD'&&([403,404,405,501].includes(upstream.status)||(upstream.ok&&(!Number.isFinite(knownHeadSize)||knownHeadSize<=0)))){
     await upstream.body?.cancel().catch(()=>{})
     upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,{method:'GET',headers:{Accept:accept,Range:'bytes=0-0'}},55000)
     headRangeFallback=true

@@ -65,29 +65,37 @@ function nodes(element,match,out=[]){
 }
 function previewUI(options,selected){
  const el=rail.VideoQualityRail({quality:selected,onChange:()=>{},available:options,analyzed:true})
- // Invoke direct functional child to expand QualitySlider's JSX for a meaningful UI check.
- const component=nodes(el,node=>typeof node.type==='function')[0]
- const inner=component?component.type(component.props):null
- return {text:flatten([el,inner]).join(' '),buttons:nodes(inner,node=>node.type==='button')}
+ return {text:flatten(el).join(' '),buttons:nodes(el,node=>node.type==='button'),ranges:nodes(el,node=>node.type==='input'&&node.props.type==='range')}
 }
 
-test('1: [360,720,1080] renders exactly those quality choices',()=>{
+test('1: [360,720,1080] retains all seven visual markers but enables only three',()=>{
  const options=adapter.confirmedMp4Qualities(mkPreview([entry(1080),entry(360),entry(720)]))
  const ui=previewUI(options,'1080')
  assert.equal(options.map(x=>x.value).join(','),'360,720,1080')
- assert.equal(ui.buttons.length,3)
- assert.ok(!ui.text.includes('1440p')&&!ui.text.includes('2160p'))
+ assert.equal(ui.buttons.length,7)
+ assert.equal(ui.buttons.filter(item=>!item.props.disabled).length,3)
+ assert.deepEqual(ui.buttons.filter(item=>!item.props.disabled).map(item=>item.props.children[0].props.children),['360p','720p','1080p'])
+ assert.ok(ui.buttons.find(x=>x.props.title.includes('2160p exceeds'))?.props.disabled)
+ assert.ok(ui.text.includes('Maximum reported quality: 1080p'))
+ assert.equal(ui.ranges.length,1)
+ assert.equal(ui.ranges[0].props.value,4)
 })
-test('2: a single 360 quality selects 360',()=>{
+test('2: single 360p preview clamps thumb to 360p and disables higher tiers',()=>{
  const options=adapter.confirmedMp4Qualities(mkPreview([entry(360)]))
  assert.equal(rail.highestConfirmedQuality(options),'360')
- assert.equal(previewUI(options,'360').buttons.length,1)
+ const ui=previewUI(options,'360')
+ assert.equal(ui.buttons.length,7)
+ assert.equal(ui.buttons.filter(b=>!b.props.disabled).length,1)
+ assert.equal(ui.ranges[0].props.value,1)
+ assert.equal(ui.buttons[2].props.disabled,true)
 })
-test('3/4: empty backend qualities -> empty UI, empty selection, no fake 720',()=>{
+test('3/4: empty backend qualities -> no selection, all seven marks disabled, no fake 720',()=>{
  const options=adapter.confirmedMp4Qualities(mkPreview([]))
  assert.equal(rail.highestConfirmedQuality(options),'')
  const ui=previewUI(options,'')
- assert.equal(ui.buttons.length,0)
+ assert.equal(ui.buttons.length,7)
+ assert.equal(ui.buttons.filter(b=>!b.props.disabled).length,0)
+ assert.equal(ui.ranges.length,0)
  assert.ok(ui.text.includes('No downloadable MP4 resolutions were reported for this video.'))
 })
 test('5: duplicate 1080 formats reduce to one',()=>{
@@ -104,7 +112,7 @@ test('7: 1080 DASH video-only stream is valid if backend confirms it can merge a
 test('8: unavailable, DRM, unusable, unsupported and bare raw formats are rejected',()=>{
  assert.equal(adapter.confirmedMp4Qualities(mkPreview([entry(720,{available:false}),entry(1080,{has_drm:true}),entry(480,{supported:false}),entry(360,{audio_available:false})])).length,0)
  assert.equal(adapter.confirmedMp4Qualities({formats:[entry(1080)]}).length,0)
- assert.equal(adapter.confirmedMp4Qualities({qualities:['1080',{value:'720',label:'720p'}]}).length,0)
+ assert.equal(adapter.confirmedMp4Qualities({qualities:['1080',{value:'720',label:'720p'}]}).map(item=>item.value).join(','),'720,1080')
 })
 test('9: exact requested MP4 quality is sent unchanged after fresh preview validation',async()=>{
  let posted=null
@@ -262,4 +270,61 @@ test('HEAD without a reliable Content-Length retries a 1-byte Range GET',async()
  const req={method:'HEAD',query:{action:'file',id:'no-head-size',format:'mp3'},headers:{}}
  const res=new MockRes();await adapter.default(req,res)
  assert.equal(res.responseStatus,200);assert.equal(observedRange,'bytes=0-0');assert.equal(res.headers['content-length'],'987')
+})
+
+test('V54: legacy preview {qualities:[{value,label}]} becomes verified choices, not empty MP4',async()=>{
+ mockRoutes({'/api/preview':apiResponse({title:'Legacy video',qualities:[{value:'360',label:'360p'},{value:'720',label:'720p'},{value:'1080',label:'1080p'}]})})
+ const result=await call('meta',{url:validUrl})
+ assert.equal(result.responseStatus,200)
+ assert.equal(result.body.qualities.map(x=>x.value).join(','),'360,720,1080')
+ assert.equal(rail.highestConfirmedQuality(result.body.qualities),'1080')
+ const ui=previewUI(result.body.qualities,'1080')
+ assert.equal(ui.buttons.length,7)
+ assert.equal(ui.buttons.filter(x=>!x.props.disabled).length,3)
+ assert.equal(ui.buttons[5].props.disabled,true)
+})
+test('V54: legacy preview {qualities:[360,720]} is accepted as API-declared resolutions, raw formats remain rejected',()=>{
+ assert.equal(adapter.confirmedMp4Qualities({data:{qualities:['720','360','720']}}).map(x=>x.value).join(','),'360,720')
+ assert.equal(adapter.confirmedMp4Qualities({formats:[entry(1080)]}).length,0)
+ assert.equal(adapter.confirmedMp4Qualities({available_qualities:[]}).length,0)
+ assert.equal(adapter.confirmedMp4Qualities({qualities:[{value:'1080',format_id:'not-confirmed'}]}).length,0)
+})
+test('V54: video max 2160 unlocks 2160p, 1080 preview locks 1440p and 2160p',()=>{
+ const all=video=>rail.VideoQualityRail({quality:rail.highestConfirmedQuality(video),available:video,analyzed:true,onChange:()=>{}})
+ const max=adapter.confirmedMp4Qualities(mkPreview([entry(240),entry(1080),entry(2160)]))
+ const ui=nodes(all(max),x=>x.type==='button')
+ assert.equal(ui.filter(x=>!x.props.disabled).length,3)
+ assert.equal(ui[6].props.disabled,false)
+ assert.equal(ui[4].props.disabled,false)
+ const short=adapter.confirmedMp4Qualities(mkPreview([entry(360),entry(1080)]))
+ const locked=nodes(all(short),x=>x.type==='button')
+ assert.equal(locked[5].props.disabled,true)
+ assert.equal(locked[6].props.disabled,true)
+})
+test('V54: clicking lower reported quality updates selection without substituting an unavailable quality',()=>{
+ const options=adapter.confirmedMp4Qualities(mkPreview([entry(360),entry(720),entry(1080)]))
+ let selected='1080'
+ const element=rail.VideoQualityRail({quality:selected,available:options,analyzed:true,onChange:v=>selected=v})
+ const buttons=nodes(element,x=>x.type==='button')
+ assert.equal(buttons[2].props.disabled,true)
+ buttons[3].props.onClick()
+ assert.equal(selected,'720')
+ buttons[1].props.onClick()
+ assert.equal(selected,'360')
+})
+test('V54: completed MP3 gets a file even when YTDL HEAD returns 404 but Range GET succeeds',async()=>{
+ mockRoutes({'/api/download/status/mp3-head-old':apiResponse({job_id:'mp3-head-old',status:'complete'}),
+ '/api/download/file/mp3-head-old':options=>options.method==='HEAD'?new Response(null,{status:404}):new Response(new Uint8Array([73]),{status:206,headers:{'content-type':'audio/mpeg','content-range':'bytes 0-0/23456','content-length':'1'}})})
+ const result=await call('status',{id:'mp3-head-old',format:'mp3'})
+ assert.equal(result.responseStatus,200)
+ assert.equal(result.body.state,'complete')
+ assert.equal(result.body.files.length,1)
+})
+test('V54: adapter HEAD itself falls back to Range GET for legacy origin HEAD 404',async()=>{
+ mockRoutes({'/api/download/file/mp3-legacy':options=>options.method==='HEAD'?new Response(null,{status:404}):new Response(new Uint8Array([73]),{status:206,headers:{'content-type':'audio/mpeg','content-range':'bytes 0-0/12345','content-length':'1'}})})
+ const req={method:'HEAD',query:{action:'file',id:'mp3-legacy',format:'mp3'},headers:{}}
+ const res=new MockRes();await adapter.default(req,res)
+ assert.equal(res.responseStatus,200)
+ assert.equal(res.headers['content-length'],'12345')
+ assert.equal(res.headers['content-type'],'audio/mpeg')
 })

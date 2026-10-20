@@ -1576,3 +1576,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
  .ax52-hero-mark{will-change:auto;filter:none}
  .ax52-hero-mark img,.ax49-strip-section::before{animation:none!important}
 }
+
+/* V53: a single confirmed MP4 quality stays centered in the existing rail. */
+.ax46-slider.is-single .ax46-slider-track,.ax46-slider.is-single .ax46-slider-input{display:none!important}
+.ax46-slider.is-single .ax46-slider-options{justify-content:center;min-height:44px}
+.ax46-slider.is-single .ax46-slider-options button{flex-basis:auto;min-width:72px;padding:8px 16px!important;border-radius:999px;background:rgba(137,97,232,.08)!important}

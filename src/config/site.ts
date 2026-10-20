@@ -17,7 +17,7 @@ const normalizeMp4Quality=(value:unknown)=>{
  const match=String(value??'').trim().match(/^(240|360|480|720|1080|1440|2160)(?:p)?$/i)
  return match?match[1]:''
 }
-const configuredDefaultQuality=normalizeMp4Quality(import.meta.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY)||'720'
+// Resolutions are supplied by /api/preview after each Analyze, never this UI configuration.
 
 export const site = {
  name:'Audixo',shortName:'Audixo',
@@ -27,7 +27,7 @@ export const site = {
  description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted MP3 or MP4 downloads.'
 }
 export const contactEmailReady=Boolean(site.email)
-export const mediaUiConfig={defaultMp4Quality:configuredDefaultQuality,allMp4Qualities:[...MP4_QUALITIES]}
+export const mediaUiConfig={allMp4Qualities:[...MP4_QUALITIES],normalizeMp4Quality}
 
 
 // V51: thirteen supplied cover images are bundled in the local demo sprite.

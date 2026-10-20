@@ -1,82 +1,159 @@
-# AUDIXO Studio V52 — Converter API + Cinematic UI Patch
+# AUDIXO Studio V53 — Strict MP4 Discovery & Converter Reliability Patch
 
-This source release preserves the V51 project, 13 bundled phonk/funk excerpts, artwork, editor tooling, vocal separation and Studio, while refining the converter and home UI.
+This is a focused converter patch against the user's V52 source. UI, editors,
+13 music tracks and supplied covers, Turnstile, Resume, title preservation,
+progress, animation, SEO and PWA remain present. No YTDL backend source code
+was supplied, so **the external origin server has not been modified**.
 
-## Direct Vercel settings
+## Fixed in the uploaded AUDIXO project
 
-Repository root contains `package.json`, `src/`, `api/`, and `public/`.
+1. The MP4 rail derives selectable choices only from the normalized server
+   preview qualities, not a seven-item hard-coded list. Empty preview →
+   no quality selected and MP4 download disabled. Highest confirmed quality
+   is selected by default. MP3 is unaffected when no MP4 formats exist.
+2. The Vercel adapter accepts only explicitly `downloadable: true` MP4 video
+   entries with valid width/height, video evidence and MP4 output container.
+   It rejects generic raw formats, audio-only entries, unavailable items,
+   DRM, missing dimensions, and bare numeric quality lists. A DASH video-only
+   stream with `acodec: none` is accepted only if the backend explicitly
+   affirms that a downloadable MP4 can be produced (including audio muxing).
+3. `POST /api/media?action=convert` re-requests `/api/preview` and returns
+   HTTP 422 `QUALITY_UNAVAILABLE` before creating a job if exact selected
+   resolution is not confirmed. No silent quality downgrade.
+4. Upstream structured error codes remain intact. Status error codes,
+   permanent Resume job cleanup, trusted output dimensions (with browser
+   fallback), and honest MP3 bitrate reporting are retained/improved.
+5. Upstream media file is probed by HEAD or one-byte Range GET before
+   completion; an output marked `done` is not treated as finished until a
+   nonempty readable media file exists. Browser download endpoint preserves
+   byte-range responses and streams rather than buffering MP4 files.
+6. Incompatible MIME types, disguised HTML/JSON and invalid output file
+   signatures are blocked before starting a download.
+7. `npm run test:converter` now runs mocked adapter/client/UI contract tests.
 
-- Framework: **Vite**
-- Root Directory: **./**
-- Install Command: **npm ci**
-- Build Command: **npm run build**
-- Output Directory: **dist**
-- Node.js: >=20
+## Required YTDL backend change (source not provided)
 
-Required environment values (put each as a separate Vercel variable):
+The upstream `POST /api/preview` must be authoritative and return the actual
+MP4 formats that your own yt-dlp + FFmpeg backend can download and produce.
+Example:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "title": "Example authorized video",
+    "author": "Creator",
+    "duration": 123,
+    "available_qualities": [
+      {"quality":"360","width":640,"height":360,"format_id":"18","container":"mp4","downloadable":true},
+      {"quality":"1080","width":1920,"height":1080,"format_id":"137","container":"mp4","downloadable":true,"vcodec":"avc1","acodec":"none","audio_downloadable":true}
+    ]
+  }
+}
+```
+
+The backend must implement this contract itself. AUDIXO deliberately ignores
+unverified, historical preview payloads such as `qualities: ["720","1080"]`,
+`resolutions` and raw `formats` because these are **not proof of downloadability**.
+If your current backend still responds with unverified lists, MP4 quality
+selection will be EMPTY rather than misleading users. Update the YTDL server
+and deploy it before expecting MP4 choices to appear.
+
+Backend yt-dlp/FFmpeg requirements:
+
+- Discover video + compatible audio streams with current yt-dlp metadata.
+- Check each desired exact height and that the video stream is usable.
+- Check a usable audio stream is present even if the video stream is video-only
+  (`acodec=none` on DASH video is normal).
+- Check actual muxing/transcoding support with FFmpeg and MP4 output. Only
+  advertise `downloadable:true` when the pipeline supports that stream pair.
+- Re-discover/revalidate on `POST /api/download`, then choose exact video
+  stream + audio. Never change to another resolution silently.
+- If unavailable, return HTTP 422 JSON `{"code":"QUALITY_UNAVAILABLE",
+  "error":"1080p is not available for this video.",
+  "available_qualities":["360","720"]}` before starting a job.
+- Run jobs in isolated job-ID directories; report `complete` only after FFmpeg
+  exits successfully, ffprobe verifies actual dimensions and the final nonzero
+  media file exists. Use status `failed` on yt-dlp/FFmpeg errors.
+- Preserve `/0auth`, validate the session/cookie health without logging any
+  cookie or token content; do not expose credentials to the browser.
+- Use current stable yt-dlp and a correctly installed compatible JavaScript
+  challenge runtime, and diagnose expired cookies / `SOURCE_FORBIDDEN` separately
+  from quality selection. Authentication problems cannot be fixed by UI code.
+- `0.0.0.0:2052` is the backend listener/bind address; the Cloudflare-facing
+  public service must still be reachable and healthy at `https://ytdl.tiers.rest`.
+- Ensure HEAD and Range on `/api/download/file/:jobId` work and return correct
+  `Content-Length`, `Content-Range`, `Accept-Ranges`, and media MIME type.
+
+## Environment variables
+
+Vercel → Settings → Environment Variables:
 
 ```
 AUDIXO_YTDL_BASE_URL=https://ytdl.tiers.rest
 VITE_SITE_URL=https://audixo.vercel.app
 ```
 
-`VITE_SITE_URL` must be your **actual** production domain, if it differs. The original custom backend may be behind Cloudflare. If that origin returns 520/522/524/403, the new Vercel project **cannot** repair it. Fix upstream API availability and source-access rules first.
-
-### Optional service authentication
-
-Set **only** if your backend expects them, and never use a `VITE_` prefix for secrets:
+Optional private Vercel server-only variables, **only when supported by the
+external origin**:
 
 ```
-AUDIXO_YTDL_AUTH_TOKEN=<backend-issued-private-token>
+AUDIXO_YTDL_AUTH_TOKEN=YOUR_PRIVATE_TOKEN
 AUDIXO_YTDL_AUTH_SCHEME=Bearer
+AUDIXO_YTDL_COOKIE=YOUR_PRIVATE_SERVER_COOKIE_IF_NEEDED
+AUDIXO_TURNSTILE_SECRET_KEY=YOUR_PRIVATE_TURNSTILE_SECRET
 ```
 
-`AUDIXO_YTDL_COOKIE` forwards one HTTP Cookie header to the REST service. It is not a YouTube cookies-file loader and should not be assumed to solve YouTube 403s. Never expose or commit session cookies.
-
-### Optional REAL human verification
-
-The previous long permission checkbox is removed. The interface does **not** pretend that a frontend-only checkbox is a bot check. To enable actual Cloudflare Turnstile, register the site in Cloudflare and add **both**:
+Optional browser-public Turnstile setting:
 
 ```
-VITE_AUDIXO_TURNSTILE_SITE_KEY=<public-site-key>
-AUDIXO_TURNSTILE_SECRET_KEY=<private-secret-key>
+VITE_AUDIXO_TURNSTILE_SITE_KEY=YOUR_PUBLIC_TURNSTILE_SITE_KEY
 ```
 
-With neither variable set, no bot-verification control is shown and the converter is usable without one. If only one is set, correct the configuration: the backend will reject invalid/incomplete verification.
+Only configure BOTH Turnstile keys if you enable Turnstile. Never use `VITE_`
+for server tokens/cookies/secrets. `VITE_AUDIXO_DEFAULT_MP4_QUALITY` no longer
+controls the MP4 rail: the preview result is the sole source of choices.
 
-### MP4 quality
-
-The UI supports **240p / 360p / 480p / 720p / 1080p / 1440p / 2160p**. After analyzing a video the default is the **highest resolution actually reported by** `/api/preview`. It is not locked at 1080p. The chosen quality is passed exactly to the backend's documented `/api/download` request:
+## Build & test
 
 ```
-POST /api/download
-{"url":"https://www.youtube.com/watch?v=...","format":"mp4","quality":"2160"}
+npm ci
+npm run typecheck
+npm run test:converter
+npm run test:tracks
+npm run test:ssr
+npm run build
 ```
 
-If no quality metadata is provided by the API, the provisional initial selection is 720p; this is a **request**, not a guarantee. Optional `VITE_AUDIXO_DEFAULT_MP4_QUALITY` can change the fallback selection but does **not** affect the server encoder, supported quality list, or 403 access errors.
+Vercel settings: Framework **Vite**, Install **npm ci**, Build **npm run build**,
+Output **dist**, root `/`. Keep the existing GitHub repo/project.
 
-### MP3 quality
+## Local execution in this assistant environment
 
-Documented explicit and legacy forms are supported. The adapter sends `{ "url": "...", "format": "mp3" }` by default and retries `{ "url": "..." }` **only when the backend explicitly rejects the additional field** as a 400/422 schema issue. Short files under the on-device limits can be encoded locally as 64/128/192/256/320 kbps; long files need the backend's actual encoding support. Re-encoding cannot restore quality missing from a low-quality original.
+- `npm ci --offline`: failed (`yallist@3.1.1` not cached).
+- `npm ci` using network: failed (npm installation incomplete).
+- `npm run typecheck`: blocked by the incomplete dependencies, e.g.
+  missing `@types/react`, `@types/node`; this does NOT mean the edited code
+  received a successful full-project typecheck.
+- An independent strict targeted typecheck for `api/media.ts` and
+  `QualityRail.tsx` passed with temporary ambient module shims.
+- An independent targeted client-service typecheck passed with temporary shims.
+- `npm run test:converter`: mocked API/client/quality UI tests passed using
+  the system-installed TypeScript compiler. These tests do not call YouTube.
+- Full production Vite build and live YTDL origin tests were unavailable here.
 
-### Diagnostic code meanings
+## Changed paths
 
-- `ORIGIN_UNAVAILABLE`: conversion API/Cloudflare origin is failing or unavailable. **Fix backend service.**
-- `SOURCE_FORBIDDEN`: the source platform refused the backend a media stream (YouTube 403). **Fix backend yt-dlp / service access.**
-- `SERVICE_AUTH`: API rejected the service token or login.
-- `QUALITY_UNAVAILABLE`: requested quality is not reported by the source.
-- `WRONG_FILE_TYPE` / `FILE_FORBIDDEN`: wrong response or inaccessible backend file endpoint.
+- `api/media.ts`
+- `src/services/media.ts`
+- `src/pages/YouTubeConverter.tsx`
+- `src/components/QualityRail.tsx`
+- `src/config/site.ts`
+- `src/styles/ax40.css` (one narrow single-quality rail rule)
+- `scripts/converter-tests.mjs` (new)
+- `scripts/seo-build.mjs` (remove stale static quality default)
+- `package.json`, `package-lock.json`
+- `index.html`, `public/sw.js` (release/cache version)
+- `README.md`
 
-### UI changes
-
-- Big, continuously clockwise-rotating original AUDIXO symbol as the hero disc, with no ornamental rings; compact waveform below.
-- Moving music strip is a gradient/glass shadow surface, not a clipping outline; tiles remain clickable, all 13 songs and supplied DP artwork preserved.
-- More space after the four metrics cards; no pill-outline artifacts on their links.
-- Short first-visit intro with no Skip button. Loader percentage drives the track instead of a seven-second CSS timer.
-- The long download-permission checkbox is removed, replaced with a small lawful-use note and optional real Turnstile.
-
-## Tests and limitations
-
-Source syntax, import and CSS checks; 10/20 and 13/26 strip regression; and mocked REST YTDL contract tests passed in the creation environment. Full `npm ci && npm run build` could not complete because the runtime lacks `yallist@3.1.1` in its npm cache and the registry was inaccessible. Full live YouTube MP3/MP4 downloads were not validated. Treat this as a **release candidate** until Vercel Preview build and live backend tests pass.
-
-The 13 supplied music clips/artwork are included unchanged. Rights to distribute them on a public website are **not** guaranteed; obtain permission from the relevant rights holders before publishing.
+All music content, artwork, editors and unrelated UI components remain unchanged.

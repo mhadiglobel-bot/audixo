@@ -50,7 +50,7 @@ const origin=new URL(configured).origin
 if(!['http:','https:'].includes(new URL(origin).protocol))throw new Error('VITE_SITE_URL must be HTTP or HTTPS.')
 if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SITE_URL to your production HTTPS domain.')
 await mkdir('.build',{recursive:true})
-await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||'',VITE_SUPPORT_EMAIL_ENABLED:process.env.VITE_SUPPORT_EMAIL_ENABLED||'',VITE_AUDIXO_DEFAULT_MP4_QUALITY:process.env.VITE_AUDIXO_DEFAULT_MP4_QUALITY||'720',VITE_AUDIXO_TURNSTILE_SITE_KEY:process.env.VITE_AUDIXO_TURNSTILE_SITE_KEY||''})}})
+await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||'',VITE_SUPPORT_EMAIL_ENABLED:process.env.VITE_SUPPORT_EMAIL_ENABLED||'',VITE_AUDIXO_TURNSTILE_SITE_KEY:process.env.VITE_AUDIXO_TURNSTILE_SITE_KEY||''})}})
 const {pageRoutes,pageHtml,blogs,faqs,audioTools,DEMO_TRACKS}=await import(path.resolve('.build/prerender.mjs'))
 function renderPage(route){
  try{

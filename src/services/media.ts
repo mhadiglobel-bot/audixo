@@ -3,8 +3,8 @@ export type MediaQuality={value:string;label:string}
 export type MediaPreview={url:string;title:string;author:string;duration:number;thumbnail:string;qualities:MediaQuality[]}
 export type MediaFile={name?:string;url:string;fileName:string}
 export type MediaJob={
- id:string;format?:MediaKind;state:'queued'|'processing'|'complete'|'failed';message?:string;error?:string;errorCode?:string;
- title?:string;duration?:number;progress?:number;reportedKbps?:number;reportedWidth?:number;reportedHeight?:number;
+ id:string;format?:MediaKind;state:'queued'|'processing'|'complete'|'failed';stage?:string;message?:string;error?:string;errorCode?:string;
+ title?:string;duration?:number;progress?:number;downloadPercent?:number;downloadSpeed?:string;eta?:string;downloadPart?:number;downloadPartsTotal?:number;reportedKbps?:number;reportedWidth?:number;reportedHeight?:number;
  files?:MediaFile[]
 }
 export class MediaServiceError extends Error{
@@ -37,31 +37,106 @@ export function explainMediaError(error:unknown){
  if(code==='WRONG_FILE_TYPE')return 'The conversion server returned the wrong media type rather than a valid MP3/MP4 file.'
  return message
 }
+/** Prefer SSE (the YTDL origin emits progress/heartbeat about every 3s).
+ * The origin permits only 20 API requests / 10 minutes / IP; frequent polling
+ * can exhaust that limit. If SSE is blocked, fall back to slow 45-second polls.
+ * The job expires after 15 minutes, so never keep polling for 90 minutes.
+ */
 export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJob)=>void,signal?:AbortSignal,quality=''){
- const started=Date.now();let failures=0
- for(;;){
-  if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
-  if(Date.now()-started>90*60_000)throw new MediaServiceError('Conversion is still running. Use Resume to check the same job later.','UPSTREAM_LIMIT')
-  try{
-   const job=await mediaRequest<MediaJob>('status',{id,format,...(format==='mp4'&&quality?{quality}:{})},signal)
-   failures=0;onUpdate(job)
-   if(job.state==='complete'){
-    if(!job.files?.length)throw new MediaServiceError('Completed job is missing its final media file.','JOB_FAILED',0,true)
-    return job
-   }
-   if(job.state==='failed')throw new MediaServiceError(job.error||'The conversion server reported an error.',job.errorCode||'JOB_FAILED',0,true)
-  }catch(error){
-   if(signal?.aborted)throw error
-   if(error instanceof MediaServiceError&&(error.terminal||!RETRYABLE_CODES.has(error.code)))throw error
-   if(++failures>=4)throw error
+ const started=Date.now()
+ const deadline=started+14*60_000
+ const readStatus=async()=>{
+  const job=await mediaRequest<MediaJob>('status',{id,format,...(format==='mp4'&&quality?{quality}:{})},signal)
+  onUpdate(job)
+  if(job.state==='complete'){
+   if(!job.files?.length)throw new MediaServiceError('Ready job has no file endpoint.','JOB_FAILED',0,true)
+   return job
   }
-  const interval=failures?6000:Date.now()-started<20_000?2100:Date.now()-started<100_000?3500:6000
-  await new Promise<void>((resolve,reject)=>{
-   const timer=window.setTimeout(()=>{signal?.removeEventListener('abort',stop);resolve()},interval)
-   const stop=()=>{window.clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'))}
-   signal?.addEventListener('abort',stop,{once:true})
-  })
+  if(job.state==='failed')throw new MediaServiceError(job.error||'The YTDL server reported a failed job.',job.errorCode||'JOB_FAILED',0,true)
+  return null
  }
+ const sleep=(ms:number)=>new Promise<void>((resolve,reject)=>{
+  const timer=window.setTimeout(()=>{signal?.removeEventListener('abort',stop);resolve()},ms)
+  const stop=()=>{window.clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'))}
+  signal?.addEventListener('abort',stop,{once:true})
+ })
+ const polling=async()=>{
+  let consecutiveErrors=0
+  for(;;){
+   if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
+   if(Date.now()>deadline)throw new MediaServiceError('The YTDL job has reached its 15-minute retention window. Start a new conversion.','JOB_FAILED',0,true)
+   try{
+    const done=await readStatus();if(done)return done
+    consecutiveErrors=0
+   }catch(error){
+    if(signal?.aborted)throw error
+    if(error instanceof MediaServiceError&&(error.terminal||!RETRYABLE_CODES.has(error.code)))throw error
+    if(++consecutiveErrors>=3)throw error
+   }
+   await sleep(45000)
+  }
+ }
+ if(typeof EventSource==='undefined')return polling()
+ return await new Promise<MediaJob>((resolve,reject)=>{
+  const source=new EventSource(`/api/media?action=events&id=${encodeURIComponent(id)}`)
+  let settled=false,seenEvent=false,checking=false
+  const cleanup=()=>{source.close();clearTimeout(connectDeadline);signal?.removeEventListener('abort',cancel)}
+  const finish=(error?:unknown,job?:MediaJob)=>{
+   if(settled)return;settled=true;cleanup()
+   if(error)reject(error);else if(job)resolve(job)
+  }
+  const fallback=()=>{
+   if(settled)return;settled=true;cleanup()
+   void polling().then(resolve,reject)
+  }
+  const cancel=()=>finish(new DOMException('Cancelled','AbortError'))
+  const connectDeadline=window.setTimeout(()=>{if(!seenEvent)fallback()},16000)
+  const confirm=async()=>{
+   if(settled||checking)return
+   checking=true
+   try{
+    const done=await readStatus()
+    if(done)finish(undefined,done)
+    else{checking=false}
+   }catch(error){finish(error)}
+  }
+  const onEvent=(type:string,event:MessageEvent)=>{
+   seenEvent=true
+   if(type==='heartbeat'||type==='connected')return
+   let payload:any=null
+   try{payload=JSON.parse(String(event.data??''))}catch{}
+   if(type==='error'||payload?.status==='failed'||payload?.state==='failed'){
+    const code=String(payload?.code??payload?.error_code??'JOB_FAILED')
+    finish(new MediaServiceError(String(payload?.error??payload?.message??'YTDL download failed.'),code,0,TERMINAL_JOB_CODES.has(code)))
+    return
+   }
+   const pct=Number(payload?.progress??payload?.percent??payload?.download?.percent)
+   const eventStage=String(payload?.stage??type)
+   if(Number.isFinite(pct)||payload?.message){
+    const state:MediaJob={id,format,state:'processing',stage:eventStage,
+     progress:Number.isFinite(pct)?Math.max(0,Math.min(100,pct)):undefined,
+     downloadSpeed:String(payload?.download?.speed??payload?.speed??''),
+     eta:String(payload?.download?.eta??payload?.eta??''),
+     message:String(payload?.message??'')}
+    onUpdate(state)
+   }
+   if(type==='complete'||type==='file_delivered'||['complete','ready'].includes(String(payload?.status??payload?.state??'')))void confirm()
+  }
+  for(const name of ['connected','queued','stage','metadata','progress','retry','warning','complete','file_delivered','heartbeat']){
+   source.addEventListener(name,event=>onEvent(name,event as MessageEvent))
+  }
+  source.addEventListener('error',event=>{
+   const message=(event as MessageEvent).data
+   if(typeof message==='string'&&message){onEvent('error',event as MessageEvent);return}
+   // A dropped SSE connection may reconnect, but a slow poll is safer if
+   // the Vercel relay cannot maintain EventSource for this deployment.
+   fallback()
+  })
+  if(signal?.aborted){cancel();return}
+  signal?.addEventListener('abort',cancel,{once:true})
+  // Important: if the SSE endpoint is unavailable, slow polling starts on its
+  // error. No rapid fallback polling that could hit 20 requests / 10 minutes.
+ })
 }
 const cleanTitle=(s:string)=>s.replace(/[\\/<>|:*?"\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().replace(/[. ]+$/,'').slice(0,145)||'YouTube video'
 function fileUrl(file:MediaFile,title:string,format:MediaKind){
@@ -69,55 +144,36 @@ function fileUrl(file:MediaFile,title:string,format:MediaKind){
  if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='file')throw new MediaServiceError('Invalid media download location.','INVALID_REQUEST')
  url.searchParams.set('format',format);url.searchParams.set('title',cleanTitle(title));return url
 }
-async function checkFile(file:MediaFile,title:string,format:MediaKind,signal?:AbortSignal){
- const url=fileUrl(file,title,format)
- const res=await fetch(url.href,{method:'HEAD',cache:'no-store',signal})
- if(!res.ok){
-  const data=await res.json().catch(()=>null)
-  throw new MediaServiceError(String(data?.error||`Media output is not available (HTTP ${res.status}).`),String(data?.code||'FILE_UNAVAILABLE'),res.status,TERMINAL_JOB_CODES.has(data?.code))
- }
- const type=(res.headers.get('content-type')||'').toLowerCase()
- const mime=type.split(';')[0].trim()
- const valid=['application/octet-stream','application/binary','binary/octet-stream'].includes(mime)||(format==='mp4'?mime==='video/mp4':['audio/mpeg','audio/mp3','audio/x-mpeg','audio/x-mp3'].includes(mime))
- if(!valid)throw new MediaServiceError('The server returned a non-media or incompatible file.','WRONG_FILE_TYPE',0,true)
- const size=Number(res.headers.get('content-length')||NaN)
- if(!Number.isFinite(size)||size<=0)throw new MediaServiceError('The finished file has no confirmed non-zero size.','FILE_UNAVAILABLE',0,true)
- return url
-}
+/** One-time YTDL origin file: never prefetch with HEAD or metadata GET.
+ * Let the browser perform exactly one full GET. The origin deletes the temp
+ * file after delivery. The click only starts a download; the browser owns it.
+ */
 export async function downloadFile(file:MediaFile,title:string,format:MediaKind,signal?:AbortSignal){
- const url=await checkFile(file,title,format,signal)
+ const url=fileUrl(file,title,format)
  if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
- const anchor=document.createElement('a');anchor.href=url.href;anchor.download=`${cleanTitle(title)} (Audixo ${format.toUpperCase()}).${format}`;anchor.rel='noreferrer';document.body.append(anchor);anchor.click();anchor.remove()
+ const anchor=document.createElement('a')
+ anchor.href=url.href
+ anchor.download=`${cleanTitle(title)} (Audixo ${format.toUpperCase()}).${format}`
+ anchor.rel='noreferrer'
+ document.body.append(anchor);anchor.click();anchor.remove()
 }
-/** Height must equal the requested exact output resolution, never assume a slider value is proof. */
+/** Verify only trusted output metadata supplied in job status. Never open the
+ * one-time file in a hidden <video> just to check dimensions.
+ */
 export function assertVideoResolution(width:number,height:number,requested:string){
  const expected=Number(requested)
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)throw new MediaServiceError('The output MP4 dimensions could not be verified.','QUALITY_UNVERIFIED',0,true)
  if(height!==expected)throw new MediaServiceError(`The YTDL server produced ${width} x ${height}, not the requested ${expected}p. No download was started.`,'QUALITY_MISMATCH',0,true)
  return height
 }
-export async function verifyVideoOutput(file:MediaFile,title:string,quality:string,reported?:{reportedWidth?:number;reportedHeight?:number},signal?:AbortSignal){
+export async function verifyVideoOutput(_file:MediaFile,_title:string,quality:string,reported?:{reportedWidth?:number;reportedHeight?:number},_signal?:AbortSignal){
  if(reported?.reportedWidth&&reported.reportedHeight){
   const actual=assertVideoResolution(reported.reportedWidth,reported.reportedHeight,quality)
-  await checkFile(file,title,'mp4',signal)
-  return {width:reported.reportedWidth,height:reported.reportedHeight,actual}
+  return {width:reported.reportedWidth,height:reported.reportedHeight,actual,verified:true}
  }
- const url=await checkFile(file,title,'mp4',signal)
- const dims=await new Promise<{width:number;height:number}>((resolve,reject)=>{
-  const video=document.createElement('video');video.muted=true;video.preload='metadata';video.playsInline=true
-  let done=false
-  const cleanup=()=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);video.onloadedmetadata=null;video.onerror=null;video.removeAttribute('src');video.load()}
-  const finish=(error?:Error)=>{if(done)return;done=true;const result={width:video.videoWidth,height:video.videoHeight};cleanup();error?reject(error):resolve(result)}
-  const abort=()=>finish(new DOMException('Cancelled','AbortError'))
-  const timer=window.setTimeout(()=>finish(new MediaServiceError('Could not verify MP4 dimensions. The YTDL server must serve a browser-readable MP4 with Range support.','QUALITY_UNVERIFIED',0,true)),25000)
-  video.onloadedmetadata=()=>finish()
-  video.onerror=()=>finish(new MediaServiceError('The browser could not open this MP4. Check its codec and file endpoint.','QUALITY_UNVERIFIED',0,true))
-  if(signal?.aborted){abort();return}
-  signal?.addEventListener('abort',abort,{once:true});video.src=url.href
- })
- const actual=assertVideoResolution(dims.width,dims.height,quality)
- return {...dims,actual}
+ return {width:0,height:0,actual:Number(quality),verified:false}
 }
+
 export function localMetadata(file:File):Promise<number>{return new Promise((resolve,reject)=>{
  const a=document.createElement('audio'),url=URL.createObjectURL(file),timer=setTimeout(()=>finish(new Error('Metadata timeout')),15000)
  const finish=(error?:Error)=>{clearTimeout(timer);const duration=a.duration;a.onloadedmetadata=null;a.onerror=null;a.removeAttribute('src');a.load();URL.revokeObjectURL(url);error?reject(error):resolve(duration)}

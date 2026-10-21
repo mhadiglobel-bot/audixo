@@ -5,10 +5,10 @@ import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,confirmedVideoOp
 import {downloadFile,downloadMp3AtBitrate,verifyVideoOutput,explainMediaError,MediaServiceError,TERMINAL_JOB_CODES,mediaRequest,waitForJob,type MediaPreview,type MediaJob,type MediaKind} from '../services/media'
 
 type Health={ready:boolean;authenticated?:boolean;maxConcurrent?:number;message?:string}
-type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:Mp3Bitrate;duration:number}
-const KEY='audixo-conversion-job-v51'
+type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:Mp3Bitrate;duration:number;createdAt?:number}
+const KEY='audixo-conversion-job-v55'
 const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
-function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)?value:null}catch{return null}}
+function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)&&Date.now()-Number(value.createdAt||0)<14*60_000?value:null}catch{return null}}
 const turnstileSiteKey=import.meta.env.VITE_AUDIXO_TURNSTILE_SITE_KEY?.trim()||''
 type TurnstileWidget={render:(container:HTMLElement,config:Record<string,unknown>)=>string;reset:(id:string)=>void;remove:(id:string)=>void}
 function HumanCheck({onVerified,resetKey}:{onVerified:(token:string)=>void;resetKey:number}){
@@ -70,16 +70,17 @@ export default function YouTubeConverter(){
  const finish=async(record:SavedJob,controller:AbortController)=>{
   setBusy(`Preparing ${record.format.toUpperCase()}...`)
   const finished=await waitForJob(record.id,record.format,item=>{
-   setJob(item);setBusy(item.state==='queued'?'Queued...':`Processing ${record.format.toUpperCase()}${item.progress?` - ${Math.round(item.progress)}%`:''}...`)
+   setJob(item);setBusy(item.state==='queued'?'Queued on YTDL server...':`${item.stage||'Processing'} ${record.format.toUpperCase()}${Number.isFinite(item.progress)?` · ${Math.round(item.progress||0)}%`:''}${item.downloadSpeed?` · ${item.downloadSpeed}`:''}${item.eta?` · ETA ${item.eta}`:''}`)
   },controller.signal,record.format==='mp4'?record.quality:'')
   const file=finished.files?.[0];if(!file)throw new Error('Conversion completed without a downloadable file.')
   setJob(finished)
   let detail=''
   if(record.format==='mp4'){
-   setBusy('Checking the actual MP4 resolution...')
+   setBusy('Preparing the one-time MP4 delivery...')
    const output=await verifyVideoOutput(file,record.title,record.quality,finished,controller.signal)
+   // Origin removes each file after ONE GET; do not HEAD or metadata-preview it.
    await downloadFile(file,record.title,'mp4',controller.signal)
-   detail=`MP4 ${output.actual}p (${output.width} x ${output.height}).`
+   detail=output.verified?`Verified MP4 ${output.actual}p (${output.width} x ${output.height}) from YTDL status.`:`Requested ${record.quality}p MP4. The backend did not supply final dimensions; inspect the downloaded file to confirm actual resolution.`
   }else{
    const target=record.mp3Bitrate||320
    if(record.duration>0&&record.duration<=300){
@@ -94,7 +95,8 @@ export default function YouTubeConverter(){
    }
   }
   if(controller.signal.aborted)return
-  dropSaved();setCompleted(record);setNotice(`Download started. ${detail}`)
+  // A one-time file cannot be fetched twice. A new download creates a new job.
+  dropSaved();setCompleted(record);setNotice(`One-time download requested. ${detail}`)
  }
  const start=async()=>{
   if(!preview||busy||(turnstileSiteKey&&!humanToken))return
@@ -117,7 +119,7 @@ export default function YouTubeConverter(){
    const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{}),...(turnstileSiteKey?{turnstileToken:humanToken}:{})},controller.signal)
    if(created.state==='failed')throw new MediaServiceError(created.error||'Conversion rejected.',created.errorCode||'JOB_FAILED')
    if(!created.id)throw new Error('The API did not return a job ID.')
-   const record:SavedJob={id:created.id,title:preview.title,format:recordFormat,quality:recordFormat==='mp3'?'':recordQuality,mp3Bitrate:recordFormat==='mp3'?mp3Bitrate:undefined,duration:preview.duration}
+   const record:SavedJob={id:created.id,title:preview.title,format:recordFormat,quality:recordFormat==='mp3'?'':recordQuality,mp3Bitrate:recordFormat==='mp3'?mp3Bitrate:undefined,duration:preview.duration,createdAt:Date.now()}
    save(record);createdHere=true;setJob(created);await finish(record,controller)
   }catch(e){if(!aborted(e)){setNotice(explainMediaError(e));setCompleted(null);if(createdHere&&e instanceof MediaServiceError&&TERMINAL_JOB_CODES.has(e.code))dropSaved()}}
   finally{if(turnstileSiteKey){setHumanToken('');setHumanReset(n=>n+1)}if(running.current===controller){running.current=null;setBusy('')}}
@@ -129,7 +131,7 @@ export default function YouTubeConverter(){
   finally{if(running.current===controller){running.current=null;setBusy('')}}
  }
  const resume=()=>{if(saved)void continueRecord(saved)}
- const downloadAgain=()=>{if(completed)void continueRecord(completed)}
+ const downloadAgain=()=>{if(completed)void start()}
  const stop=()=>{running.current?.abort();running.current=null;setBusy('');setNotice('Stopped checking. The remote job may continue; Resume checks the same job.')}
  const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Choose a bitrate for short clips',glyph:'\u266b'},{id:'mp4' as const,title:'MP4 Video',copy:'Download at the selected resolution',glyph:'\u25b6'}]
  return <SiteShell><Seo title="YouTube to MP3 & MP4 Downloader | AUDIXO" description="Analyze an authorized YouTube video, request MP3 audio, or choose only the MP4 resolutions verified by the conversion server." path="/tools/youtube-to-mp3"/>
@@ -145,15 +147,15 @@ export default function YouTubeConverter(){
      <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Set video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={preview?.duration||0} disabled={!!busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={preview?.qualities||[]} analyzed={!!preview} disabled={!!busy}/>}
       </div></div>
      <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><HumanCheck onVerified={setHumanToken} resetKey={humanReset}/><p className="ax52-usage-note">Use media you are permitted to download or transform.</p><button type="button" className="ax39-create ax42-download" disabled={!preview||!!busy||(turnstileSiteKey&&!humanToken)||(format==='mp4'&&(!quality||!confirmedVideoOptions(preview.qualities||[]).some(item=>item.value===quality)))} onClick={start}><span>{downloadButtonText}</span><b>↓</b></button>
-       {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>Conversion continues on the remote server. Long videos depend on backend capacity and serverless download limits.</small></div>}
+       {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>{job?.message||'Live YTDL progress is shown when available; the server cleans up the file after a single download.'}{job?.downloadPart&&job.downloadPartsTotal?` · Stream ${job.downloadPart}/${job.downloadPartsTotal}`:''}</small></div>}
        {saved&&!busy&&<button className="ax39-resume" onClick={resume}>↻ Resume earlier {saved.format.toUpperCase()} job</button>}
-       {completed&&!busy&&<button className="ax39-resume" onClick={downloadAgain}>Download again</button>}
+       {completed&&!busy&&<button className="ax39-resume" onClick={downloadAgain}>Start a new download job</button>}
       </div></div>
     </div>
     <div className="ax39-converter-bottom"><span>Original video title</span><span>MP3 or MP4</span><span>Download progress</span></div>
    </section>
    {health&&!health.ready&&<div role="status" className="ax39-alert">{health.message||'Check the conversion server connection and service credentials.'}</div>}
-   {notice&&<div role="status" className="ax39-alert" data-type={/Download started/i.test(notice)?'success':'info'}>{notice}</div>}
+   {notice&&<div role="status" className="ax39-alert" data-type={/One-time download requested/i.test(notice)?'success':'info'}>{notice}</div>}
   </main>
  </SiteShell>
 }

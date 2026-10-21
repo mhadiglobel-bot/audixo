@@ -180,44 +180,46 @@ test('17: permanent failures clear Resume; transient origin outage remains resum
  assert.ok(!client.TERMINAL_JOB_CODES.has('ORIGIN_UNAVAILABLE'))
  assert.ok(!client.TERMINAL_JOB_CODES.has('UPSTREAM_LIMIT'))
 })
-test('18a: HEAD file endpoint succeeds and forwards Content-Length',async()=>{
- mockRoutes({'/api/download/file/job-1':fileHead(1024)})
+test('V55: HEAD is refused without consuming the one-time origin file',async()=>{
+ let originCalls=0
+ mockRoutes({'/api/download/file/job-1':()=>{originCalls++;throw Error('HEAD must not touch origin')}})
  const req={method:'HEAD',query:{action:'file',id:'job-1',format:'mp4'},headers:{}}
  const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200);assert.equal(res.headers['content-length'],'1024')
+ assert.equal(res.responseStatus,405)
+ assert.equal(originCalls,0)
 })
-test('18b: HEAD falls back to 1-byte Range GET and preserves total length',async()=>{
- let observedRange=''
- mockRoutes({'/api/download/file/job-2':opts=>{
-  if(opts.method==='HEAD')return new Response(null,{status:405})
-  observedRange=opts.headers.Range
-  return new Response(new Uint8Array([0]),{status:206,headers:{'content-type':'video/mp4','content-range':'bytes 0-0/2048','content-length':'1','accept-ranges':'bytes'}})
- }})
- const req={method:'HEAD',query:{action:'file',id:'job-2',format:'mp4'},headers:{}}
+test('V55: Range GET is refused before contacting the one-time origin file',async()=>{
+ let originCalls=0
+ mockRoutes({'/api/download/file/job-2':()=>{originCalls++;throw Error('Range must not touch origin')}})
+ const req={method:'GET',query:{action:'file',id:'job-2',format:'mp4'},headers:{range:'bytes=0-0'}}
  const res=new MockRes();await adapter.default(req,res)
- assert.equal(observedRange,'bytes=0-0');assert.equal(res.responseStatus,200);assert.equal(res.headers['content-length'],'2048')
+ assert.equal(res.responseStatus,416)
+ assert.equal(originCalls,0)
 })
-test('18c: ranged GET forwards 206 and exact Content-Range; streams without buffering',async()=>{
- mockRoutes({'/api/download/file/job-3':opts=>{
-  assert.equal(opts.headers.Range,'bytes=4-7')
-  return new Response(new Uint8Array([1,2,3,4]),{status:206,headers:{'content-type':'video/mp4','content-range':'bytes 4-7/100','content-length':'4','accept-ranges':'bytes'}})
- }})
- const req={method:'GET',query:{action:'file',id:'job-3',format:'mp4'},headers:{range:'bytes=4-7'}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,206);assert.equal(res.headers['content-range'],'bytes 4-7/100')
- assert.deepEqual(Buffer.concat(res.chunks),Buffer.from([1,2,3,4]))
-})
-test('completed upstream job remains processing until file HEAD proves its existence',async()=>{
- mockRoutes({'/api/download/status/job4':apiResponse({job_id:'job4',status:'complete',actual_height:720,actual_width:1280}),
- '/api/download/file/job4':new Response(null,{status:404})})
+test('V55: completed status is ready without destructive HEAD or Range preflights',async()=>{
+ let fileCalls=0
+ mockRoutes({'/api/download/status/job4':apiResponse({job_id:'job4',status:'ready',actual_height:720,actual_width:1280,stage:'ready'}),
+  '/api/download/file/job4':()=>{fileCalls++;throw Error('Do not probe!')}})
  const res=await call('status',{id:'job4',format:'mp4',quality:'720'})
- assert.equal(res.body.state,'processing');assert.equal(res.body.files.length,0)
+ assert.equal(res.body.state,'complete')
+ assert.equal(res.body.files.length,1)
+ assert.equal(fileCalls,0)
 })
-test('successful status with verified file becomes complete and gets one valid file URL',async()=>{
- mockRoutes({'/api/download/status/job5':apiResponse({job_id:'job5',status:'complete',actual_height:720,actual_width:1280}),
- '/api/download/file/job5':fileHead(400)})
- const res=await call('status',{id:'job5',format:'mp4',quality:'720'})
- assert.equal(res.body.state,'complete');assert.equal(res.body.files.length,1)
+test('V55: origin file GET happens exactly once and is streamed intact',async()=>{
+ let getCount=0
+ const bytes=Buffer.from([0,0,0,24,102,116,121,112,105,115,111,109,1,2,3,4,5,6,7,8,9,10,11,12])
+ mockRoutes({'/api/download/file/job-3':opts=>{
+  getCount++
+  assert.equal(opts.method,'GET')
+  assert.equal(opts.headers.Range,undefined)
+  return new Response(bytes,{status:200,headers:{'content-type':'video/mp4','content-length':String(bytes.length)}})
+ }})
+ const req={method:'GET',query:{action:'file',id:'job-3',format:'mp4',title:'Original title'},headers:{}}
+ const res=new MockRes();await adapter.default(req,res)
+ assert.equal(res.responseStatus,200)
+ assert.equal(getCount,1)
+ assert.equal(res.headers['accept-ranges'],'none')
+ assert.deepEqual(Buffer.concat(res.chunks),bytes)
 })
 
 test('canonical preview requires explicit downloadable video evidence and compatible MP4 output',()=>{
@@ -260,16 +262,29 @@ test('Cloudflare origin HTTP 522 becomes ORIGIN_UNAVAILABLE',async()=>{
  const res=await call('convert',{url:validUrl,format:'mp3'})
  assert.equal(res.responseStatus,503);assert.equal(res.body.code,'ORIGIN_UNAVAILABLE')
 })
-test('HEAD without a reliable Content-Length retries a 1-byte Range GET',async()=>{
- let observedRange=''
- mockRoutes({'/api/download/file/no-head-size':opts=>{
-  if(opts.method==='HEAD')return new Response(null,{status:200,headers:{'content-type':'audio/mpeg'}})
-  observedRange=opts.headers.Range
-  return new Response(new Uint8Array([0]),{status:206,headers:{'content-type':'audio/mpeg','content-range':'bytes 0-0/987','content-length':'1','accept-ranges':'bytes'}})
+test('V55: SSE events proxy returns text/event-stream and preserves progress payload',async()=>{
+ let requests=0
+ mockRoutes({'/api/download/events/sse-job':opts=>{
+  requests++
+  assert.equal(opts.method,'GET')
+  return new Response('event: progress\ndata: {"progress":48,"stage":"downloading"}\n\n',{status:200,headers:{'content-type':'text/event-stream'}})
  }})
- const req={method:'HEAD',query:{action:'file',id:'no-head-size',format:'mp3'},headers:{}}
+ const req={method:'GET',query:{action:'events',id:'sse-job'},headers:{}}
  const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200);assert.equal(observedRange,'bytes=0-0');assert.equal(res.headers['content-length'],'987')
+ assert.equal(res.responseStatus,200)
+ assert.match(res.headers['content-type'],/text\/event-stream/)
+ assert.match(Buffer.concat(res.chunks).toString(),/"progress":48/)
+ assert.equal(requests,1)
+})
+test('V55: job progress exposes YTDL stage, stream parts, rate and ETA',()=>{
+ const job=adapter.normalizeJob({job_id:'j3',status:'processing',stage:'downloading',progress:48,download:{part:1,parts_total:2,percent:45.2,speed:'5.2MiB/s',eta:'00:04'}},'','mp4',false,'720')
+ assert.equal(job.state,'processing')
+ assert.equal(job.stage,'downloading')
+ assert.equal(job.progress,48)
+ assert.equal(job.downloadPart,1)
+ assert.equal(job.downloadPartsTotal,2)
+ assert.equal(job.downloadSpeed,'5.2MiB/s')
+ assert.equal(job.eta,'00:04')
 })
 
 test('V54: legacy preview {qualities:[{value,label}]} becomes verified choices, not empty MP4',async()=>{
@@ -312,19 +327,43 @@ test('V54: clicking lower reported quality updates selection without substitutin
  buttons[1].props.onClick()
  assert.equal(selected,'360')
 })
-test('V54: completed MP3 gets a file even when YTDL HEAD returns 404 but Range GET succeeds',async()=>{
- mockRoutes({'/api/download/status/mp3-head-old':apiResponse({job_id:'mp3-head-old',status:'complete'}),
- '/api/download/file/mp3-head-old':options=>options.method==='HEAD'?new Response(null,{status:404}):new Response(new Uint8Array([73]),{status:206,headers:{'content-type':'audio/mpeg','content-range':'bytes 0-0/23456','content-length':'1'}})})
- const result=await call('status',{id:'mp3-head-old',format:'mp3'})
+test('V55: a ready MP3 job does not call the one-time file endpoint',async()=>{
+ let fileCalls=0
+ mockRoutes({'/api/download/status/mp3-ready':apiResponse({job_id:'mp3-ready',status:'ready',stage:'ready'}),
+  '/api/download/file/mp3-ready':()=>{fileCalls++;throw Error('No preview GET allowed')}})
+ const result=await call('status',{id:'mp3-ready',format:'mp3'})
  assert.equal(result.responseStatus,200)
  assert.equal(result.body.state,'complete')
  assert.equal(result.body.files.length,1)
+ assert.equal(fileCalls,0)
 })
-test('V54: adapter HEAD itself falls back to Range GET for legacy origin HEAD 404',async()=>{
- mockRoutes({'/api/download/file/mp3-legacy':options=>options.method==='HEAD'?new Response(null,{status:404}):new Response(new Uint8Array([73]),{status:206,headers:{'content-type':'audio/mpeg','content-range':'bytes 0-0/12345','content-length':'1'}})})
- const req={method:'HEAD',query:{action:'file',id:'mp3-legacy',format:'mp3'},headers:{}}
+test('V55: MP3 one-time GET is accepted and no probe occurs',async()=>{
+ let calls=0
+ const data=Buffer.from([73,68,51,3,0,0,0,0,0,0,255,251,144,100,1,2,3,4,5,6])
+ mockRoutes({'/api/download/file/only-mp3':opts=>{calls++;assert.equal(opts.method,'GET');return new Response(data,{status:200,headers:{'content-type':'audio/mpeg','content-length':String(data.length)}})}})
+ const req={method:'GET',query:{action:'file',id:'only-mp3',format:'mp3'},headers:{}}
  const res=new MockRes();await adapter.default(req,res)
  assert.equal(res.responseStatus,200)
- assert.equal(res.headers['content-length'],'12345')
- assert.equal(res.headers['content-type'],'audio/mpeg')
+ assert.equal(calls,1)
+ assert.deepEqual(Buffer.concat(res.chunks),data)
+})
+test('V55: documented canonical upstream preview qualities and uploader map correctly',async()=>{
+ mockRoutes({'/api/preview':apiResponse({ok:true,video_id:'dQw4w9WgXcQ',title:'Test source',uploader:'Creator',duration:120,thumbnail:'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',qualities:[{value:'1080',label:'1080p'},{value:'720',label:'720p'}]})})
+ const res=await call('meta',{url:validUrl})
+ assert.equal(res.body.qualities.map(x=>x.value).join(','),'720,1080')
+ assert.equal(res.body.author,'Creator')
+ assert.equal(res.body.thumbnail,'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg')
+})
+
+test('V55: local MP3 bitrate encoder and one-time browser downloader exports remain available',()=>{
+ assert.equal(typeof client.downloadMp3AtBitrate,'function')
+ assert.equal(typeof client.downloadFile,'function')
+ assert.equal(typeof client.verifyVideoOutput,'function')
+})
+test('V55: verified video dimensions are enforced without touching the one-time media URL',async()=>{
+ const file={url:'/api/media?action=file&id=j2&format=mp4',fileName:'test.mp4'}
+ const result=await client.verifyVideoOutput(file,'Sample','1080',{reportedWidth:1920,reportedHeight:1080})
+ assert.equal(result.verified,true)
+ assert.equal(result.actual,1080)
+ await assert.rejects(client.verifyVideoOutput(file,'Sample','1080',{reportedWidth:1280,reportedHeight:720}),{code:'QUALITY_MISMATCH'})
 })

@@ -29,7 +29,7 @@ export const productTools: ProductTool[] = [
     short: 'One converter for audio MP3 and video MP4, with original titles and available resolutions.',
     group: 'Convert',
     icon: '↓',
-    bullets: ['Original video title', '320 kbps MP3 encoding target', '240p–1440p MP4 where supported'],
+    bullets: ['Original video title', '320 kbps MP3 encoding target', '240p–2160p MP4 where supported'],
   },
   {
     id: 'mashup',

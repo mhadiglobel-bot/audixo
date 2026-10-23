@@ -1,411 +1,175 @@
-/** AUDIXO V55 — server-only bridge for the YTDL REST API.
- * Origin contract: POST /api/preview, POST /api/download,
- * GET /api/download/status/:id, GET /api/download/events/:id,
- * and a ONE-TIME GET /api/download/file/:id.
- * A file probe (HEAD / Range GET / video metadata GET) can consume its only download.
- * Never expose origin tokens or YouTube session cookies in VITE_* variables.
+/** AUDIXO V56 - private self-hosted media worker proxy.
+ * No third-party YTDL API, authentication cookie, or yt-dlp subprocess is
+ * shipped to the browser/Vercel. The worker performs source discovery,
+ * conversion and final-file verification on a persistent Docker host.
  */
 import {Readable} from 'node:stream'
+import {createHmac} from 'node:crypto'
 import {pipeline} from 'node:stream/promises'
 
-const YT_HOSTS=new Set(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be'])
-const MP4_QUALITIES=['240','360','480','720','1080','1440','2160'] as const
-const SUPPORTED=new Set<string>(MP4_QUALITIES)
-const JOB_ID=/^[\w-]{1,128}$/
-const CF_ORIGIN_STATUSES=new Set([520,521,522,523,524,525,526,530])
-export const MEDIA_ERROR_CODES=[
- 'INVALID_REQUEST','QUALITY_UNAVAILABLE','SOURCE_FORBIDDEN','SERVICE_AUTH','ORIGIN_UNAVAILABLE',
- 'UPSTREAM_LIMIT','UPSTREAM_VALIDATION','FILE_FORBIDDEN','FILE_UNAVAILABLE','WRONG_FILE_TYPE',
- 'QUALITY_MISMATCH','QUALITY_UNVERIFIED','JOB_FAILED','BOT_CHECK_CONFIG','BOT_CHECK_REQUIRED',
- 'BOT_CHECK_FAILED','BOT_CHECK_UNAVAILABLE','SERVICE_CONFIG','UPSTREAM_ERROR'
-] as const
-export type MediaErrorCode=(typeof MEDIA_ERROR_CODES)[number]
-const CODE_SET=new Set<string>(MEDIA_ERROR_CODES)
-type Kind='mp3'|'mp4'
-type Quality={value:string;label:string}
-class UpstreamApiError extends Error{
- constructor(message:string,public status:number,public code:MediaErrorCode,public availableQualities?:string[]){super(message);this.name='UpstreamApiError'}
+type MediaKind='mp3'|'mp4'
+const QUALITIES=new Set(['144','240','360','480','720','1080','1440','2160','4320'])
+const BITRATES=new Set([64,128,192,256,320])
+const JOB_ID=/^[a-f\d]{32}$/
+const raw=(value:unknown,max=250)=>String(value??'').slice(0,max)
+const filename=(value:unknown,format:MediaKind)=>raw(value||'YouTube video',180).replace(/[\\<>|:*?"\x00-\x1f]/g,' ').replace(/\s+/g,' ').trim().slice(0,140).replace(/[. ]+$/,'')+`.${format}`
+
+class ApiError extends Error{
+ constructor(message:string,public code='UPSTREAM_ERROR',public status=502){super(message);this.name='ApiError'}
 }
-const text=(v:unknown,max=180)=>String(v??'').replace(/[\u0000-\u001f\u007f<>\\/|:*?"']/g,' ').replace(/\s+/g,' ').trim().slice(0,max)
-const kind=(v:unknown):Kind=>{if(v!==undefined&&v!==''&&v!=='mp3'&&v!=='mp4')throw new UpstreamApiError('Invalid media format.',400,'INVALID_REQUEST');return v==='mp4'?'mp4':'mp3'}
-const niceName=(title:unknown,format:Kind)=>{
- const cleaned=text(title||'YouTube media',145).replace(/\s*\(Audixo (?:MP3|MP4)\)\s*$/i,'').replace(/\.(?:mp3|mp4)$/i,'').replace(/[. ]+$/,'')||'YouTube media'
- return `${cleaned} (Audixo ${format.toUpperCase()}).${format}`
+const classifyStatus=(status:number)=>status===401||status===403?'SERVICE_AUTH':status===422?'QUALITY_UNAVAILABLE':status===404||status===410?'FILE_UNAVAILABLE':status===429?'UPSTREAM_LIMIT':status>=500?'ORIGIN_UNAVAILABLE':'UPSTREAM_ERROR'
+
+function workerConfig(){
+ const candidate=process.env.AUDIXO_WORKER_URL?.trim()||''
+ const token=process.env.AUDIXO_WORKER_TOKEN?.trim()||''
+ if(!candidate||token.length<32)throw new ApiError('AUDIXO private processing worker is not configured. Set AUDIXO_WORKER_URL and AUDIXO_WORKER_TOKEN in Vercel.','ORIGIN_UNAVAILABLE',503)
+ let url:URL
+ try{url=new URL(candidate)}catch{throw new ApiError('The private media worker URL is invalid.','ORIGIN_UNAVAILABLE',503)}
+ if(url.username||url.password||url.search||url.hash||url.pathname!=='/'||!['http:','https:'].includes(url.protocol))throw new ApiError('The private media worker URL must be a plain HTTP(S) origin.','ORIGIN_UNAVAILABLE',503)
+ if(process.env.VERCEL&&url.protocol!=='https:')throw new ApiError('Use HTTPS for the private media worker in production.','ORIGIN_UNAVAILABLE',503)
+ return {origin:url.origin,token}
 }
-const youtube=(raw:unknown)=>{
+function youtube(rawUrl:unknown){
+ if(typeof rawUrl!=='string'||rawUrl.length>2048)throw new ApiError('Paste a valid YouTube video URL.','INVALID_REQUEST',400)
  let u:URL
- try{u=new URL(String(raw||''))}catch{throw new UpstreamApiError('Paste a valid YouTube video URL.',400,'INVALID_REQUEST')}
- if(u.protocol!=='https:'||!YT_HOSTS.has(u.hostname)||u.username||u.password)throw new UpstreamApiError('Paste a valid HTTPS YouTube URL.',400,'INVALID_REQUEST')
- const parts=u.pathname.split('/').filter(Boolean)
- const id=u.hostname==='youtu.be'?parts[0]:u.pathname==='/watch'?u.searchParams.get('v'):['shorts','live','embed'].includes(parts[0]||'')?parts[1]:''
- if(!id||!/^[-\w]{11}$/.test(id))throw new UpstreamApiError('Enter a YouTube video URL with a valid video ID.',400,'INVALID_REQUEST')
+ try{u=new URL(rawUrl.trim())}catch{throw new ApiError('Paste a valid YouTube video URL.','INVALID_REQUEST',400)}
+ if(u.protocol!=='https:'||u.username||u.password||u.port||!['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be'].includes(u.hostname.toLowerCase()))throw new ApiError('Only HTTPS YouTube links are accepted.','INVALID_REQUEST',400)
+ const id=u.hostname==='youtu.be'?u.pathname.slice(1):u.pathname==='/watch'?u.searchParams.get('v'):u.pathname.match(/^\/(?:shorts|live|embed)\/([\w-]{11})\/?$/)?.[1]
+ if(!id||!/^[A-Za-z0-9_-]{11}$/.test(id))throw new ApiError('This link does not contain a valid YouTube video ID.','INVALID_REQUEST',400)
  return `https://www.youtube.com/watch?v=${id}`
 }
-function settings(){
- const raw=process.env.AUDIXO_YTDL_BASE_URL?.trim()
- if(!raw)throw new UpstreamApiError('AUDIXO_YTDL_BASE_URL is missing in Vercel.',503,'SERVICE_CONFIG')
- let url:URL
- try{url=new URL(raw)}catch{throw new UpstreamApiError('Invalid AUDIXO_YTDL_BASE_URL.',503,'SERVICE_CONFIG')}
- if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash||url.port||/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname))throw new UpstreamApiError('The YTDL base URL must be a public HTTPS origin.',503,'SERVICE_CONFIG')
- const headers:Record<string,string>={Accept:'application/json'}
- if(process.env.AUDIXO_YTDL_AUTH_TOKEN?.trim()){
-  const scheme=process.env.AUDIXO_YTDL_AUTH_SCHEME?.trim()||'Bearer'
-  if(!/^[A-Za-z][A-Za-z0-9_-]{0,25}$/.test(scheme))throw new UpstreamApiError('Invalid YTDL API auth scheme.',503,'SERVICE_CONFIG')
-  headers.Authorization=`${scheme} ${process.env.AUDIXO_YTDL_AUTH_TOKEN.trim()}`
+async function worker(route:string,method:'GET'|'POST'='GET',body?:object,timeoutMs=50000,clientKey=''):Promise<Response>{
+ const {origin,token}=workerConfig()
+ let response:Response
+ try{response=await fetch(`${origin}${route}`,{method,headers:{Authorization:`Bearer ${token}`,...(clientKey?{'X-Audixo-Client-Key':clientKey}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(timeoutMs),cache:'no-store',redirect:'error'})}
+ catch{throw new ApiError('Private media worker cannot be reached. Verify that its Docker service is running and the HTTPS URL is correct.','ORIGIN_UNAVAILABLE',503)}
+ if(!response.ok){
+  const detail=await response.json().catch(()=>null)
+  const code=typeof detail?.code==='string'&&/^[A-Z_]{3,40}$/.test(detail.code)?detail.code:classifyStatus(response.status)
+  throw new ApiError(raw(detail?.error||`Media worker HTTP ${response.status}`,340),code,response.status)
  }
- if(process.env.AUDIXO_YTDL_COOKIE?.trim())headers.Cookie=process.env.AUDIXO_YTDL_COOKIE.trim()
- return {origin:url.origin,headers}
+ return response
 }
-async function request(path:string,options:RequestInit={},timeout=30000){
- const {origin,headers}=settings()
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout)
- try{
-  const res=await fetch(origin+path,{...options,headers:{...headers,...options.headers},redirect:'manual',signal:controller.signal,cache:'no-store'})
-  if(res.status>=300&&res.status<400){await res.body?.cancel().catch(()=>{});throw new UpstreamApiError('YTDL service redirected the request. Check private API authentication.',502,'SERVICE_AUTH')}
-  return res
- }catch(error){
-  if(error instanceof UpstreamApiError)throw error
-  throw new UpstreamApiError(controller.signal.aborted?'YTDL server did not respond in time.':'Cannot reach the YTDL origin; check Cloudflare, DNS and the backend service.',503,'ORIGIN_UNAVAILABLE')
- }finally{clearTimeout(timer)}
+async function data(route:string,method:'GET'|'POST'='GET',body?:object,timeoutMs=50000,clientKey=''):Promise<any>{
+ const result=await worker(route,method,body,timeoutMs,clientKey)
+ const payload=await result.json().catch(()=>null)
+ if(!payload||typeof payload!=='object')throw new ApiError('The private worker returned an invalid response.','UPSTREAM_ERROR',502)
+ return payload
 }
-export function classifyMediaError(message:string):{code:MediaErrorCode;status:number}{
- if(/requested format.*not available|quality.*not available|unsupported resolution|resolution.*not supported|format.*unavailable|QUALITY_UNAVAILABLE/i.test(message))return {code:'QUALITY_UNAVAILABLE',status:422}
- if(/YouTube rejected|unable to download (?:video |audio )?data|googlevideo.*403|n challenge|bot verification|page needs to be reloaded|expired.*cookie|source.*forbidden|SOURCE_FORBIDDEN/i.test(message))return {code:'SOURCE_FORBIDDEN',status:502}
- if(/quality mismatch|output.*resolution.*does not match/i.test(message))return {code:'QUALITY_MISMATCH',status:422}
- if(/Cloudflare|origin.*unavailable|incomplete response/i.test(message))return {code:'ORIGIN_UNAVAILABLE',status:503}
- if(/429|rate limit|too many requests|concurrent.*limit/i.test(message))return {code:'UPSTREAM_LIMIT',status:429}
- if(/401|403|forbidden|unauthorized|authentication|login page|redirected/i.test(message))return {code:'SERVICE_AUTH',status:502}
- if(/missing.*YTDL|base URL|public HTTPS/i.test(message))return {code:'SERVICE_CONFIG',status:503}
- if(/invalid|paste a valid|video URL|video ID/i.test(message))return {code:'INVALID_REQUEST',status:400}
- return {code:'UPSTREAM_ERROR',status:502}
-}
-function unwrap(v:any):any{return v?.data&&typeof v.data==='object'?v.data:v?.result&&typeof v.result==='object'?v.result:v}
-const validCode=(raw:unknown):MediaErrorCode|null=>typeof raw==='string'&&CODE_SET.has(raw.toUpperCase())?raw.toUpperCase() as MediaErrorCode:null
-const errorText=(value:any)=>{
- const raw=value?.error??value?.message??value?.detail
- if(typeof raw==='string')return raw.slice(0,600)
- if(raw&&typeof raw==='object')return String(raw.message??raw.error??'Remote API rejected the request.').slice(0,600)
- return 'Remote conversion API failed.'
-}
-const returnedQualities=(data:any):string[]|undefined=>{
- const raw=data?.available_qualities??data?.availableQualities??data?.details?.available_qualities
- if(!Array.isArray(raw))return undefined
- return raw.map((v:any)=>typeof v==='string'?v:String(v?.quality??v?.value??'')).filter((v:string)=>SUPPORTED.has(v))
-}
-async function json(path:string,body?:Record<string,unknown>,timeout=30000){
- const res=await request(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{method:'GET'},timeout)
- if(CF_ORIGIN_STATUSES.has(res.status)){
-  await res.body?.cancel().catch(()=>{})
-  throw new UpstreamApiError(`Cloudflare HTTP ${res.status}: YTDL origin is unavailable. Check origin health and logs.`,503,'ORIGIN_UNAVAILABLE')
- }
- const type=(res.headers.get('content-type')||'').toLowerCase()
- const data=type.includes('json')?await res.json().catch(()=>null):null
- if(!type.includes('json'))await res.body?.cancel().catch(()=>{})
- if(!res.ok||data?.ok===false){
-  const message=errorText(data)
-  const specific=validCode(data?.code??data?.error?.code??data?.detail?.code)
-  const inferred=classifyMediaError(message)
-  const generic:MediaErrorCode=res.status===429?'UPSTREAM_LIMIT':res.status===401||res.status===403?'SERVICE_AUTH':res.status===400||res.status===422?'UPSTREAM_VALIDATION':res.status===404?'FILE_UNAVAILABLE':'UPSTREAM_ERROR'
-  const chosen=specific??(inferred.code!=='UPSTREAM_ERROR'?inferred.code:generic)
-  const status=chosen==='QUALITY_UNAVAILABLE'||chosen==='QUALITY_MISMATCH'?422:chosen==='ORIGIN_UNAVAILABLE'?503:chosen==='UPSTREAM_LIMIT'?429:chosen==='INVALID_REQUEST'?400:chosen==='UPSTREAM_VALIDATION'?422:chosen==='SOURCE_FORBIDDEN'||chosen==='SERVICE_AUTH'?502:res.status>=400&&res.status<600?res.status:502
-  throw new UpstreamApiError(message||`YTDL API HTTP ${res.status}`,status,chosen,returnedQualities(data))
- }
- if(!data||typeof data!=='object')throw new UpstreamApiError('The conversion service returned HTML/text instead of valid JSON.',503,'ORIGIN_UNAVAILABLE')
- return data
-}
-function duration(v:unknown){
- if(typeof v==='number')return Number.isFinite(v)?Math.max(0,v):0
- if(typeof v==='string'&&/^\d+(?::\d{1,2}){1,2}$/.test(v))return v.split(':').reduce((a,c)=>a*60+Number(c),0)
- return Number.isFinite(Number(v))?Math.max(0,Number(v)):0
-}
-const QUALITY_LABELS:Record<string,string>={'240':'SD','360':'SD','480':'SD','720':'HD','1080':'Full HD','1440':'QHD','2160':'4K'}
-/** MP4 source availability is supplied only by /api/preview; never by
- * the application's global resolution scale or generic yt-dlp `formats`.
- *
- * New origin API: available_qualities entries with downloadable:true and
- * verified video/merge metadata. Older origin API: explicit `qualities` or
- * `supported_qualities` lists (e.g. ["360", "720"] or [{value:"720",label:"720p"}]).
- * The older shape is an upstream DECLARATION, not proof that a stream can be
- * fetched; /api/download still has to validate the exact requested height.
- * We don't infer availability from max_height, raw formats, or labels alone.
- */
-export function confirmedMp4Qualities(payload:any):Quality[]{
- const candidates:any[]=[payload,unwrap(payload),unwrap(unwrap(payload))]
- let entries:any[]|undefined
- let authoritative=false
- // If canonical list exists, it wins even if it is empty. No fallback to a
- // stale, generic legacy field when the origin reports zero real formats.
- for(const obj of candidates){
-  if(!obj||typeof obj!=='object')continue
-  if(Array.isArray(obj.available_qualities)){entries=obj.available_qualities;authoritative=true;break}
-  if(Array.isArray(obj.availableQualities)){entries=obj.availableQualities;authoritative=true;break}
- }
- if(!entries){
-  for(const obj of candidates){
-   if(!obj||typeof obj!=='object')continue
-   for(const field of ['qualities','supported_qualities','video_qualities','available_resolutions']){
-    if(Array.isArray(obj[field])){entries=obj[field];break}
-    if(Array.isArray(obj[field]?.mp4)){entries=obj[field].mp4;break}
-   }
-   if(entries)break
-  }
- }
- if(!entries)return []
- const found=new Set<string>()
- for(const raw of entries){
-  if(raw===null||raw===undefined)continue
-  if(typeof raw==='string'||typeof raw==='number'){
-   const value=String(raw).trim().replace(/p$/i,'')
-   // A value from the origin's declared resolutions IS a format claim;
-   // a number in generic yt-dlp metadata is NOT, and isn't scanned here.
-   if(SUPPORTED.has(value))found.add(value)
-   continue
-  }
-  if(typeof raw!=='object'||Array.isArray(raw))continue
-  if(raw.downloadable===false||raw.available===false||raw.supported===false||raw.drm===true||raw.has_drm===true||raw.is_drm===true||raw.unusable===true||raw.audio_downloadable===false||raw.audio_available===false)continue
-  if(String(raw.vcodec??'').toLowerCase()==='none'||String(raw.type??raw.stream_type??'').toLowerCase()==='audio')continue
-  const field=raw.quality??raw.value??raw.resolution??raw.height
-  const value=String(field??'').trim().replace(/p$/i,'')
-  if(!SUPPORTED.has(value))continue
-  const hasRawHeight=raw.height!==undefined&&raw.height!==null&&raw.height!==''
-  const hasRawWidth=raw.width!==undefined&&raw.width!==null&&raw.width!==''
-  const height=Number(raw.height),width=Number(raw.width)
-  if(hasRawHeight&&(!Number.isInteger(height)||height!==Number(value)))continue
-  if(hasRawWidth&&(!Number.isInteger(width)||width<=0))continue
-  const container=String(raw.output_container??raw.container??raw.ext??'').toLowerCase()
-  if(container&&!['mp4','video/mp4'].includes(container))continue
-  if(authoritative){
-   // Detailed canonical formats MUST explicitly guarantee usability, but
-   // compact old-style {value,label} canonical lists are kept compatible.
-   const hasFormatEvidence=hasRawHeight||hasRawWidth||Boolean(raw.format_id??raw.formatId??raw.vcodec??raw.type)
-   if(hasFormatEvidence){
-    if(raw.downloadable!==true||!hasRawHeight||!hasRawWidth||!container)continue
-    if(!String(raw.format_id??raw.formatId??raw.vcodec??'').trim()&&String(raw.type??'').toLowerCase()!=='video')continue
-   }
-  }else{
-   // A raw extractor format object lacking a confirmed downloadable flag
-   // is not a selectable quality. A short {value,label} preview entry is.
-   const looksLikeExtractorFormat=hasRawHeight||hasRawWidth||Boolean(raw.format_id??raw.formatId??raw.vcodec??raw.acodec??raw.type)
-   if(looksLikeExtractorFormat){
-    if(raw.downloadable!==true||!hasRawHeight||!hasRawWidth||!container)continue
-    if(!String(raw.format_id??raw.formatId??raw.vcodec??'').trim()&&String(raw.type??'').toLowerCase()!=='video')continue
-   }
-  }
-  found.add(value)
- }
- return [...found].sort((a,b)=>Number(a)-Number(b)).map(value=>({value,label:`${value}p${Number(value)>=720?` - ${QUALITY_LABELS[value]}`:''}`}))
-}
-export function buildDownloadBody(url:string,format:Kind,quality:string){
- if(format==='mp4'){
-  if(!SUPPORTED.has(quality))throw new UpstreamApiError('Select an available MP4 resolution.',400,'INVALID_REQUEST')
-  return {url,format:'mp4',quality}
- }
- return {url,format:'mp3'} // Legacy {url} retry remains supported.
-}
-function outputDimensions(value:any){
- const v=unwrap(value)||{}
- const output=v.output??v.output_info??v.file_info??v.ffprobe??{}
- const stream=Array.isArray(output.streams)?output.streams.find((x:any)=>x.codec_type==='video'):undefined
- const width=Number(v.actual_width??v.output_width??output.width??stream?.width)
- const height=Number(v.actual_height??v.output_height??output.height??stream?.height)
- return {reportedWidth:Number.isInteger(width)&&width>0?width:undefined,reportedHeight:Number.isInteger(height)&&height>0?height:undefined}
-}
-const actualBitrate=(value:any)=>{
- const v=unwrap(value)||{}
- const raw=v.actual_audio_bitrate_kbps??v.output_audio_bitrate_kbps??v.actual_bitrate_kbps??v.result?.audio_bitrate_kbps
- const num=Number(String(raw??'').replace(/\s*kbps/i,''))
- return Number.isFinite(num)&&num>=32&&num<=512?Math.round(num):undefined
-}
-export function normalizeJob(value:any,idFallback='',format:Kind='mp3',fileVerified=false,requestedQuality=''){
- const v=unwrap(value)||{},raw=String(v.status??v.state??v.phase??'queued').toLowerCase()
- let state:'queued'|'processing'|'complete'|'failed'=/^(completed|complete|done|ready|finished|success|succeeded)$/.test(raw)?'complete':/^(failed|failure|error|cancelled|canceled|rejected)$/.test(raw)?'failed':/^(processing|running|downloading|converting|working|in_progress)$/.test(raw)?'processing':'queued'
- const pathId=String(v.status_url??'').match(/\/api\/download\/status\/([\w-]+)(?:[?#]|$)/)?.[1]
- const id=String(v.job_id??v.jobId??v.id??pathId??idFallback)
- const rawProgress=Number(v.progress??v.percent??0)
- const progress=Number.isFinite(rawProgress)?Math.min(100,Math.max(0,rawProgress>0&&rawProgress<1?rawProgress*100:rawProgress)):0
- const dims=outputDimensions(value)
- let errorCode:MediaErrorCode|undefined=state==='failed'?(validCode(v.code??v.error_code)??(classifyMediaError(String(v.error??v.detail??'')).code==='UPSTREAM_ERROR'?'JOB_FAILED':classifyMediaError(String(v.error??v.detail??'')).code)):undefined
- let error=text(v.error??v.detail??'',300)
- if(format==='mp4'&&state==='complete'&&requestedQuality&&dims.reportedHeight&&dims.reportedHeight!==Number(requestedQuality)){
-  state='failed';errorCode='QUALITY_MISMATCH';error=`The API produced ${dims.reportedHeight}p instead of ${requestedQuality}p.`
- }
- if(state==='complete'&&!JOB_ID.test(id)){state='failed';errorCode='JOB_FAILED';error='The conversion finished without a valid job ID.'}
- const stage=text(v.stage??v.phase??raw,50)
- const stream=typeof v.download==='object'&&v.download?v.download:{}
- const downloadPercent=Number(stream.percent)
- const message=text(v.message??(state==='complete'?'Ready for one-time file delivery':''),180)
- return {id,format,state,stage,progress,downloadPercent:Number.isFinite(downloadPercent)?downloadPercent:undefined,downloadSpeed:String(stream.speed??'').replace(/[^A-Za-z0-9_.: \/-]/g,'').trim().slice(0,40),eta:String(stream.eta??'').replace(/[^0-9:]/g,'').slice(0,30),downloadPart:Number(stream.part)||undefined,downloadPartsTotal:Number(stream.parts_total)||undefined,title:text(v.title??v.video_title??'',160),error,errorCode,message,...dims,reportedKbps:actualBitrate(value),files:state==='complete'&&JOB_ID.test(id)?[{name:format.toUpperCase(),url:`/api/media?action=file&id=${encodeURIComponent(id)}&format=${format}`,fileName:niceName(v.title,format)}]:[]}
-}
-function validateFileType(response:Response,format:Kind){
- const type=(response.headers.get('content-type')??'').toLowerCase().split(';')[0].trim()
- if(!type||type.startsWith('text/')||/json|html|xml/.test(type)||format==='mp4'&&type.startsWith('audio/')||format==='mp3'&&type.startsWith('video/'))throw new UpstreamApiError('YTDL returned a non-media or incorrect file type.',502,'WRONG_FILE_TYPE')
- const valid=type==='application/octet-stream'||type==='application/binary'||type==='binary/octet-stream'||(format==='mp4'?type==='video/mp4':['audio/mpeg','audio/mp3','audio/x-mpeg','audio/x-mp3'].includes(type))
- if(!valid)throw new UpstreamApiError(`YTDL returned a ${type||'missing'} content type instead of a compatible ${format.toUpperCase()} file.`,502,'WRONG_FILE_TYPE')
-}
-function remoteFileFailure(status:number){
- if(CF_ORIGIN_STATUSES.has(status))return new UpstreamApiError(`Cloudflare HTTP ${status}: the remote file origin is unavailable.`,503,'ORIGIN_UNAVAILABLE')
- if(status===401||status===403)return new UpstreamApiError(`File endpoint access denied (HTTP ${status}).`,502,'FILE_FORBIDDEN')
- return new UpstreamApiError(`Conversion output file not available (HTTP ${status}).`,status===404?404:502,'FILE_UNAVAILABLE')
-}
-/** The origin delivers a file only once. Never preflight it with HEAD or Range.
- * Job status "ready" is authoritative for when the client may issue one GET.
- * The origin is responsible for verifying that ready means file exists.
- */
-
 async function verifyHuman(token:unknown,req:any){
  const secret=process.env.AUDIXO_TURNSTILE_SECRET_KEY?.trim()
- if(!secret){if(token)throw new UpstreamApiError('Turnstile is enabled in the UI but the backend secret is missing.',503,'BOT_CHECK_CONFIG');return}
- if(typeof token!=='string'||token.length<10||token.length>2100)throw new UpstreamApiError('Complete the security check before downloading.',400,'BOT_CHECK_REQUIRED')
+ if(!secret){if(token)throw new ApiError('Turnstile is enabled in the UI, but the private verification secret is missing.','BOT_CHECK_CONFIG',503);return}
+ if(typeof token!=='string'||token.length<10||token.length>2100)throw new ApiError('Complete the security check before downloading.','BOT_CHECK_REQUIRED',400)
  const form=new URLSearchParams({secret,response:token})
  const ip=String(req.headers?.['x-forwarded-for']??'').split(',')[0].trim()
  if(ip&&ip.length<64)form.set('remoteip',ip)
- let response:Response
- try{response=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:form,signal:AbortSignal.timeout(13000),cache:'no-store'})}
- catch{throw new UpstreamApiError('Human verification service is temporarily unavailable.',503,'BOT_CHECK_UNAVAILABLE')}
- const answer=await response.json().catch(()=>null)
- if(!response.ok||answer?.success!==true)throw new UpstreamApiError('Human verification expired or failed.',400,'BOT_CHECK_FAILED')
+ const result=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:form,signal:AbortSignal.timeout(13000)}).catch(()=>null)
+ const value=await result?.json().catch(()=>null)
+ if(value?.success!==true)throw new ApiError('Security verification expired or failed.','BOT_CHECK_FAILED',400)
 }
-const httpCodeStatus=(code:MediaErrorCode,status:number)=>{
- if(code==='QUALITY_UNAVAILABLE'||code==='QUALITY_MISMATCH'||code==='UPSTREAM_VALIDATION')return 422
- if(code==='INVALID_REQUEST'||code==='BOT_CHECK_REQUIRED'||code==='BOT_CHECK_FAILED')return 400
- if(code==='ORIGIN_UNAVAILABLE'||code==='SERVICE_CONFIG'||code==='BOT_CHECK_CONFIG'||code==='BOT_CHECK_UNAVAILABLE')return 503
- if(code==='UPSTREAM_LIMIT')return 429
- if(code==='FILE_UNAVAILABLE')return 404
- return status>=500&&status<=599?status:502
+function jobShape(value:any,format:MediaKind,quality=''){
+ const id=raw(value.job_id??value.id,90)
+ if(!JOB_ID.test(id))throw new ApiError('The processing worker returned an invalid job ID.','JOB_FAILED',502)
+ const status=raw(value.status??value.state,50).toLowerCase()
+ const state=status==='ready'||status==='complete'?'complete':status==='failed'?'failed':status==='queued'?'queued':'processing'
+ const progress=Number(value.progress??0)
+ const height=Number(value.actual_height??value.output_height)
+ const width=Number(value.actual_width??value.output_width)
+ let errorCode=raw(value.code??value.error_code,70)
+ let error=raw(value.error,250)
+ let currentState=state
+ if(format==='mp4'&&state==='complete'&&Number.isFinite(height)&&height>0&&quality&&height!==Number(quality)){
+  errorCode='QUALITY_MISMATCH';error=`The output is ${height}p instead of ${quality}p.`;currentState='failed'
+ }
+ const dl=value.download??{}
+ return {id,format,state:currentState,stage:raw(value.stage,60),message:raw(value.message,220),error,errorCode,title:raw(value.title,200),progress:Number.isFinite(progress)?Math.max(0,Math.min(100,progress)):0,downloadPercent:Number(dl.percent)||undefined,downloadSpeed:raw(dl.speed,40),eta:raw(dl.eta,40),reportedWidth:Number.isFinite(width)&&width>0?width:undefined,reportedHeight:Number.isFinite(height)&&height>0?height:undefined,reportedKbps:Number(value.actual_audio_bitrate_kbps)||undefined,files:currentState==='complete'?[{name:format.toUpperCase(),url:`/api/media?action=file&id=${id}&format=${format}`,fileName:filename(value.title,format)}]:[]}
 }
-function fail(res:any,error:unknown){
- const message=error instanceof Error?error.message:'Media service unavailable.'
- const info=error instanceof UpstreamApiError?{code:error.code,status:error.status,available_qualities:error.availableQualities}:classifyMediaError(message)
- return res.status(httpCodeStatus(info.code,info.status)).json({error:text(message,500),code:info.code,...('available_qualities' in info&&info.available_qualities?{available_qualities:info.available_qualities}:{})})
+const sendFailure=(res:any,error:unknown)=>{
+ if(res.headersSent){res.destroy?.();return}
+ const e=error instanceof ApiError?error:new ApiError('Media service temporarily unavailable.','UPSTREAM_ERROR',503)
+ res.status(e.status).json({ok:false,error:e.message,code:e.code})
 }
-function setFileHeaders(res:any,response:Response,format:Kind,fileName:string){
- const escaped=encodeURIComponent(fileName).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())
- res.setHeader('Content-Type',format==='mp4'?'video/mp4':'audio/mpeg')
- res.setHeader('Content-Disposition',`attachment; filename="Audixo.${format}"; filename*=UTF-8''${escaped}`)
- const length=response.headers.get('content-length')
- if(length&&/^\d+$/.test(length))res.setHeader('Content-Length',length)
- // One-time source files cannot safely serve repeated byte-range requests.
- res.setHeader('Accept-Ranges','none')
-}
+const getId=(value:unknown)=>{const id=raw(value,90);if(!JOB_ID.test(id))throw new ApiError('Invalid job reference.','INVALID_REQUEST',400);return id}
+const getKind=(value:unknown):MediaKind=>{if(value==='mp3'||value==='mp4')return value;throw new ApiError('Select MP3 or MP4.','INVALID_REQUEST',400)}
+
 export default async function handler(req:any,res:any){
  res.setHeader('Cache-Control','private, no-store, max-age=0')
  res.setHeader('X-Content-Type-Options','nosniff')
  res.setHeader('Referrer-Policy','no-referrer')
- const action=String(req.query?.action??'')
+ const action=raw(req.query?.action,30)
  try{
   if(action==='events'){
-   if(req.method!=='GET')return res.status(405).json({error:'Use GET for live progress.',code:'INVALID_REQUEST'})
-   const id=String(req.query?.id??'')
-   if(!JOB_ID.test(id))throw new UpstreamApiError('Invalid job ID.',400,'INVALID_REQUEST')
-   const upstream=await request(`/api/download/events/${encodeURIComponent(id)}`,
-    {method:'GET',headers:{Accept:'text/event-stream'}},18000)
-   if(!upstream.ok){await upstream.body?.cancel().catch(()=>{});throw remoteFileFailure(upstream.status)}
-   if(!upstream.headers.get('content-type')?.toLowerCase().includes('text/event-stream')||!upstream.body){
-    await upstream.body?.cancel().catch(()=>{})
-    throw new UpstreamApiError('YTDL did not return an SSE progress stream.',502,'UPSTREAM_ERROR')
-   }
+   if(req.method!=='GET')throw new ApiError('Use GET for progress events.','INVALID_REQUEST',405)
+   const id=getId(req.query?.id)
+   const response=await worker(`/jobs/${id}/events`,'GET',undefined,70_000)
+   if(!response.headers.get('content-type')?.includes('text/event-stream')||!response.body)throw new ApiError('Worker progress stream is unavailable.','ORIGIN_UNAVAILABLE',503)
+   res.status(200)
    res.setHeader('Content-Type','text/event-stream; charset=utf-8')
    res.setHeader('Cache-Control','private, no-cache, no-transform')
    res.setHeader('X-Accel-Buffering','no')
-   res.setHeader('Connection','keep-alive')
-   res.status(200)
    res.flushHeaders?.()
-   // Bounded relay. Browser EventSource reconnects automatically; polling is fallback.
-   const relay=Readable.fromWeb(upstream.body as any)
-   const deadline=setTimeout(()=>relay.destroy(),48000)
-   try{await pipeline(relay,res)}finally{clearTimeout(deadline)}
+   const source=Readable.fromWeb(response.body as any)
+   // The browser reconnects; frontend also implements status polling fallback.
+   const timer=setTimeout(()=>source.destroy(),55_000)
+   try{await pipeline(source,res)}catch{}finally{clearTimeout(timer)}
    return
   }
   if(action==='file'){
-   if(req.method==='HEAD'){
-    res.setHeader('Allow','GET')
-    return res.status(405).json({error:'This API delivers the media file only once. HEAD verification would consume it; use one full GET.',code:'INVALID_REQUEST'})
-   }
-   if(req.method!=='GET')return res.status(405).json({error:'Use GET to download.',code:'INVALID_REQUEST'})
-   const id=String(req.query?.id??'');if(!JOB_ID.test(id))throw new UpstreamApiError('Invalid job ID.',400,'INVALID_REQUEST')
-   const format=kind(req.query?.format),fileName=niceName(req.query?.title,format)
-   if(req.headers?.range){
-    return res.status(416).json({error:'Range probes are unavailable for one-time download files. Request the complete file once.',code:'FILE_UNAVAILABLE'})
-   }
-   const accept=format==='mp4'?'video/mp4, application/octet-stream':'audio/mpeg, application/octet-stream'
-   // Exactly ONE request to the one-time origin file endpoint. Do not probe.
-   const upstream=await request(`/api/download/file/${encodeURIComponent(id)}`,
-    {method:'GET',headers:{Accept:accept}},55000)
-   if(!upstream.ok){await upstream.body?.cancel().catch(()=>{});throw remoteFileFailure(upstream.status)}
-   try{validateFileType(upstream,format)}catch(error){await upstream.body?.cancel().catch(()=>{});throw error}
-   if(!upstream.body)throw new UpstreamApiError('Origin returned an empty file response.',502,'FILE_UNAVAILABLE')
-   // Buffer only the initial 16-96 bytes, to reject disguised HTML/JSON.
-   // The rest is streamed, not held in Vercel memory.
-   const reader=upstream.body.getReader()
-   const prefixParts:Uint8Array[]=[]
-   let prefixSize=0
-   while(prefixSize<16){
-    const next=await reader.read()
-    if(next.done)break
-    if(next.value?.byteLength){prefixParts.push(next.value);prefixSize+=next.value.byteLength}
-   }
-   if(prefixSize===0){await reader.cancel().catch(()=>{});throw new UpstreamApiError('The completed media file was empty.',502,'FILE_UNAVAILABLE')}
-   const leading=Buffer.concat(prefixParts.map(p=>Buffer.from(p)),prefixSize)
-   const prefix=leading.subarray(0,96).toString('utf8').trimStart()
-   const disguisedText=/^(?:<!doctype|<html|<\?xml|\{|\[)/i.test(prefix)
-   const isMp4=leading.length>=8&&['ftyp','styp','moof','moov','free','wide'].includes(leading.subarray(4,8).toString('latin1'))
-   const isMp3=(leading.length>=3&&leading.subarray(0,3).toString('latin1')==='ID3')||(leading.length>=2&&leading[0]===255&&(leading[1]&224)===224)
-   if(disguisedText||!(format==='mp4'?isMp4:isMp3)){
-    await reader.cancel().catch(()=>{})
-    throw new UpstreamApiError('The YTDL server delivered HTML, JSON or an invalid audio/video file.',502,'WRONG_FILE_TYPE')
-   }
-   setFileHeaders(res,upstream,format,fileName)
+   if(req.method!=='GET')throw new ApiError('Use a single GET for the completed media file.','INVALID_REQUEST',405)
+   if(req.headers?.range)throw new ApiError('This download uses one full GET, not Range requests.','FILE_UNAVAILABLE',416)
+   const id=getId(req.query?.id),format=getKind(req.query?.format)
+   const response=await worker(`/jobs/${id}/file`,'GET',undefined,275_000)
+   const contentType=(response.headers.get('content-type')||'').toLowerCase().split(';')[0]
+   const expected=format==='mp4'?'video/mp4':'audio/mpeg'
+   if(contentType!==expected||!response.body){await response.body?.cancel().catch(()=>{});throw new ApiError('Media worker returned the wrong file type.','WRONG_FILE_TYPE',502)}
+   const reader=response.body.getReader()
+   const sample=[] as Uint8Array[]
+   let total=0
+   while(total<16){const packet=await reader.read();if(packet.done)break;sample.push(packet.value);total+=packet.value.byteLength}
+   if(total<8){await reader.cancel().catch(()=>{});throw new ApiError('Output media file is empty.','FILE_UNAVAILABLE',502)}
+   const prefix=Buffer.concat(sample.map(x=>Buffer.from(x)),total)
+   const mp4=prefix.subarray(4,8).toString('latin1')==='ftyp'
+   const mp3=prefix.subarray(0,3).toString('latin1')==='ID3'||(prefix[0]===255&&(prefix[1]&224)===224)
+   if(format==='mp4'?!mp4:!mp3){await reader.cancel().catch(()=>{});throw new ApiError('Output media content did not match its MP3/MP4 label.','WRONG_FILE_TYPE',502)}
+   const name=filename(req.query?.title,format)
    res.status(200)
-   async function* chunks(){
-    try{
-     yield leading
-     for(;;){const next=await reader.read();if(next.done)break;yield Buffer.from(next.value)}
-    }finally{reader.releaseLock()}
-   }
-   await pipeline(Readable.from(chunks()),res)
+   res.setHeader('Content-Type',expected)
+   res.setHeader('Content-Disposition',`attachment; filename*=UTF-8''${encodeURIComponent(name)}`)
+   const size=response.headers.get('content-length')
+   if(size&&/^\d+$/.test(size))res.setHeader('Content-Length',size)
+   res.setHeader('Accept-Ranges','none')
+   async function* parts(){try{yield prefix;for(;;){const next=await reader.read();if(next.done)break;yield next.value}}finally{reader.releaseLock()}}
+   await pipeline(Readable.from(parts()),res)
    return
   }
-  if(req.method!=='POST')return res.status(405).json({error:'Use POST.',code:'INVALID_REQUEST'})
+  if(req.method!=='POST')throw new ApiError('Use POST for this action.','INVALID_REQUEST',405)
   if(action==='health'){
-   if(!process.env.AUDIXO_YTDL_BASE_URL)return res.status(200).json({ready:false,message:'Configure AUDIXO_YTDL_BASE_URL in Vercel.'})
-   const v=unwrap(await json('/ytdl/status',undefined,12000))
-   const operational=v.ok===true||v.ready===true||v.status==='ready'||v.status==='ok'
-   return res.status(200).json({ready:!!(operational&&v.authenticated!==false),authenticated:v.authenticated===true,maxConcurrent:Number(v.max_concurrent??v.maxConcurrent??0),message:operational?'':'YTDL service reports it is not ready.'})
+   const value=await data('/health','GET',undefined,16000)
+   return res.status(200).json({ready:value.ok===true&&value.ready===true,authenticated:!!value.authenticated,maxConcurrent:Number(value.max_concurrent||2),message:raw(value.message,200)})
   }
   if(action==='meta'){
-   const url=youtube(req.body?.url),raw=await json('/api/preview',{url},40000),v=unwrap(unwrap(raw))
-   const id=new URL(url).searchParams.get('v')
-   const image=typeof v.thumbnail==='string'&&/^https:\/\//.test(v.thumbnail)?v.thumbnail:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`
-   return res.status(200).json({url,title:text(v.title??v.video_title??v.video?.title??'YouTube video',180),author:text(v.author??v.channel??v.uploader??'',100),duration:duration(v.duration??v.length_seconds??v.video?.duration),thumbnail:image,qualities:confirmedMp4Qualities(raw)})
+   const url=youtube(req.body?.url),value=await data('/preview','POST',{url},95000)
+   const qualities=(Array.isArray(value.qualities)?value.qualities:[]).map((q:any)=>({value:raw(q.value??q.quality,10).replace(/p$/,''),label:raw(q.label,40)})).filter((q:any)=>QUALITIES.has(q.value))
+   const unique=[...new Map(qualities.map((q:{value:string;label:string})=>[q.value,{value:q.value,label:q.label||`${q.value}p`}])).values()].sort((a:any,b:any)=>Number(a.value)-Number(b.value))
+   return res.status(200).json({url,title:raw(value.title,230),author:raw(value.uploader??value.author,150),duration:Number(value.duration)||0,thumbnail:raw(value.thumbnail,600),qualities:unique})
   }
   if(action==='convert'){
-   const url=youtube(req.body?.url),format=kind(req.body?.format),quality=String(req.body?.quality??'')
-   if(format==='mp4'){
-    if(!SUPPORTED.has(quality))throw new UpstreamApiError('Select a valid MP4 resolution.',400,'INVALID_REQUEST')
-    // Server-side revalidation on every MP4 request; no trust in a client slider.
-    const fresh=confirmedMp4Qualities(await json('/api/preview',{url},40000))
-    if(!fresh.some(q=>q.value===quality))throw new UpstreamApiError(`${quality}p is not available for this video.`,422,'QUALITY_UNAVAILABLE',fresh.map(q=>q.value))
-   }
+   const url=youtube(req.body?.url),format=getKind(req.body?.format)
+   const quality=raw(req.body?.quality,10)
+   const bitrate=Number(req.body?.bitrate??320)
+   if(format==='mp4'&&!QUALITIES.has(quality))throw new ApiError('Select a valid MP4 resolution.','INVALID_REQUEST',400)
+   if(format==='mp3'&&!BITRATES.has(bitrate))throw new ApiError('Select a valid MP3 bitrate.','INVALID_REQUEST',400)
    await verifyHuman(req.body?.turnstileToken,req)
-   const body=buildDownloadBody(url,format,quality)
-   let value:any
-   try{value=await json('/api/download',body,55000)}
-   catch(error){
-    // Legacy MP3-only servers accept {url}. Never retry auth, 403, or origin errors.
-    if(format==='mp3'&&error instanceof UpstreamApiError&&error.code==='UPSTREAM_VALIDATION'&&/format|unexpected|extra|field|parameter|schema|input|unknown/i.test(error.message))value=await json('/api/download',{url},55000)
-    else throw error
-   }
-   const record=normalizeJob(value,'',format,false,quality)
-   if(!JOB_ID.test(record.id))throw new UpstreamApiError('YTDL server did not return a valid job ID.',502,'JOB_FAILED')
-   return res.status(200).json({...record,requestedQuality:format==='mp4'?quality:undefined})
+   const ip=raw(req.headers?.['x-forwarded-for']??req.headers?.['x-real-ip']??'anonymous',150).split(',')[0].trim()
+   const clientKey=createHmac('sha256',workerConfig().token).update(ip).digest('hex')
+   const value=await data('/jobs','POST',{url,format,...(format==='mp4'?{quality}:{bitrate})},95000,clientKey)
+   return res.status(200).json(jobShape(value,format,quality))
   }
   if(action==='status'){
-   const id=String(req.body?.id??'');if(!JOB_ID.test(id))throw new UpstreamApiError('Invalid job ID.',400,'INVALID_REQUEST')
-   const format=kind(req.body?.format)
-   const quality=format==='mp4'?String(req.body?.quality??''):''
-   if(quality&&!SUPPORTED.has(quality))throw new UpstreamApiError('Invalid requested quality for job.',400,'INVALID_REQUEST')
-   return res.status(200).json(normalizeJob(await json(`/api/download/status/${encodeURIComponent(id)}`,undefined,24000),id,format,false,quality))
+   const id=getId(req.body?.id),format=getKind(req.body?.format),quality=raw(req.body?.quality,10)
+   const value=await data(`/jobs/${id}`,'GET',undefined,20000)
+   return res.status(200).json(jobShape(value,format,quality))
   }
-  return res.status(400).json({error:'Unknown media action.',code:'INVALID_REQUEST'})
- }catch(error){if(res.headersSent){res.destroy?.(error instanceof Error?error:undefined);return}return fail(res,error)}
+  throw new ApiError('Unknown media action.','INVALID_REQUEST',400)
+ }catch(error){return sendFailure(res,error)}
 }

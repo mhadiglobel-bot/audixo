@@ -23,7 +23,7 @@ const answerCards=[
  {title:'What is AUDIXO?',tag:'ONLINE STUDIO',copy:'AUDIXO is an online audio editor for trimming, mixing and shaping sound directly in your web browser. Use focused effects or open the full multitrack studio.'},
  {title:'Can I use AUDIXO on mobile?',tag:'MOBILE READY',copy:'Yes. The mobile layout supports import, playback, basic editing and export, and compatible browsers can install AUDIXO as a web app. Large tracks and AI stems may need more memory.'},
  {title:'Does AUDIXO support echo?',tag:'FX CONTROL',copy:'Yes. A dedicated Echo dock controls delay time, echo mix and feedback independently of reverb. You can apply echo to individual clips or as part of a preset.'},
- {title:'Which MP3 and MP4 formats are available?',tag:'EXPORT MODES',copy:'MP3 defaults to a 320 kbps encoding request; smaller bitrates can be re-encoded locally for shorter recordings. Video resolutions depend on the source and converter API.'},
+ {title:'Which MP3 and MP4 formats are available?',tag:'EXPORT MODES',copy:'MP3 defaults to 320 kbps, with selectable encoder bitrates. Video resolutions depend on the source formats found by the private processing worker.'},
 ]
 
 function AnswerPreview({title,tag,copy,index}:{title:string;tag:string;copy:string;index:number}){

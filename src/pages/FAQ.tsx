@@ -17,7 +17,7 @@ export const faqs=[
  ['Does 320 kbps restore missing detail?','No. It controls the output bitrate. It cannot recreate detail that is already missing from the source. Choose WAV when you want to avoid another lossy encoding step.'],
  ['What about long recordings?','Long files use a streaming-oriented editor path instead of forcing the full recording through memory-heavy creative processing. Trim a shorter section before using heavier local AI features.'],
  ['Can I install AUDIXO on my phone?','On Android Chrome and Edge, choose Install app when it is offered. On iPhone Safari, tap Share and Add to Home Screen. The installed web app uses a touch-optimized layout; conversion still needs the network.'],
- ['Why is 4K not always selectable?','Your video and conversion API must both support 2160p for 4K. 1440p is usually called 2K or QHD. When API metadata is missing, a selected resolution is only an unverified request.'],
+ ['Why is 4K not always selectable?','4K appears only when the original video has a usable 2160p video stream and audio for merging. The processing worker checks exact output dimensions before delivery.'],
  ['Is Echo different from Reverb?','Yes. Echo repeats a sound with adjustable delay, mix and feedback. Reverb adds a diffuse room tail. In the Full Studio, you can enable either independently in its dedicated tab.']
 ]
 

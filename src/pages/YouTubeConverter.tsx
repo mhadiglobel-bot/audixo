@@ -2,11 +2,11 @@ import {useEffect,useRef,useState} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,confirmedVideoOptions,type Mp3Bitrate} from '../components/QualityRail'
-import {downloadFile,downloadMp3AtBitrate,verifyVideoOutput,explainMediaError,MediaServiceError,TERMINAL_JOB_CODES,mediaRequest,waitForJob,type MediaPreview,type MediaJob,type MediaKind} from '../services/media'
+import {downloadFile,verifyVideoOutput,explainMediaError,MediaServiceError,TERMINAL_JOB_CODES,mediaRequest,waitForJob,type MediaPreview,type MediaJob,type MediaKind} from '../services/media'
 
 type Health={ready:boolean;authenticated?:boolean;maxConcurrent?:number;message?:string}
 type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:Mp3Bitrate;duration:number;createdAt?:number}
-const KEY='audixo-conversion-job-v55'
+const KEY='audixo-conversion-job-v56'
 const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
 function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)&&Date.now()-Number(value.createdAt||0)<14*60_000?value:null}catch{return null}}
 const turnstileSiteKey=import.meta.env.VITE_AUDIXO_TURNSTILE_SITE_KEY?.trim()||''
@@ -50,7 +50,7 @@ export default function YouTubeConverter(){
  const [saved,setSaved]=useState<SavedJob|null>(savedJob),[completed,setCompleted]=useState<SavedJob|null>(null)
  const change=useRef(0),running=useRef<AbortController|null>(null)
  const effectiveMp3Bitrate=mp3Bitrate
- const downloadButtonText=busy||(format==='mp4'?(quality?`Download MP4 · ${quality}p`:preview?'MP4 not available for this video':'Analyze video for MP4'):`Download MP3${preview?.duration>0&&preview.duration<=300?` · ${effectiveMp3Bitrate} kbps local`:' · server output'}`)
+ const downloadButtonText=busy||(format==='mp4'?(quality?`Download MP4 · ${quality}p`:preview?'MP4 not available for this video':'Analyze video for MP4'):`Download MP3 · ${effectiveMp3Bitrate} kbps`)
  useEffect(()=>{
   const controller=new AbortController()
   mediaRequest<Health>('health',{},controller.signal).then(setHealth).catch(e=>{if(!controller.signal.aborted)setHealth({ready:false,message:explainMediaError(e)})})
@@ -70,7 +70,7 @@ export default function YouTubeConverter(){
  const finish=async(record:SavedJob,controller:AbortController)=>{
   setBusy(`Preparing ${record.format.toUpperCase()}...`)
   const finished=await waitForJob(record.id,record.format,item=>{
-   setJob(item);setBusy(item.state==='queued'?'Queued on YTDL server...':`${item.stage||'Processing'} ${record.format.toUpperCase()}${Number.isFinite(item.progress)?` · ${Math.round(item.progress||0)}%`:''}${item.downloadSpeed?` · ${item.downloadSpeed}`:''}${item.eta?` · ETA ${item.eta}`:''}`)
+   setJob(item);setBusy(item.state==='queued'?'Queued on AUDIXO worker...':`${item.stage||'Processing'} ${record.format.toUpperCase()}${Number.isFinite(item.progress)?` · ${Math.round(item.progress||0)}%`:''}${item.downloadSpeed?` · ${item.downloadSpeed}`:''}${item.eta?` · ETA ${item.eta}`:''}`)
   },controller.signal,record.format==='mp4'?record.quality:'')
   const file=finished.files?.[0];if(!file)throw new Error('Conversion completed without a downloadable file.')
   setJob(finished)
@@ -80,19 +80,16 @@ export default function YouTubeConverter(){
    const output=await verifyVideoOutput(file,record.title,record.quality,finished,controller.signal)
    // Origin removes each file after ONE GET; do not HEAD or metadata-preview it.
    await downloadFile(file,record.title,'mp4',controller.signal)
-   detail=output.verified?`Verified MP4 ${output.actual}p (${output.width} x ${output.height}) from YTDL status.`:`Requested ${record.quality}p MP4. The backend did not supply final dimensions; inspect the downloaded file to confirm actual resolution.`
+   detail=output.verified?`Verified MP4 ${output.actual}p (${output.width} x ${output.height}) from AUDIXO worker status.`:`Requested ${record.quality}p MP4. The worker did not supply final dimensions; inspect the downloaded file to confirm actual resolution.`
   }else{
    const target=record.mp3Bitrate||320
-   if(record.duration>0&&record.duration<=300){
-    setBusy(`Encoding ${target} kbps MP3 on this device...`)
-    await downloadMp3AtBitrate(file,record.title,target,controller.signal)
-    detail=`MP3 encoded at ${target} kbps.`
-   }else{
-    if(target!==320)throw new Error('For files longer than five minutes, select 320 kbps or configure server-side bitrate encoding.')
-    // The legacy MP3 API does not accept a bitrate field; never assume its output equals the selected target.
-    await downloadFile(file,record.title,'mp3',controller.signal)
-    detail=finished.reportedKbps?`MP3; server reports ${finished.reportedKbps} kbps.`:'MP3; the backend did not report an output bitrate.'
-   }
+   const actual=finished.reportedKbps
+   if(actual&&Math.abs(actual-target)>8)throw new MediaServiceError(`The MP3 output is ${actual} kbps instead of the selected ${target} kbps. The incorrect file was not downloaded.`,'QUALITY_MISMATCH',422,true)
+   // AUDIXO V56 private worker encodes MP3 at the selected bitrate itself.
+   // One full GET only; do not consume one-time output for local re-encoding.
+   await downloadFile(file,record.title,'mp3',controller.signal)
+   detail=actual?`MP3 encoded at ${actual} kbps (worker-verified).`:`MP3 requested at ${target} kbps. The server did not provide final bitrate metadata.`
+
   }
   if(controller.signal.aborted)return
   // A one-time file cannot be fetched twice. A new download creates a new job.
@@ -108,15 +105,12 @@ export default function YouTubeConverter(){
     return
    }
   }
-  if(recordFormat==='mp3'&&mp3Bitrate!==320&&(!(preview.duration>0)||preview.duration>300)){
-   setNotice('Local bitrate encoding supports clips up to five minutes. Select 320 kbps for the server file.');return
-  }
   running.current?.abort();const controller=new AbortController();running.current=controller
   setNotice('');setCompleted(null);setJob(null);setBusy(`Starting ${recordFormat.toUpperCase()}...`)
   let createdHere=false
   try{
    // Exactly the selected quality; never silently create a lower-quality job.
-   const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{}),...(turnstileSiteKey?{turnstileToken:humanToken}:{})},controller.signal)
+   const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{bitrate:mp3Bitrate}),...(turnstileSiteKey?{turnstileToken:humanToken}:{})},controller.signal)
    if(created.state==='failed')throw new MediaServiceError(created.error||'Conversion rejected.',created.errorCode||'JOB_FAILED')
    if(!created.id)throw new Error('The API did not return a job ID.')
    const record:SavedJob={id:created.id,title:preview.title,format:recordFormat,quality:recordFormat==='mp3'?'':recordQuality,mp3Bitrate:recordFormat==='mp3'?mp3Bitrate:undefined,duration:preview.duration,createdAt:Date.now()}
@@ -133,7 +127,7 @@ export default function YouTubeConverter(){
  const resume=()=>{if(saved)void continueRecord(saved)}
  const downloadAgain=()=>{if(completed)void start()}
  const stop=()=>{running.current?.abort();running.current=null;setBusy('');setNotice('Stopped checking. The remote job may continue; Resume checks the same job.')}
- const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Choose a bitrate for short clips',glyph:'\u266b'},{id:'mp4' as const,title:'MP4 Video',copy:'Download at the selected resolution',glyph:'\u25b6'}]
+ const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Choose your MP3 bitrate',glyph:'\u266b'},{id:'mp4' as const,title:'MP4 Video',copy:'Download at the selected resolution',glyph:'\u25b6'}]
  return <SiteShell><Seo title="YouTube to MP3 & MP4 Downloader | AUDIXO" description="Analyze an authorized YouTube video, request MP3 audio, or choose only the MP4 resolutions verified by the conversion server." path="/tools/youtube-to-mp3"/>
   <main className="page-shell ax39-converter">
    <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / MEDIA CONVERTER</div><h1>One link.<br/><em>Sound or video.</em></h1><p>Choose MP3 audio or MP4 video in one clear workspace. Analyze the original title, select a supported format and let your conversion server handle the rest.</p><div className={`ax39-server ${health?.ready?'ready':health?'not-ready':'loading'}`}><i/>{health?.ready?'Conversion API connected':health?'Connection requires attention':'Checking API connection'}{health?.ready&&health.maxConcurrent?` · ${health.maxConcurrent} concurrent jobs`:''}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · server encoded</div><div className="ax39-art-chip two">MP4 · source resolution</div></div></div>
@@ -147,7 +141,7 @@ export default function YouTubeConverter(){
      <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Set video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={preview?.duration||0} disabled={!!busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={preview?.qualities||[]} analyzed={!!preview} disabled={!!busy}/>}
       </div></div>
      <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><HumanCheck onVerified={setHumanToken} resetKey={humanReset}/><p className="ax52-usage-note">Use media you are permitted to download or transform.</p><button type="button" className="ax39-create ax42-download" disabled={!preview||!!busy||(turnstileSiteKey&&!humanToken)||(format==='mp4'&&(!quality||!confirmedVideoOptions(preview.qualities||[]).some(item=>item.value===quality)))} onClick={start}><span>{downloadButtonText}</span><b>↓</b></button>
-       {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>{job?.message||'Live YTDL progress is shown when available; the server cleans up the file after a single download.'}{job?.downloadPart&&job.downloadPartsTotal?` · Stream ${job.downloadPart}/${job.downloadPartsTotal}`:''}</small></div>}
+       {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>{job?.message||'Live processing progress appears as your audio/video is prepared; the server cleans up the file after a single download.'}{job?.downloadPart&&job.downloadPartsTotal?` · Stream ${job.downloadPart}/${job.downloadPartsTotal}`:''}</small></div>}
        {saved&&!busy&&<button className="ax39-resume" onClick={resume}>↻ Resume earlier {saved.format.toUpperCase()} job</button>}
        {completed&&!busy&&<button className="ax39-resume" onClick={downloadAgain}>Start a new download job</button>}
       </div></div>

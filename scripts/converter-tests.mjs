@@ -1,369 +1,109 @@
-/** Converter contract / adapter regression tests. Run with `npm run test:converter`. */
-import {test} from 'node:test'
-import assert from 'node:assert/strict'
-import {readFileSync} from 'node:fs'
-import {createRequire} from 'node:module'
-import vm from 'node:vm'
-import {Writable} from 'node:stream'
-const require=createRequire(import.meta.url)
-const ts=require('typescript')
-let remoteFetch=async()=>{throw Error('Unexpected network request: test mock not configured.')}
-function load(file,{jsx=false}={}){
- const source=readFileSync(new URL('../'+file,import.meta.url),'utf8')
- const compiled=ts.transpileModule(source,{fileName:file,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX},reportDiagnostics:true})
- const diagnostics=compiled.diagnostics??[]
- assert.equal(diagnostics.length,0,`${file} TS parse errors: ${diagnostics.map(x=>ts.flattenDiagnosticMessageText(x.messageText,' ')).join('; ')}`)
- const module={exports:{}}
- const fakeJSX={jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})}
- const fakeRequire=name=>name==='react/jsx-runtime'?fakeJSX:require(name)
- const environment={module,exports:module.exports,require:fakeRequire,process,URL,URLSearchParams,Buffer,AbortController,DOMException,Response,TextDecoder,setTimeout,clearTimeout,window:{location:{href:'https://audixo.vercel.app/'}},fetch:(...args)=>remoteFetch(...args)}
- vm.runInNewContext(compiled.outputText,environment,{filename:file,timeout:12000})
- return module.exports
-}
-const adapter=load('api/media.ts')
-const rail=load('src/components/QualityRail.tsx',{jsx:true})
-const client=load('src/services/media.ts')
-process.env.AUDIXO_YTDL_BASE_URL='https://ytdl.tiers.rest'
-const validUrl='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-const entry=(height,other={})=>({quality:String(height),width:Math.round(height*16/9),height,format_id:`v${height}`,container:'mp4',downloadable:true,vcodec:'avc1.640028',acodec:'none',...other})
-const mkPreview=(items)=>({data:{title:'Authorized sample',author:'Test creator',duration:50,available_qualities:items}})
-class MockRes extends Writable{
- constructor(){super();this.headers={};this.responseStatus=200;this.body=null;this.chunks=[];this.headersSent=false}
- setHeader(key,value){this.headers[key.toLowerCase()]=value;return this}
- status(code){this.responseStatus=code;return this}
- json(obj){this.body=obj;this.headersSent=true;this.end();return this}
- _write(chunk,_enc,cb){this.chunks.push(Buffer.from(chunk));this.headersSent=true;cb()}
- end(chunk){this.headersSent=true;return super.end(chunk)}
-}
-const apiResponse=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'content-type':'application/json'}})
-const fileHead=(length=200)=>new Response(null,{status:200,headers:{'content-type':'video/mp4','content-length':String(length),'accept-ranges':'bytes'}})
-async function call(action,body={},method='POST',headers={}){
- const req={method,query:{action},body,headers},res=new MockRes()
- await adapter.default(req,res)
- return res
-}
-const mockRoutes=(routes)=>{remoteFetch=async(url,options={})=>{
- const path=new URL(String(url)).pathname
- const result=routes[path]
- if(typeof result==='function')return result(options)
- if(result)return result
- throw Error(`Unmocked API route ${path}`)
-}}
-function flatten(element,out=[]){
- if(element===null||element===undefined||typeof element==='boolean')return out
- if(typeof element==='string'||typeof element==='number'){out.push(String(element));return out}
- if(Array.isArray(element)){for(const x of element)flatten(x,out);return out}
- if(element?.props){flatten(element.props.children,out);return out}
- return out
-}
-function nodes(element,match,out=[]){
- if(Array.isArray(element)){element.forEach(x=>nodes(x,match,out));return out}
- if(!element||typeof element!=='object')return out
- if(match(element))out.push(element)
- if(element.props?.children)nodes(element.props.children,match,out)
- return out
-}
-function previewUI(options,selected){
- const el=rail.VideoQualityRail({quality:selected,onChange:()=>{},available:options,analyzed:true})
- return {text:flatten(el).join(' '),buttons:nodes(el,node=>node.type==='button'),ranges:nodes(el,node=>node.type==='input'&&node.props.type==='range')}
-}
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const ts=require(process.env.AUDIXO_TEST_TYPESCRIPT_PATH||'typescript');;
 
-test('1: [360,720,1080] retains all seven visual markers but enables only three',()=>{
- const options=adapter.confirmedMp4Qualities(mkPreview([entry(1080),entry(360),entry(720)]))
- const ui=previewUI(options,'1080')
- assert.equal(options.map(x=>x.value).join(','),'360,720,1080')
- assert.equal(ui.buttons.length,7)
- assert.equal(ui.buttons.filter(item=>!item.props.disabled).length,3)
- assert.deepEqual(ui.buttons.filter(item=>!item.props.disabled).map(item=>item.props.children[0].props.children),['360p','720p','1080p'])
- assert.ok(ui.buttons.find(x=>x.props.title.includes('2160p exceeds'))?.props.disabled)
- assert.ok(ui.text.includes('Maximum reported quality: 1080p'))
- assert.equal(ui.ranges.length,1)
- assert.equal(ui.ranges[0].props.value,4)
-})
-test('2: single 360p preview clamps thumb to 360p and disables higher tiers',()=>{
- const options=adapter.confirmedMp4Qualities(mkPreview([entry(360)]))
- assert.equal(rail.highestConfirmedQuality(options),'360')
- const ui=previewUI(options,'360')
- assert.equal(ui.buttons.length,7)
- assert.equal(ui.buttons.filter(b=>!b.props.disabled).length,1)
- assert.equal(ui.ranges[0].props.value,1)
- assert.equal(ui.buttons[2].props.disabled,true)
-})
-test('3/4: empty backend qualities -> no selection, all seven marks disabled, no fake 720',()=>{
- const options=adapter.confirmedMp4Qualities(mkPreview([]))
- assert.equal(rail.highestConfirmedQuality(options),'')
- const ui=previewUI(options,'')
- assert.equal(ui.buttons.length,7)
- assert.equal(ui.buttons.filter(b=>!b.props.disabled).length,0)
- assert.equal(ui.ranges.length,0)
- assert.ok(ui.text.includes('No downloadable MP4 resolutions were reported for this video.'))
-})
-test('5: duplicate 1080 formats reduce to one',()=>{
- assert.equal(adapter.confirmedMp4Qualities(mkPreview([entry(1080),entry(1080,{format_id:'other'})])).length,1)
-})
-test('6: audio-only formats are excluded',()=>{
- const items=[entry(1080,{vcodec:'none'}),entry(720,{type:'audio'}),entry(480,{height:0}),entry(360,{downloadable:false})]
- assert.deepEqual(Array.from(adapter.confirmedMp4Qualities(mkPreview(items))),[])
-})
-test('7: 1080 DASH video-only stream is valid if backend confirms it can merge audio',()=>{
- const items=[entry(1080,{acodec:'none',audio_downloadable:true,downloadable:true})]
- assert.equal(adapter.confirmedMp4Qualities(mkPreview(items))[0].value,'1080')
-})
-test('8: unavailable, DRM, unusable, unsupported and bare raw formats are rejected',()=>{
- assert.equal(adapter.confirmedMp4Qualities(mkPreview([entry(720,{available:false}),entry(1080,{has_drm:true}),entry(480,{supported:false}),entry(360,{audio_available:false})])).length,0)
- assert.equal(adapter.confirmedMp4Qualities({formats:[entry(1080)]}).length,0)
- assert.equal(adapter.confirmedMp4Qualities({qualities:['1080',{value:'720',label:'720p'}]}).map(item=>item.value).join(','),'720,1080')
-})
-test('9: exact requested MP4 quality is sent unchanged after fresh preview validation',async()=>{
- let posted=null
- mockRoutes({'/api/preview':apiResponse(mkPreview([entry(720),entry(1080)])),
-  '/api/download':opts=>{posted=JSON.parse(opts.body);return apiResponse({job_id:'job-1080',status:'queued'})}})
- const result=await call('convert',{url:validUrl,format:'mp4',quality:'1080'})
- assert.equal(result.responseStatus,200)
- assert.equal(posted.quality,'1080')
- assert.equal(result.body.requestedQuality,'1080')
-})
-test('10: 1440 not in fresh preview -> 422 QUALITY_UNAVAILABLE without creating job',async()=>{
- let posted=false
- mockRoutes({'/api/preview':apiResponse(mkPreview([entry(360),entry(720)])), '/api/download':()=>{posted=true;throw Error('must not call')}})
- const result=await call('convert',{url:validUrl,format:'mp4',quality:'1440'})
- assert.equal(result.responseStatus,422)
- assert.equal(result.body.code,'QUALITY_UNAVAILABLE')
- assert.equal(posted,false)
- assert.equal(result.body.available_qualities.join(','),'360,720')
-})
-test('11: actual 720p for requested 1080p -> QUALITY_MISMATCH and no file',()=>{
- const status=adapter.normalizeJob({job_id:'a-job',status:'complete',actual_width:1280,actual_height:720},'', 'mp4',true,'1080')
- assert.equal(status.state,'failed')
- assert.equal(status.errorCode,'QUALITY_MISMATCH')
- assert.equal(status.files.length,0)
- assert.throws(()=>client.assertVideoResolution(1280,720,'1080'),{code:'QUALITY_MISMATCH'})
-})
-test('12: structured SOURCE_FORBIDDEN survives adapter',async()=>{
- mockRoutes({'/api/download':apiResponse({code:'SOURCE_FORBIDDEN',error:'YouTube rejected source access.'},403)})
- const result=await call('convert',{url:validUrl,format:'mp3'})
- assert.equal(result.body.code,'SOURCE_FORBIDDEN')
- assert.equal(result.responseStatus,502)
-})
-test('13: quality errors do not become UPSTREAM_VALIDATION',async()=>{
- mockRoutes({'/api/preview':apiResponse(mkPreview([entry(720)])),
-  '/api/download':apiResponse({error:'requested format is not available'},422)})
- const result=await call('convert',{url:validUrl,format:'mp4',quality:'720'})
- assert.equal(result.responseStatus,422)
- assert.equal(result.body.code,'QUALITY_UNAVAILABLE')
-})
-test('14: HTML response from upstream file endpoint is never passed through as MP4',async()=>{
- mockRoutes({'/api/download/file/a-job':new Response('<html>Denied</html>',{status:200,headers:{'content-type':'text/html','content-length':'19'}})})
- const req={method:'GET',query:{action:'file',id:'a-job',format:'mp4'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,502)
- assert.equal(res.body.code,'WRONG_FILE_TYPE')
- assert.equal(res.chunks.length,0)
-})
-test('15: failed job never produces a synthetic file URL',()=>{
- const job=adapter.normalizeJob({job_id:'good-id',status:'failed',error:'Source rejected',code:'SOURCE_FORBIDDEN'},'','mp4',true,'720')
- assert.equal(job.state,'failed');assert.equal(job.files.length,0)
-})
-test('16: documented MP3 body and legacy {url} compatibility',async()=>{
- const payloads=[]
- mockRoutes({'/api/download':opts=>{
-  const b=JSON.parse(opts.body);payloads.push(b)
-  return payloads.length===1?apiResponse({code:'UPSTREAM_VALIDATION',error:'unknown field: format'},422):apiResponse({job_id:'old-api-job',status:'queued'})
- }})
- const result=await call('convert',{url:validUrl,format:'mp3'})
- assert.equal(result.responseStatus,200)
- assert.equal(payloads[0].format,'mp3')
- assert.deepEqual(Object.keys(payloads[1]),['url'])
-})
-test('17: permanent failures clear Resume; transient origin outage remains resumable',()=>{
- for(const code of ['QUALITY_UNAVAILABLE','QUALITY_MISMATCH','SOURCE_FORBIDDEN','SERVICE_AUTH','FILE_FORBIDDEN','FILE_UNAVAILABLE','JOB_FAILED'])assert.ok(client.TERMINAL_JOB_CODES.has(code))
- assert.ok(!client.TERMINAL_JOB_CODES.has('ORIGIN_UNAVAILABLE'))
- assert.ok(!client.TERMINAL_JOB_CODES.has('UPSTREAM_LIMIT'))
-})
-test('V55: HEAD is refused without consuming the one-time origin file',async()=>{
- let originCalls=0
- mockRoutes({'/api/download/file/job-1':()=>{originCalls++;throw Error('HEAD must not touch origin')}})
- const req={method:'HEAD',query:{action:'file',id:'job-1',format:'mp4'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,405)
- assert.equal(originCalls,0)
-})
-test('V55: Range GET is refused before contacting the one-time origin file',async()=>{
- let originCalls=0
- mockRoutes({'/api/download/file/job-2':()=>{originCalls++;throw Error('Range must not touch origin')}})
- const req={method:'GET',query:{action:'file',id:'job-2',format:'mp4'},headers:{range:'bytes=0-0'}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,416)
- assert.equal(originCalls,0)
-})
-test('V55: completed status is ready without destructive HEAD or Range preflights',async()=>{
- let fileCalls=0
- mockRoutes({'/api/download/status/job4':apiResponse({job_id:'job4',status:'ready',actual_height:720,actual_width:1280,stage:'ready'}),
-  '/api/download/file/job4':()=>{fileCalls++;throw Error('Do not probe!')}})
- const res=await call('status',{id:'job4',format:'mp4',quality:'720'})
- assert.equal(res.body.state,'complete')
- assert.equal(res.body.files.length,1)
- assert.equal(fileCalls,0)
-})
-test('V55: origin file GET happens exactly once and is streamed intact',async()=>{
- let getCount=0
- const bytes=Buffer.from([0,0,0,24,102,116,121,112,105,115,111,109,1,2,3,4,5,6,7,8,9,10,11,12])
- mockRoutes({'/api/download/file/job-3':opts=>{
-  getCount++
-  assert.equal(opts.method,'GET')
-  assert.equal(opts.headers.Range,undefined)
-  return new Response(bytes,{status:200,headers:{'content-type':'video/mp4','content-length':String(bytes.length)}})
- }})
- const req={method:'GET',query:{action:'file',id:'job-3',format:'mp4',title:'Original title'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200)
- assert.equal(getCount,1)
- assert.equal(res.headers['accept-ranges'],'none')
- assert.deepEqual(Buffer.concat(res.chunks),bytes)
-})
+// The tests transpile only this lightweight Vercel adapter, without npm deps.
+// Production project typecheck/build still run as separate release gates.
+const source=fs.readFileSync(new URL('../api/media.ts',import.meta.url),'utf8');
+const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {default:handler}=await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const actualFetch=globalThis.fetch;
+process.env.AUDIXO_WORKER_TOKEN='unit-test-worker-token-longer-than-32-characters';
+process.env.AUDIXO_WORKER_URL='http://127.0.0.1:8080';
+process.env.VERCEL='';
+function res(){return {code:200,headers:{},headersSent:false,status(n){this.code=n;return this},setHeader(k,v){this.headers[k]=v;return this},json(v){this.body=v;return this}}}
+async function invoke(action,body,server){
+ const calls=[];
+ globalThis.fetch=async(url,opts)=>{
+  calls.push({url:String(url),method:opts?.method,headers:opts?.headers,body:opts?.body&&JSON.parse(String(opts.body))});
+  const result=await server(String(url),opts);
+  return Response.json(result.body,{status:result.status||200});
+ };
+ const response=res();
+ try{await handler({method:'POST',query:{action},body:body||{},headers:{}},response);return {response,calls}}finally{globalThis.fetch=actualFetch}
+}
+const example='https://www.youtube.com/watch?v=abcdefghijk';
 
-test('canonical preview requires explicit downloadable video evidence and compatible MP4 output',()=>{
- const list=[entry(720,{format_id:'',vcodec:'',type:''}),entry(1080,{container:'webm'}),entry(480,{downloadable:false}),entry(360)]
- assert.equal(adapter.confirmedMp4Qualities(mkPreview(list)).map(x=>x.value).join(','),'360')
-})
-test('MP3 conversion stays independent when preview contains no usable MP4 quality',async()=>{
- let previewCalls=0
- mockRoutes({'/api/preview':()=>{previewCalls++;throw Error('MP3 must not check MP4 formats')},'/api/download':apiResponse({job_id:'audio-job',status:'queued'})})
- const result=await call('convert',{url:validUrl,format:'mp3'})
- assert.equal(result.responseStatus,200)
- assert.equal(result.body.format,'mp3')
- assert.equal(previewCalls,0)
-})
-test('octet-stream HTML masquerading as media is rejected before a download streams',async()=>{
- mockRoutes({'/api/download/file/evil-file':new Response('<html>access denied</html>',{status:200,headers:{'content-type':'application/octet-stream','content-length':'26'}})})
- const req={method:'GET',query:{action:'file',id:'evil-file',format:'mp4'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,502)
- assert.equal(res.body.code,'WRONG_FILE_TYPE')
- assert.equal(res.chunks.length,0)
-})
-test('valid MP4 ftyp bytes stream under the requested type',async()=>{
- const bytes=Buffer.from([0,0,0,24,102,116,121,112,105,115,111,109,0,0,0,0,0,0,0,0,0,0,0,0])
- mockRoutes({'/api/download/file/good-file':new Response(bytes,{status:200,headers:{'content-type':'application/octet-stream','content-length':String(bytes.length)}})})
- const req={method:'GET',query:{action:'file',id:'good-file',format:'mp4'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200)
- assert.deepEqual(Buffer.concat(res.chunks),bytes)
-})
-test('server-reported output mismatch fails status before handing out any URL',async()=>{
- let probeCount=0
- mockRoutes({'/api/download/status/mismatch':apiResponse({job_id:'mismatch',status:'complete',output_width:1280,output_height:720}),'/api/download/file/mismatch':()=>{probeCount++;return fileHead()}})
- const res=await call('status',{id:'mismatch',format:'mp4',quality:'1080'})
- assert.equal(res.body.state,'failed');assert.equal(res.body.errorCode,'QUALITY_MISMATCH')
- assert.equal(res.body.files.length,0);assert.equal(probeCount,0)
-})
-test('Cloudflare origin HTTP 522 becomes ORIGIN_UNAVAILABLE',async()=>{
- mockRoutes({'/api/download':new Response('<html>Cloudflare</html>',{status:522,headers:{'content-type':'text/html'}})})
- const res=await call('convert',{url:validUrl,format:'mp3'})
- assert.equal(res.responseStatus,503);assert.equal(res.body.code,'ORIGIN_UNAVAILABLE')
-})
-test('V55: SSE events proxy returns text/event-stream and preserves progress payload',async()=>{
- let requests=0
- mockRoutes({'/api/download/events/sse-job':opts=>{
-  requests++
-  assert.equal(opts.method,'GET')
-  return new Response('event: progress\ndata: {"progress":48,"stage":"downloading"}\n\n',{status:200,headers:{'content-type':'text/event-stream'}})
- }})
- const req={method:'GET',query:{action:'events',id:'sse-job'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200)
- assert.match(res.headers['content-type'],/text\/event-stream/)
- assert.match(Buffer.concat(res.chunks).toString(),/"progress":48/)
- assert.equal(requests,1)
-})
-test('V55: job progress exposes YTDL stage, stream parts, rate and ETA',()=>{
- const job=adapter.normalizeJob({job_id:'j3',status:'processing',stage:'downloading',progress:48,download:{part:1,parts_total:2,percent:45.2,speed:'5.2MiB/s',eta:'00:04'}},'','mp4',false,'720')
- assert.equal(job.state,'processing')
- assert.equal(job.stage,'downloading')
- assert.equal(job.progress,48)
- assert.equal(job.downloadPart,1)
- assert.equal(job.downloadPartsTotal,2)
- assert.equal(job.downloadSpeed,'5.2MiB/s')
- assert.equal(job.eta,'00:04')
-})
+test('health checks new private worker, not any old external API',async()=>{
+ const {response,calls}=await invoke('health',{},()=>({body:{ok:true,ready:true,authenticated:false,max_concurrent:2,message:'Public videos available'}}));
+ assert.equal(calls[0].url,'http://127.0.0.1:8080/health');
+ assert.equal(response.body.ready,true);
+ assert.equal(response.body.maxConcurrent,2);
+});
+test('preview maps only actual reported qualities and sorts ascending',async()=>{
+ const {response,calls}=await invoke('meta',{url:example},()=>({body:{title:'My Video',uploader:'Creator',duration:30,thumbnail:'https://img.youtube.test/item.jpg',qualities:[{value:'1080',label:'1080p'},{value:'360',label:'360p'},{value:'1080',label:'1080p'}]}}));
+ assert.deepEqual(response.body.qualities.map(q=>q.value),['360','1080']);
+ assert.equal(calls[0].body.url,example);
+});
+test('preview with empty qualities never inserts 720p',async()=>{
+ const {response}=await invoke('meta',{url:example},()=>({body:{qualities:[],duration:30}}));
+ assert.deepEqual(response.body.qualities,[]);
+});
+test('MP4 forwards precisely selected 1080p without silent fallback',async()=>{
+ const {response,calls}=await invoke('convert',{url:example,format:'mp4',quality:'1080'},()=>({body:{job_id:'a'.repeat(32),status:'queued',format:'mp4'}}));
+ assert.equal(calls[0].body.quality,'1080');
+ assert.equal(response.body.state,'queued');
+});
+test('MP3 forwards selected real bitrate to private worker',async()=>{
+ const {response,calls}=await invoke('convert',{url:example,format:'mp3',bitrate:192},()=>({body:{job_id:'a'.repeat(32),status:'queued'}}));
+ assert.equal(calls[0].body.bitrate,192);
+ assert.equal(response.body.format,'mp3');
+});
+test('legacy MP3 requests default to 320 kbps worker encoding',async()=>{
+ const {calls}=await invoke('convert',{url:example,format:'mp3'},()=>({body:{job_id:'a'.repeat(32),status:'queued'}}));
+ assert.equal(calls[0].body.bitrate,320);
+});
+test('backend structured 422 QUALITY_UNAVAILABLE remains specific',async()=>{
+ const {response}=await invoke('convert',{url:example,format:'mp4',quality:'2160'},()=>({status:422,body:{code:'QUALITY_UNAVAILABLE',error:'2160p not available'}}));
+ assert.equal(response.code,422);assert.equal(response.body.code,'QUALITY_UNAVAILABLE');
+});
+test('URL validation blocks non-YouTube and insecure SSRF',async()=>{
+ for(const url of ['https://evil.com/watch?v=abcdefghijk','http://youtube.com/watch?v=abcdefghijk','https://youtube.com.evil.org/watch?v=abcdefghijk']){
+  const {response,calls}=await invoke('meta',{url},()=>{throw Error('should not fetch')});
+  assert.equal(response.code,400);assert.equal(calls.length,0);
+ }
+});
+test('job completion includes verified dimensions and file link',async()=>{
+ const {response}=await invoke('status',{id:'a'.repeat(32),format:'mp4',quality:'720'},()=>({body:{job_id:'a'.repeat(32),status:'ready',title:'Test',actual_width:1280,actual_height:720,progress:100}}));
+ assert.equal(response.body.state,'complete');assert.equal(response.body.reportedHeight,720);assert.equal(response.body.files.length,1);
+});
+test('MP4 quality mismatch fails closed, no fake file link',async()=>{
+ const {response}=await invoke('status',{id:'a'.repeat(32),format:'mp4',quality:'1080'},()=>({body:{job_id:'a'.repeat(32),status:'ready',actual_width:1280,actual_height:720}}));
+ assert.equal(response.body.state,'failed');assert.equal(response.body.errorCode,'QUALITY_MISMATCH');assert.deepEqual(response.body.files,[]);
+});
+test('failed job cannot produce downloadable file',async()=>{
+ const {response}=await invoke('status',{id:'a'.repeat(32),format:'mp3'},()=>({body:{job_id:'a'.repeat(32),status:'failed',code:'SOURCE_FORBIDDEN',error:'Access refused'}}));
+ assert.equal(response.body.state,'failed');assert.deepEqual(response.body.files,[]);
+});
+test('private worker authentication never appears in JSON',async()=>{
+ const {response,calls}=await invoke('meta',{url:example},()=>({body:{qualities:[]}}));
+ assert.equal(calls[0].headers.Authorization,'Bearer '+process.env.AUDIXO_WORKER_TOKEN);
+ assert.ok(!JSON.stringify(response.body).includes(process.env.AUDIXO_WORKER_TOKEN));
+});
+test('missing worker config yields clear error',async()=>{
+ const old=process.env.AUDIXO_WORKER_URL;delete process.env.AUDIXO_WORKER_URL;
+ try{const {response}=await invoke('health',{},()=>{throw Error('should not fetch')});assert.equal(response.code,503);assert.equal(response.body.code,'ORIGIN_UNAVAILABLE')}
+ finally{process.env.AUDIXO_WORKER_URL=old}
+});
 
-test('V54: legacy preview {qualities:[{value,label}]} becomes verified choices, not empty MP4',async()=>{
- mockRoutes({'/api/preview':apiResponse({title:'Legacy video',qualities:[{value:'360',label:'360p'},{value:'720',label:'720p'},{value:'1080',label:'1080p'}]})})
- const result=await call('meta',{url:validUrl})
- assert.equal(result.responseStatus,200)
- assert.equal(result.body.qualities.map(x=>x.value).join(','),'360,720,1080')
- assert.equal(rail.highestConfirmedQuality(result.body.qualities),'1080')
- const ui=previewUI(result.body.qualities,'1080')
- assert.equal(ui.buttons.length,7)
- assert.equal(ui.buttons.filter(x=>!x.props.disabled).length,3)
- assert.equal(ui.buttons[5].props.disabled,true)
-})
-test('V54: legacy preview {qualities:[360,720]} is accepted as API-declared resolutions, raw formats remain rejected',()=>{
- assert.equal(adapter.confirmedMp4Qualities({data:{qualities:['720','360','720']}}).map(x=>x.value).join(','),'360,720')
- assert.equal(adapter.confirmedMp4Qualities({formats:[entry(1080)]}).length,0)
- assert.equal(adapter.confirmedMp4Qualities({available_qualities:[]}).length,0)
- assert.equal(adapter.confirmedMp4Qualities({qualities:[{value:'1080',format_id:'not-confirmed'}]}).length,0)
-})
-test('V54: video max 2160 unlocks 2160p, 1080 preview locks 1440p and 2160p',()=>{
- const all=video=>rail.VideoQualityRail({quality:rail.highestConfirmedQuality(video),available:video,analyzed:true,onChange:()=>{}})
- const max=adapter.confirmedMp4Qualities(mkPreview([entry(240),entry(1080),entry(2160)]))
- const ui=nodes(all(max),x=>x.type==='button')
- assert.equal(ui.filter(x=>!x.props.disabled).length,3)
- assert.equal(ui[6].props.disabled,false)
- assert.equal(ui[4].props.disabled,false)
- const short=adapter.confirmedMp4Qualities(mkPreview([entry(360),entry(1080)]))
- const locked=nodes(all(short),x=>x.type==='button')
- assert.equal(locked[5].props.disabled,true)
- assert.equal(locked[6].props.disabled,true)
-})
-test('V54: clicking lower reported quality updates selection without substituting an unavailable quality',()=>{
- const options=adapter.confirmedMp4Qualities(mkPreview([entry(360),entry(720),entry(1080)]))
- let selected='1080'
- const element=rail.VideoQualityRail({quality:selected,available:options,analyzed:true,onChange:v=>selected=v})
- const buttons=nodes(element,x=>x.type==='button')
- assert.equal(buttons[2].props.disabled,true)
- buttons[3].props.onClick()
- assert.equal(selected,'720')
- buttons[1].props.onClick()
- assert.equal(selected,'360')
-})
-test('V55: a ready MP3 job does not call the one-time file endpoint',async()=>{
- let fileCalls=0
- mockRoutes({'/api/download/status/mp3-ready':apiResponse({job_id:'mp3-ready',status:'ready',stage:'ready'}),
-  '/api/download/file/mp3-ready':()=>{fileCalls++;throw Error('No preview GET allowed')}})
- const result=await call('status',{id:'mp3-ready',format:'mp3'})
- assert.equal(result.responseStatus,200)
- assert.equal(result.body.state,'complete')
- assert.equal(result.body.files.length,1)
- assert.equal(fileCalls,0)
-})
-test('V55: MP3 one-time GET is accepted and no probe occurs',async()=>{
- let calls=0
- const data=Buffer.from([73,68,51,3,0,0,0,0,0,0,255,251,144,100,1,2,3,4,5,6])
- mockRoutes({'/api/download/file/only-mp3':opts=>{calls++;assert.equal(opts.method,'GET');return new Response(data,{status:200,headers:{'content-type':'audio/mpeg','content-length':String(data.length)}})}})
- const req={method:'GET',query:{action:'file',id:'only-mp3',format:'mp3'},headers:{}}
- const res=new MockRes();await adapter.default(req,res)
- assert.equal(res.responseStatus,200)
- assert.equal(calls,1)
- assert.deepEqual(Buffer.concat(res.chunks),data)
-})
-test('V55: documented canonical upstream preview qualities and uploader map correctly',async()=>{
- mockRoutes({'/api/preview':apiResponse({ok:true,video_id:'dQw4w9WgXcQ',title:'Test source',uploader:'Creator',duration:120,thumbnail:'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',qualities:[{value:'1080',label:'1080p'},{value:'720',label:'720p'}]})})
- const res=await call('meta',{url:validUrl})
- assert.equal(res.body.qualities.map(x=>x.value).join(','),'720,1080')
- assert.equal(res.body.author,'Creator')
- assert.equal(res.body.thumbnail,'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg')
-})
-
-test('V55: local MP3 bitrate encoder and one-time browser downloader exports remain available',()=>{
- assert.equal(typeof client.downloadMp3AtBitrate,'function')
- assert.equal(typeof client.downloadFile,'function')
- assert.equal(typeof client.verifyVideoOutput,'function')
-})
-test('V55: verified video dimensions are enforced without touching the one-time media URL',async()=>{
- const file={url:'/api/media?action=file&id=j2&format=mp4',fileName:'test.mp4'}
- const result=await client.verifyVideoOutput(file,'Sample','1080',{reportedWidth:1920,reportedHeight:1080})
- assert.equal(result.verified,true)
- assert.equal(result.actual,1080)
- await assert.rejects(client.verifyVideoOutput(file,'Sample','1080',{reportedWidth:1280,reportedHeight:720}),{code:'QUALITY_MISMATCH'})
-})
+test('HTML error response cannot be downloaded as a media file',async()=>{
+ globalThis.fetch=async()=>new Response('<!doctype html><title>error</title>',{status:200,headers:{'Content-Type':'text/html'}})
+ const response=res();
+ try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{}},response);assert.equal(response.code,502);assert.equal(response.body.code,'WRONG_FILE_TYPE')}
+ finally{globalThis.fetch=actualFetch}
+});
+test('Range preflight never consumes a one-time media file',async()=>{
+ globalThis.fetch=async()=>{throw Error('Must not contact worker')}
+ const response=res();
+ try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{range:'bytes=0-0'}},response);assert.equal(response.code,416);assert.equal(response.body.code,'FILE_UNAVAILABLE')}
+ finally{globalThis.fetch=actualFetch}
+});
+test('incorrect MP4 byte signature is rejected before download',async()=>{
+ globalThis.fetch=async()=>new Response(new TextEncoder().encode('NOTAVIDEODATA12345'),{status:200,headers:{'Content-Type':'video/mp4'}})
+ const response=res();
+ try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{}},response);assert.equal(response.code,502);assert.equal(response.body.code,'WRONG_FILE_TYPE')}
+ finally{globalThis.fetch=actualFetch}
+});

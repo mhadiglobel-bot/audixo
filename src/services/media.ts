@@ -25,26 +25,26 @@ export async function mediaRequest<T=any>(action:string,body:Record<string,unkno
 export function explainMediaError(error:unknown){
  const message=error instanceof Error?error.message:String(error)
  const code=error instanceof MediaServiceError?error.code:''
- if(code==='ORIGIN_UNAVAILABLE'||/Cloudflare HTTP 52\d|origin.*unavailable|invalid or incomplete response/i.test(message))return 'The YTDL server could not be reached through Cloudflare. Check the origin server and its logs; changing MP4 quality will not fix a down server.'
+ if(code==='ORIGIN_UNAVAILABLE'||/Cloudflare HTTP 52\d|origin.*unavailable|invalid or incomplete response/i.test(message))return 'The AUDIXO processing worker is offline or not configured. Check its hosting URL, Docker status and private token.'
  if(code==='QUALITY_UNAVAILABLE')return message||'The selected MP4 resolution is not available for this video. Analyze the video again.'
  if(code==='QUALITY_MISMATCH'||code==='QUALITY_UNVERIFIED')return message
  if(code==='BOT_CHECK_FAILED'||code==='BOT_CHECK_REQUIRED')return 'Human verification expired or failed. Complete the security check again.'
  if(code==='BOT_CHECK_CONFIG')return 'Cloudflare Turnstile setup is incomplete. Add the server secret or remove the site key until setup is finished.'
- if(code==='SOURCE_FORBIDDEN'||/unable to download (?:video |audio )?data.*403/i.test(message))return 'YouTube rejected source access. Refresh the YTDL server authentication/cookies and check yt-dlp challenge solving.'
- if(code==='SERVICE_AUTH')return 'The YTDL API rejected authentication. Check the private service token/session on the backend.'
+ if(code==='SOURCE_FORBIDDEN'||/unable to download (?:video |audio )?data.*403/i.test(message))return 'YouTube rejected source access. The private worker may need an updated YouTube-only session or yt-dlp update.'
+ if(code==='SERVICE_AUTH')return 'The AUDIXO worker rejected authentication. Check its private token in the backend and Vercel settings.'
  if(code==='FILE_FORBIDDEN')return 'The conversion server denied access to the completed file.'
- if(code==='FILE_UNAVAILABLE')return 'The conversion output is not yet available. Check the YTDL job status and storage.'
+ if(code==='FILE_UNAVAILABLE')return 'The conversion output is not yet available. Check the AUDIXO private media job status and storage.'
  if(code==='WRONG_FILE_TYPE')return 'The conversion server returned the wrong media type rather than a valid MP3/MP4 file.'
  return message
 }
-/** Prefer SSE (the YTDL origin emits progress/heartbeat about every 3s).
- * The origin permits only 20 API requests / 10 minutes / IP; frequent polling
+/** Prefer SSE (the AUDIXO private media worker emits live progress).
+ * Repeated status polling on a busy worker
  * can exhaust that limit. If SSE is blocked, fall back to slow 45-second polls.
  * The job expires after 15 minutes, so never keep polling for 90 minutes.
  */
 export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJob)=>void,signal?:AbortSignal,quality=''){
  const started=Date.now()
- const deadline=started+14*60_000
+ const deadline=started+28*60_000
  const readStatus=async()=>{
   const job=await mediaRequest<MediaJob>('status',{id,format,...(format==='mp4'&&quality?{quality}:{})},signal)
   onUpdate(job)
@@ -52,7 +52,7 @@ export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJ
    if(!job.files?.length)throw new MediaServiceError('Ready job has no file endpoint.','JOB_FAILED',0,true)
    return job
   }
-  if(job.state==='failed')throw new MediaServiceError(job.error||'The YTDL server reported a failed job.',job.errorCode||'JOB_FAILED',0,true)
+  if(job.state==='failed')throw new MediaServiceError(job.error||'The media worker reported a failed job.',job.errorCode||'JOB_FAILED',0,true)
   return null
  }
  const sleep=(ms:number)=>new Promise<void>((resolve,reject)=>{
@@ -64,7 +64,7 @@ export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJ
   let consecutiveErrors=0
   for(;;){
    if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
-   if(Date.now()>deadline)throw new MediaServiceError('The YTDL job has reached its 15-minute retention window. Start a new conversion.','JOB_FAILED',0,true)
+   if(Date.now()>deadline)throw new MediaServiceError('The processing job took too long. Start a new conversion or check the worker status.','JOB_FAILED',0,true)
    try{
     const done=await readStatus();if(done)return done
     consecutiveErrors=0
@@ -107,7 +107,7 @@ export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJ
    try{payload=JSON.parse(String(event.data??''))}catch{}
    if(type==='error'||payload?.status==='failed'||payload?.state==='failed'){
     const code=String(payload?.code??payload?.error_code??'JOB_FAILED')
-    finish(new MediaServiceError(String(payload?.error??payload?.message??'YTDL download failed.'),code,0,TERMINAL_JOB_CODES.has(code)))
+    finish(new MediaServiceError(String(payload?.error??payload?.message??'AUDIXO private media download failed.'),code,0,TERMINAL_JOB_CODES.has(code)))
     return
    }
    const pct=Number(payload?.progress??payload?.percent??payload?.download?.percent)
@@ -144,8 +144,8 @@ function fileUrl(file:MediaFile,title:string,format:MediaKind){
  if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='file')throw new MediaServiceError('Invalid media download location.','INVALID_REQUEST')
  url.searchParams.set('format',format);url.searchParams.set('title',cleanTitle(title));return url
 }
-/** One-time YTDL origin file: never prefetch with HEAD or metadata GET.
- * Let the browser perform exactly one full GET. The origin deletes the temp
+/** One-time AUDIXO worker file: never prefetch with HEAD or metadata GET.
+ * Let the browser perform exactly one full GET. The worker deletes the temp
  * file after delivery. The click only starts a download; the browser owns it.
  */
 export async function downloadFile(file:MediaFile,title:string,format:MediaKind,signal?:AbortSignal){
@@ -163,7 +163,7 @@ export async function downloadFile(file:MediaFile,title:string,format:MediaKind,
 export function assertVideoResolution(width:number,height:number,requested:string){
  const expected=Number(requested)
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)throw new MediaServiceError('The output MP4 dimensions could not be verified.','QUALITY_UNVERIFIED',0,true)
- if(height!==expected)throw new MediaServiceError(`The YTDL server produced ${width} x ${height}, not the requested ${expected}p. No download was started.`,'QUALITY_MISMATCH',0,true)
+ if(height!==expected)throw new MediaServiceError(`The AUDIXO private media server produced ${width} x ${height}, not the requested ${expected}p. No download was started.`,'QUALITY_MISMATCH',0,true)
  return height
 }
 export async function verifyVideoOutput(_file:MediaFile,_title:string,quality:string,reported?:{reportedWidth?:number;reportedHeight?:number},_signal?:AbortSignal){

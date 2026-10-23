@@ -48,8 +48,8 @@ function QualitySlider({items,index,onChange,disabled=false,ariaLabel}:{items:Se
 
 /** Keep AUDIXO's familiar 7-mark, neon slider while restricting changes to
  * resolutions actually reported by the upstream preview. We NEVER assume that
- * 480p is downloadable just because the original reaches 1080p: the YTDL
- * backend needs either an exact stream or explicit transcoding support.
+ * 480p is downloadable just because the original reaches 1080p: the AUDIXO private
+ * worker needs either an exact stream or explicit transcoding support.
  */
 export function VideoQualityRail({quality,onChange,available,analyzed,disabled=false}:{quality:string;onChange:(v:string)=>void;available:AvailableVideoQuality[];analyzed:boolean;disabled?:boolean}){
  const availableOptions=confirmedVideoOptions(available)
@@ -89,8 +89,7 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
 }
 export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
  const index=bitrateSteps.indexOf(bitrate)
- const local=duration>0&&duration<=300
- const detail=local?'Short clips are encoded on this device at the selected bitrate.':bitrate===320?'Server MP3 rate is confirmed only after conversion.':'Local bitrate encoding supports clips up to five minutes.'
+ const detail='The AUDIXO media worker encodes the selected bitrate and verifies the final MP3 file.'
  return <section className="ax46-quality-panel" aria-label="MP3 audio quality">
   <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">AUDIO BITRATE</span><h3>{bitrate} <small>kbps target</small></h3><p>{detail}</p></div><span className="ax46-quality-chip">MP3 AUDIO</span></div>
   <QualitySlider items={bitrateSteps.map(value=>({label:String(value),name:String(value),detail:'kbps'}))} index={index} disabled={disabled} onChange={i=>onChange(bitrateSteps[i])} ariaLabel="MP3 bitrate"/>

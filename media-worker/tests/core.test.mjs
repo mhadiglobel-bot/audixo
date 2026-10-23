@@ -107,6 +107,8 @@ console.log('download: 100.0%');
   }
   let launched=false;for(let i=0;i<75;i++){if(worker.exitCode!==null)throw new Error('Worker exited early '+workerErr);try{const h=await request('/health');if(h.ok){launched=true;break}}catch{}await sleep(90)}
   assert.equal(launched,true,'worker started');
+  const live=await fetch(base+'/live');assert.equal(live.status,200);
+  assert.equal((await live.json()).ok,true);
   const deny=await fetch(base+'/health');assert.equal(deny.status,401);
   const preview=await request('/preview','POST',{url:'https://www.youtube.com/watch?v=abcdefghijk'});
   assert.equal(preview.status,200);const previewData=await preview.json();
@@ -126,7 +128,17 @@ console.log('download: 100.0%');
    }
    assert.equal(end.status,'ready',JSON.stringify(end));
    assert.equal(end.progress,100);
-   const file=await request(`/jobs/${job_id}/file`);
+   // Ticket creation remains private. The file itself is served directly
+   // from the worker without credentials, so large downloads bypass Vercel.
+   const noTicket=await fetch(`${base}/download/${job_id}`);
+   assert.equal(noTicket.status,403);
+   const issue=await request(`/jobs/${job_id}/ticket`,'POST',{});
+   assert.equal(issue.status,200);
+   const ticket=await issue.json();
+   assert.match(ticket.path,new RegExp(`^/download/${job_id}\\?expires=\\d{13}&sig=[a-f0-9]{64}$`));
+   const stale=await fetch(base+ticket.path.replace(/sig=[a-f0-9]{64}/, 'sig='+'0'.repeat(64)));
+   if(ticket.path.endsWith('0'.repeat(64)))assert.equal(stale.status,200);else assert.equal(stale.status,403);
+   const file=await fetch(base+ticket.path);
    assert.equal(file.status,200);
    assert.equal(file.headers.get('content-type'),kind==='mp4'?'video/mp4':'audio/mpeg');
    const data=new Uint8Array(await file.arrayBuffer());assert.ok(data.length>2048);
@@ -137,8 +149,8 @@ console.log('download: 100.0%');
     assert.ok(Math.abs(end.actual_audio_bitrate_kbps-128)<10);
     assert.equal(new TextDecoder().decode(data.subarray(0,3)),'ID3');
    }
-   const second=await request(`/jobs/${job_id}/file`);
-   assert.equal(second.status,410,'single-use file cannot be redownloaded without new conversion job');
+   const second=await fetch(base+ticket.path);
+   assert.equal(second.status,410,'single-use signed ticket cannot redownload the same job');
   }
   await run('mp3');await run('mp4');
  }finally{

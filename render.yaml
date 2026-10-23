@@ -1,0 +1,26 @@
+# AUDIXO Media Worker, from the SAME repository as the Vercel website.
+# Render > New > Blueprint > connect GitHub repo. This is a paid service
+# because long conversions need always-available CPU and persistent disk.
+services:
+  - type: web
+    name: audixo-media-worker
+    runtime: docker
+    plan: standard
+    dockerfilePath: ./media-worker/Dockerfile
+    dockerContext: ./media-worker
+    healthCheckPath: /live
+    envVars:
+      - key: PORT
+        value: '8080'
+      - key: AUDIXO_DATA_DIR
+        value: /app/data
+      - key: AUDIXO_MAX_CONCURRENT
+        value: '2'
+      - key: AUDIXO_WORKER_TOKEN
+        generateValue: true
+      - key: AUDIXO_ADMIN_TOKEN
+        generateValue: true
+    disk:
+      name: audixo-private-media
+      mountPath: /app/data
+      sizeGB: 10

@@ -1,7 +1,7 @@
 {
   "name":"audixo-private-media-worker",
   "private":true,
-  "version":"56.0.0",
+  "version":"57.0.0",
   "type":"module",
   "engines":{"node":">=22"},
   "scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs"}

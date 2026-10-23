@@ -25,7 +25,8 @@ export async function mediaRequest<T=any>(action:string,body:Record<string,unkno
 export function explainMediaError(error:unknown){
  const message=error instanceof Error?error.message:String(error)
  const code=error instanceof MediaServiceError?error.code:''
- if(code==='ORIGIN_UNAVAILABLE'||/Cloudflare HTTP 52\d|origin.*unavailable|invalid or incomplete response/i.test(message))return 'The AUDIXO processing worker is offline or not configured. Check its hosting URL, Docker status and private token.'
+ if(code==='WORKER_NOT_CONFIGURED')return 'Media worker setup required: deploy the Docker media-worker service, then add its HTTPS URL and the shared private token to Vercel environment variables.'
+ if(code==='ORIGIN_UNAVAILABLE'||/Cloudflare HTTP 52\d|origin.*unavailable|invalid or incomplete response/i.test(message))return 'The AUDIXO media worker is unreachable. Confirm that the Docker host is live and AUDIXO_WORKER_URL points to its HTTPS domain.'
  if(code==='QUALITY_UNAVAILABLE')return message||'The selected MP4 resolution is not available for this video. Analyze the video again.'
  if(code==='QUALITY_MISMATCH'||code==='QUALITY_UNVERIFIED')return message
  if(code==='BOT_CHECK_FAILED'||code==='BOT_CHECK_REQUIRED')return 'Human verification expired or failed. Complete the security check again.'
@@ -40,7 +41,7 @@ export function explainMediaError(error:unknown){
 /** Prefer SSE (the AUDIXO private media worker emits live progress).
  * Repeated status polling on a busy worker
  * can exhaust that limit. If SSE is blocked, fall back to slow 45-second polls.
- * The job expires after 15 minutes, so never keep polling for 90 minutes.
+ * The job expires after ~55 minutes; the UI deadline is 28 minutes.
  */
 export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJob)=>void,signal?:AbortSignal,quality=''){
  const started=Date.now()
@@ -139,27 +140,39 @@ export async function waitForJob(id:string,format:MediaKind,onUpdate:(job:MediaJ
  })
 }
 const cleanTitle=(s:string)=>s.replace(/[\\/<>|:*?"\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().replace(/[. ]+$/,'').slice(0,145)||'YouTube video'
-function fileUrl(file:MediaFile,title:string,format:MediaKind){
+function jobIdFromTicketLink(file:MediaFile){
  const url=new URL(file.url,window.location.href)
- if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='file')throw new MediaServiceError('Invalid media download location.','INVALID_REQUEST')
- url.searchParams.set('format',format);url.searchParams.set('title',cleanTitle(title));return url
+ const id=url.searchParams.get('id')||''
+ if(url.origin!==window.location.origin||url.pathname!=='/api/media'||url.searchParams.get('action')!=='ticket'||!/^[a-f0-9]{32}$/.test(id))
+  throw new MediaServiceError('Invalid media job download reference.','INVALID_REQUEST')
+ return id
 }
-/** One-time AUDIXO worker file: never prefetch with HEAD or metadata GET.
- * Let the browser perform exactly one full GET. The worker deletes the temp
- * file after delivery. The click only starts a download; the browser owns it.
+/** Request a short-lived worker-signed download ticket through the Vercel proxy.
+ * The MP3/MP4 bytes then come directly from the HTTPS worker, not from Vercel
+ * (whose function response size limit is far too small for video downloads).
+ * The worker sends Content-Disposition: attachment and enforces one-time GET.
  */
 export async function downloadFile(file:MediaFile,title:string,format:MediaKind,signal?:AbortSignal){
- const url=fileUrl(file,title,format)
+ const id=jobIdFromTicketLink(file)
+ if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
+ const ticket=await mediaRequest<{ok:boolean;url:string;expiresAt:number}>('ticket',{id,format},signal)
+ let url:URL
+ try{url=new URL(ticket.url)}catch{throw new MediaServiceError('The worker returned an invalid download URL.','UPSTREAM_ERROR')}
+ const secure=url.protocol==='https:'||(url.hostname==='127.0.0.1'||url.hostname==='localhost')&&url.protocol==='http:'
+ if(!secure||url.username||url.password||url.pathname!==`/download/${id}`||
+   !/^[0-9]{13}$/.test(url.searchParams.get('expires')||'')||!/^[a-f0-9]{64}$/.test(url.searchParams.get('sig')||''))
+  throw new MediaServiceError('The worker returned an unsafe download ticket.','UPSTREAM_ERROR')
  if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
  const anchor=document.createElement('a')
  anchor.href=url.href
- anchor.download=`${cleanTitle(title)} (Audixo ${format.toUpperCase()}).${format}`
- anchor.rel='noreferrer'
+ // File name is set by the backend's attachment header (not anchor.download,
+ // which browsers may ignore for cross-origin URLs).
+ anchor.rel='noreferrer noopener'
+ anchor.style.display='none'
+ anchor.setAttribute('aria-label',`Download ${cleanTitle(title)} as ${format.toUpperCase()}`)
  document.body.append(anchor);anchor.click();anchor.remove()
+ return url.href
 }
-/** Verify only trusted output metadata supplied in job status. Never open the
- * one-time file in a hidden <video> just to check dimensions.
- */
 export function assertVideoResolution(width:number,height:number,requested:string){
  const expected=Number(requested)
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)throw new MediaServiceError('The output MP4 dimensions could not be verified.','QUALITY_UNVERIFIED',0,true)
@@ -179,25 +192,3 @@ export function localMetadata(file:File):Promise<number>{return new Promise((res
  const finish=(error?:Error)=>{clearTimeout(timer);const duration=a.duration;a.onloadedmetadata=null;a.onerror=null;a.removeAttribute('src');a.load();URL.revokeObjectURL(url);error?reject(error):resolve(duration)}
  a.preload='metadata';a.onloadedmetadata=()=>Number.isFinite(a.duration)?finish():finish(new Error('Unknown duration'));a.onerror=()=>finish(new Error('Unsupported audio format'));a.src=url
 })}
-/** Standard MP3 CBR choices; 240 kbps is deliberately not accepted. */
-export async function downloadMp3AtBitrate(file:MediaFile,title:string,kbps:number,signal?:AbortSignal){
- if(![64,128,192,256,320].includes(kbps))throw new Error('Choose a supported MP3 bitrate.')
- const url=fileUrl(file,title,'mp3')
- const response=await fetch(url.href,{credentials:'same-origin',cache:'no-store',signal})
- if(!response.ok)throw new MediaServiceError(`MP3 file download failed (${response.status}).`,response.status===403?'FILE_FORBIDDEN':'FILE_UNAVAILABLE',response.status)
- if(/text\/|json|html|xml/i.test(response.headers.get('content-type')||''))throw new Error('The API returned a message instead of MP3 audio.')
- const limit=24_000_000,announced=Number(response.headers.get('content-length')||0)
- if(announced>limit){await response.body?.cancel();throw new Error('This file is too large for local MP3 encoding. The backend must encode it at the requested bitrate.')}
- const reader=response.body?.getReader();if(!reader)throw new Error('Empty MP3 download.')
- const parts:Uint8Array[]=[];let size=0
- try{for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit)throw new Error('Local MP3 encoding is limited to 24 MB.');parts.push(value)}}catch(error){await reader.cancel();throw error}
- const bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length}
- const audio=new AudioContext();let pcm:AudioBuffer
- try{pcm=await audio.decodeAudioData(bytes.buffer as ArrayBuffer)}finally{await audio.close()}
- if(pcm.duration>300)throw new Error('Local MP3 encoding is limited to five-minute media. Longer files require the correct server encoder bitrate.')
- if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
- const {encodeMp3,downloadBlob}=await import('../editor/encoder')
- const result=await encodeMp3(pcm,kbps)
- if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
- downloadBlob(result,`${cleanTitle(title)} (Audixo MP3 ${kbps}kbps).mp3`)
-}

@@ -1,6 +1,6 @@
 import http from 'node:http';
 import {spawn} from 'node:child_process';
-import {randomBytes,timingSafeEqual} from 'node:crypto';
+import {randomBytes,timingSafeEqual,createHmac} from 'node:crypto';
 import {createReadStream,existsSync} from 'node:fs';
 import {mkdir,readFile,writeFile,readdir,rename,rm,stat,chmod} from 'node:fs/promises';
 import path from 'node:path';
@@ -36,6 +36,17 @@ const opaqueEqual=(expected,actual)=>{
 };
 const authorize=(request)=>opaqueEqual(`Bearer ${workerToken}`,request.headers.authorization);
 const authorizeAdmin=(request)=>opaqueEqual(adminToken,request.headers['x-audixo-admin']);
+// Short-lived one-time download URLs bypass the Vercel Function's 4.5 MB
+// payload ceiling. The master worker token remains private.
+const DOWNLOAD_TICKET_TTL=120_000;
+const ticketSignature=(id,expires)=>createHmac('sha256',workerToken)
+  .update(`audixo-download-v1:${id}:${expires}`).digest('hex');
+const validTicket=(id,expiresText,signature)=>{
+  if(typeof expiresText!=='string'||!/^[0-9]{13}$/.test(expiresText)||typeof signature!=='string'||!/^[a-f0-9]{64}$/.test(signature))return false;
+  const expiry=Number(expiresText),now=Date.now();
+  if(!Number.isSafeInteger(expiry)||expiry<now||expiry>now+DOWNLOAD_TICKET_TTL)return false;
+  return opaqueEqual(ticketSignature(id,expiry),signature);
+};
 const json=(res,status,value)=>{if(res.headersSent)return;res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'none'});res.end(JSON.stringify(value));};
 const fail=(res,error)=>{
   const err=error instanceof WorkerError?error:new WorkerError('Unexpected media-worker error.','JOB_FAILED',500);
@@ -217,12 +228,49 @@ const jobById=(value)=>{
 
 const adminPage=String.raw`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AUDIXO Private Cookie Setup</title><style>body{font:16px system-ui;background:#f7faff;color:#203454;max-width:640px;margin:9vh auto;padding:22px}section{background:white;border:1px solid #dce5f4;border-radius:22px;padding:26px;box-shadow:0 15px 40px #a6b6ce2a}label{display:block;margin:20px 0 8px}input{width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #c9d4e6}button{margin-top:22px;padding:14px 20px;border:0;border-radius:12px;background:linear-gradient(90deg,#dd39ee,#11cbea);font-weight:700}small{display:block;color:#677b97;margin:16px 0;line-height:1.5}</style><section><h1>🔒 AUDIXO / Session Setup</h1><p>Private worker administration. Never upload an export containing Google or other websites' cookies.</p><label>Administrator token</label><input type="password" id="secret" autocomplete="off"><label>YouTube-only Netscape cookies.txt</label><input type="file" id="cookie" accept=".txt,text/plain"><small>The file is validated; all domains must be YouTube domains. It is stored on the worker volume, not on Vercel or GitHub.</small><button id="upload">Install Private Cookies</button><p id="message" role="status"></p></section><script>document.getElementById('upload').onclick=async()=>{const secret=document.getElementById('secret').value;const file=document.getElementById('cookie').files[0];const out=document.getElementById('message');if(!secret||!file){out.textContent='Choose a file and enter the admin token.';return}if(file.size>120000){out.textContent='File too large';return}try{const response=await fetch('/admin/cookies',{method:'POST',headers:{'x-audixo-admin':secret,'Content-Type':'text/plain'},body:await file.text()});const data=await response.json();out.textContent=data.ok?'YouTube-only cookies installed successfully.':(data.error||'Upload rejected.')}catch{out.textContent='Worker could not be reached.'}};</script></html>`;
 
+// Browser downloads directly from this HTTPS worker with a one-time,
+// narrowly-scoped HMAC ticket. No authorization header or YouTube cookie is sent.
+async function deliverFile(job,res){
+  if(job.delivered)throw new WorkerError('This file has already been downloaded. Start a new conversion.','FILE_UNAVAILABLE',410);
+  if(job.state!=='ready'||!job.file)throw new WorkerError('This conversion is not ready for download.','FILE_UNAVAILABLE',409);
+  if(job.inDelivery)throw new WorkerError('A download is already in progress.','UPSTREAM_LIMIT',409);
+  const info=await stat(job.file).catch(()=>null);
+  if(!info||info.size<2048)throw new WorkerError('The final output file is missing.','FILE_UNAVAILABLE',404);
+  job.inDelivery=true;
+  const safe=sanitizeFilename(job.title)+'.'+job.format;
+  res.writeHead(200,{'Content-Type':job.format==='mp4'?'video/mp4':'audio/mpeg','Content-Length':String(info.size),
+    'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(safe)}`,
+    'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Accept-Ranges':'none'});
+  const source=createReadStream(job.file);
+  let finished=false;
+  res.once('finish',()=>{
+    finished=true;job.delivered=true;job.inDelivery=false;
+    job.message='File delivered. To download again, start a new job.';
+    broadcast(job,'file_delivered');
+    void rm(job.directory,{recursive:true,force:true}).catch(()=>{});
+  });
+  res.once('close',()=>{if(!finished){source.destroy();job.inDelivery=false;}});
+  source.once('error',()=>{job.inDelivery=false;res.destroy();});
+  source.pipe(res);
+}
+
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Referrer-Policy','no-referrer');
  res.setHeader('Cache-Control','no-store');
  const url=new URL(req.url||'/',`http://localhost:${port}`);
  try{
+  if(req.method==='GET'&&url.pathname==='/live'){
+   // Public, non-sensitive readiness endpoint for Render/other host probes.
+   const ready=Object.values(readiness).every(Boolean);
+   json(res,ready?200:503,{ok:ready,service:'audixo-media-worker'});return;
+  }
+  const direct=url.pathname.match(/^\/download\/([a-f0-9]{32})$/);
+  if(req.method==='GET'&&direct){
+   if(!validTicket(direct[1],url.searchParams.get('expires'),url.searchParams.get('sig')))
+     throw new WorkerError('This secure download link has expired or is invalid.','FILE_FORBIDDEN',403);
+   await deliverFile(jobById(direct[1]),res);return;
+  }
   if(req.method==='GET'&&url.pathname==='/admin'){
    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none';style-src 'unsafe-inline';script-src 'unsafe-inline';connect-src 'self';base-uri 'none';frame-ancestors 'none'"});res.end(adminPage);return;
   }
@@ -267,23 +315,17 @@ const server=http.createServer(async(req,res)=>{
    const pulse=setInterval(()=>{if(!res.destroyed)res.write('event: heartbeat\ndata: {}\n\n')},12000);
    req.once('close',()=>{clearInterval(pulse);job.listeners.delete(res)});return;
   }
-  const file=url.pathname.match(/^\/jobs\/([a-f0-9]{32})\/file$/);
-  if(req.method==='GET'&&file){
-   const job=jobById(file[1]);
-   if(job.delivered)throw new WorkerError('The file has already been downloaded. Start a new conversion.','FILE_UNAVAILABLE',410);
-   if(job.state!=='ready'||!job.file)throw new WorkerError('This conversion is not ready for download.','FILE_UNAVAILABLE',409);
-   if(job.inDelivery)throw new WorkerError('A download is already in progress.','UPSTREAM_LIMIT',409);
-   const info=await stat(job.file).catch(()=>null);
-   if(!info||info.size<2048)throw new WorkerError('The final output file is missing.','FILE_UNAVAILABLE',404);
-   job.inDelivery=true;
-   const safe=sanitizeFilename(job.title)+'.'+job.format;
-   res.writeHead(200,{'Content-Type':job.format==='mp4'?'video/mp4':'audio/mpeg','Content-Length':String(info.size),'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(safe)}`,'Cache-Control':'private, no-store','Accept-Ranges':'none'});
-   const source=createReadStream(job.file);
-   let finished=false;
-   res.once('finish',()=>{finished=true;job.delivered=true;job.inDelivery=false;job.message='File delivered. To download again, start a new job.';broadcast(job,'file_delivered');void rm(job.directory,{recursive:true,force:true}).catch(()=>{});});
-   res.once('close',()=>{if(!finished){source.destroy();job.inDelivery=false;}});
-   source.once('error',()=>{job.inDelivery=false;res.destroy();});
-   source.pipe(res);return;
+  const ticket=url.pathname.match(/^\/jobs\/([a-f0-9]{32})\/ticket$/);
+  if(req.method==='POST'&&ticket){
+   const job=jobById(ticket[1]);
+   if(job.delivered||job.inDelivery||job.state!=='ready'||!job.file)
+     throw new WorkerError('The requested file is not ready or has already been downloaded.','FILE_UNAVAILABLE',409);
+   const expires=Date.now()+DOWNLOAD_TICKET_TTL;
+   json(res,200,{ok:true,path:`/download/${job.id}?expires=${expires}&sig=${ticketSignature(job.id,expires)}`,expires_at:expires,format:job.format});return;
+  }
+  const deprecated=url.pathname.match(/^\/jobs\/([a-f0-9]{32})\/file$/);
+  if(req.method==='GET'&&deprecated){
+   throw new WorkerError('Update the AUDIXO website to use secure direct downloads.','FILE_UNAVAILABLE',410);
   }
   json(res,404,{ok:false,error:'Unknown worker endpoint.',code:'INVALID_REQUEST'});
  }catch(error){fail(res,error);}

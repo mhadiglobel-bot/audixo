@@ -1,4 +1,4 @@
-/** AUDIXO V56 - private self-hosted media worker proxy.
+/** AUDIXO V57 - private self-hosted media worker proxy.
  * No third-party YTDL API, authentication cookie, or yt-dlp subprocess is
  * shipped to the browser/Vercel. The worker performs source discovery,
  * conversion and final-file verification on a persistent Docker host.
@@ -22,7 +22,7 @@ const classifyStatus=(status:number)=>status===401||status===403?'SERVICE_AUTH':
 function workerConfig(){
  const candidate=process.env.AUDIXO_WORKER_URL?.trim()||''
  const token=process.env.AUDIXO_WORKER_TOKEN?.trim()||''
- if(!candidate||token.length<32)throw new ApiError('AUDIXO private processing worker is not configured. Set AUDIXO_WORKER_URL and AUDIXO_WORKER_TOKEN in Vercel.','ORIGIN_UNAVAILABLE',503)
+ if(!candidate||token.length<32)throw new ApiError('Media worker setup is incomplete. Deploy media-worker/ on a Docker host, then set AUDIXO_WORKER_URL and AUDIXO_WORKER_TOKEN in Vercel.','WORKER_NOT_CONFIGURED',503)
  let url:URL
  try{url=new URL(candidate)}catch{throw new ApiError('The private media worker URL is invalid.','ORIGIN_UNAVAILABLE',503)}
  if(url.username||url.password||url.search||url.hash||url.pathname!=='/'||!['http:','https:'].includes(url.protocol))throw new ApiError('The private media worker URL must be a plain HTTP(S) origin.','ORIGIN_UNAVAILABLE',503)
@@ -82,7 +82,7 @@ function jobShape(value:any,format:MediaKind,quality=''){
   errorCode='QUALITY_MISMATCH';error=`The output is ${height}p instead of ${quality}p.`;currentState='failed'
  }
  const dl=value.download??{}
- return {id,format,state:currentState,stage:raw(value.stage,60),message:raw(value.message,220),error,errorCode,title:raw(value.title,200),progress:Number.isFinite(progress)?Math.max(0,Math.min(100,progress)):0,downloadPercent:Number(dl.percent)||undefined,downloadSpeed:raw(dl.speed,40),eta:raw(dl.eta,40),reportedWidth:Number.isFinite(width)&&width>0?width:undefined,reportedHeight:Number.isFinite(height)&&height>0?height:undefined,reportedKbps:Number(value.actual_audio_bitrate_kbps)||undefined,files:currentState==='complete'?[{name:format.toUpperCase(),url:`/api/media?action=file&id=${id}&format=${format}`,fileName:filename(value.title,format)}]:[]}
+ return {id,format,state:currentState,stage:raw(value.stage,60),message:raw(value.message,220),error,errorCode,title:raw(value.title,200),progress:Number.isFinite(progress)?Math.max(0,Math.min(100,progress)):0,downloadPercent:Number(dl.percent)||undefined,downloadSpeed:raw(dl.speed,40),eta:raw(dl.eta,40),reportedWidth:Number.isFinite(width)&&width>0?width:undefined,reportedHeight:Number.isFinite(height)&&height>0?height:undefined,reportedKbps:Number(value.actual_audio_bitrate_kbps)||undefined,files:currentState==='complete'?[{name:format.toUpperCase(),url:`/api/media?action=ticket&id=${id}&format=${format}`,fileName:filename(value.title,format)}]:[]}
 }
 const sendFailure=(res:any,error:unknown)=>{
  if(res.headersSent){res.destroy?.();return}
@@ -114,34 +114,7 @@ export default async function handler(req:any,res:any){
    try{await pipeline(source,res)}catch{}finally{clearTimeout(timer)}
    return
   }
-  if(action==='file'){
-   if(req.method!=='GET')throw new ApiError('Use a single GET for the completed media file.','INVALID_REQUEST',405)
-   if(req.headers?.range)throw new ApiError('This download uses one full GET, not Range requests.','FILE_UNAVAILABLE',416)
-   const id=getId(req.query?.id),format=getKind(req.query?.format)
-   const response=await worker(`/jobs/${id}/file`,'GET',undefined,275_000)
-   const contentType=(response.headers.get('content-type')||'').toLowerCase().split(';')[0]
-   const expected=format==='mp4'?'video/mp4':'audio/mpeg'
-   if(contentType!==expected||!response.body){await response.body?.cancel().catch(()=>{});throw new ApiError('Media worker returned the wrong file type.','WRONG_FILE_TYPE',502)}
-   const reader=response.body.getReader()
-   const sample=[] as Uint8Array[]
-   let total=0
-   while(total<16){const packet=await reader.read();if(packet.done)break;sample.push(packet.value);total+=packet.value.byteLength}
-   if(total<8){await reader.cancel().catch(()=>{});throw new ApiError('Output media file is empty.','FILE_UNAVAILABLE',502)}
-   const prefix=Buffer.concat(sample.map(x=>Buffer.from(x)),total)
-   const mp4=prefix.subarray(4,8).toString('latin1')==='ftyp'
-   const mp3=prefix.subarray(0,3).toString('latin1')==='ID3'||(prefix[0]===255&&(prefix[1]&224)===224)
-   if(format==='mp4'?!mp4:!mp3){await reader.cancel().catch(()=>{});throw new ApiError('Output media content did not match its MP3/MP4 label.','WRONG_FILE_TYPE',502)}
-   const name=filename(req.query?.title,format)
-   res.status(200)
-   res.setHeader('Content-Type',expected)
-   res.setHeader('Content-Disposition',`attachment; filename*=UTF-8''${encodeURIComponent(name)}`)
-   const size=response.headers.get('content-length')
-   if(size&&/^\d+$/.test(size))res.setHeader('Content-Length',size)
-   res.setHeader('Accept-Ranges','none')
-   async function* parts(){try{yield prefix;for(;;){const next=await reader.read();if(next.done)break;yield next.value}}finally{reader.releaseLock()}}
-   await pipeline(Readable.from(parts()),res)
-   return
-  }
+  if(action==='file')throw new ApiError('This version now issues secure direct downloads. Refresh AUDIXO and retry.','FILE_UNAVAILABLE',410)
   if(req.method!=='POST')throw new ApiError('Use POST for this action.','INVALID_REQUEST',405)
   if(action==='health'){
    const value=await data('/health','GET',undefined,16000)
@@ -169,6 +142,25 @@ export default async function handler(req:any,res:any){
    const id=getId(req.body?.id),format=getKind(req.body?.format),quality=raw(req.body?.quality,10)
    const value=await data(`/jobs/${id}`,'GET',undefined,20000)
    return res.status(200).json(jobShape(value,format,quality))
+  }
+  if(action==='ticket'){
+   // Exchanging a private worker request for a 2-minute, single-use URL
+   // avoids proxying large audio/video files through Vercel Functions.
+   const id=getId(req.body?.id),format=getKind(req.body?.format)
+   const job=await data(`/jobs/${id}`,'GET',undefined,20000)
+   if(job.format!==format||job.status!=='ready')throw new ApiError('Media file is not ready or its format does not match.','FILE_UNAVAILABLE',409)
+   const ticket=await data(`/jobs/${id}/ticket`,'POST',{},15000)
+   if(ticket.format!==format||typeof ticket.path!=='string'||ticket.path.length>260)
+    throw new ApiError('Worker returned an invalid secure download ticket.','UPSTREAM_ERROR',502)
+   const target=new URL(ticket.path,workerConfig().origin)
+   const expires=target.searchParams.get('expires')||''
+   const sig=target.searchParams.get('sig')||''
+   const now=Date.now()
+   if(target.origin!==workerConfig().origin||target.pathname!==`/download/${id}`||
+      !/^[0-9]{13}$/.test(expires)||!/^[a-f0-9]{64}$/.test(sig)||
+      Number(expires)<now||Number(expires)>now+150_000||target.searchParams.size!==2)
+    throw new ApiError('Worker returned a malformed download ticket.','UPSTREAM_ERROR',502)
+   return res.status(200).json({ok:true,url:target.href,expiresAt:Number(expires)})
   }
   throw new ApiError('Unknown media action.','INVALID_REQUEST',400)
  }catch(error){return sendFailure(res,error)}

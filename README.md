@@ -1,286 +1,133 @@
-# AUDIXO V56 — One GitHub Repository
+# AUDIXO V57 — GitHub-ready website + private MP3/MP4 worker
 
-This is **one repository** containing both components:
+**ONE GitHub repository · 99 source files · no cookies or private tokens in GitHub.**
 
-- Root (`package.json`, `src/`, `api/`, `public/`) — existing AUDIXO website on **Vercel**.
-- `media-worker/` — self-owned **Docker** yt-dlp + FFmpeg service on a persistent host.
+This package combines the previously separate AUDIXO V56 website and media-worker projects. It fixes the large-file download architecture and provides an optional, ready-to-connect Render deployment blueprint. The screenshot's **"processing worker is offline or not configured"** error is a deployment/configuration error: source code cannot start a worker on Vercel automatically.
 
-The old `ytdl.tiers.rest` API dependency was removed. All prior Studio,
-editor, audio tools, design and 13-song Sound Lab remain in the website.
+## 1. What runs where?
 
-**Important:** One GitHub repository does not mean one Vercel runtime: Vercel
-still serves the Vite app/API proxy, while the CPU-intensive persistent media
-worker must run as a separate Docker service **from `media-worker/` in the
-same GitHub repository**. Do not point the Vercel root directory at
-`media-worker/`.
+| Component | Location in this same repo | Runs on | Purpose |
+| --- | --- | --- | --- |
+| Website (React/Vite) + private API proxy | `src/`, `api/media.ts`, `package.json` | **Vercel** | Interface, YouTube metadata, conversion requests, job progress, issuing download tickets |
+| Media Worker | `media-worker/` | **Render / Docker VPS** | yt-dlp, FFmpeg, verified MP3/MP4, file storage |
+| Render blueprint | `render.yaml` | **Render** | Deploys media-worker automatically from same GitHub repository |
 
-## Single GitHub-ready upload (99 files)
+**Important:** One *repository/ZIP* does not mean one process or one hosting service. **Vercel cannot run the persistent Docker worker from the root website deployment.** The worker needs its own Docker host with persistent disk. A public/HTTPS worker URL and matching token must be entered in Vercel before the converter can connect.
 
-Extract `AUDIXO-V56-COMBINED-GITHUB-99-FILES.zip` on your computer.
-Open the extracted files, select **all 99 files** (including files inside subfolders),
-and drag them into **GitHub > repository > Add file > Upload files**.
-The upload should show 99 files, not 112. Commit them in one upload.
-GitHub's web uploader does NOT automatically unpack a ZIP file.
+## 2. Upload ONE ZIP to GitHub (99 files, not the .zip itself)
 
-Keep `package.json`, `src/`, `api/`, `public/`, `scripts/`, and `media-worker/`
-at the repository root. The worker is still configured and deployed from its
-own subfolder on a Docker-capable host; GitHub/Vercel alone cannot perform yt-dlp conversions.
-To update an existing repository, replace matching paths and remove obsolete
-unmerged V56 duplicate files if they are still in GitHub. GitHub's web upload
-will not automatically delete old files; stale modules left in your repo can
-cause the TypeScript build to fail. The exact 13 removed/consolidated paths
-are listed at the end of this README.
+1. Extract `AUDIXO-V57-ONE-REPO-99-FILES.zip`.
+2. Open your existing AUDIXO repository on GitHub → **Add file → Upload files**.
+3. Drag the **contents of the extracted directory**, with subfolders intact, not the ZIP itself. Do not create a second nested repository folder.
+4. Commit. All 99 files are in one source tree, including `render.yaml` at the root.
+5. If this repository already contains obsolete V56 files not in this package, GitHub's web upload **does not delete** them. Remove stale paths listed under the clean-up notes below, or use Git to synchronize the repository. Do not delete unrelated files blindly.
 
-## Vercel website settings
+The 99-file count is a constraint for one browser upload, **not** a GitHub repository-wide maximum.
 
-- Framework: **Vite**
-- Root directory: `./` (repository root)
-- Install command: `npm ci`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Node.js: `22.x`
+## 3. Deploy the Docker worker FIRST (simple Render blueprint path)
 
-Add these variables in Vercel. The token is a **private** secret, not a
-`VITE_` variable:
+> Render's Standard instance + persistent disk is a paid resource; verify costs before provisioning. For lighter workloads you can choose another persistent Docker host instead.
 
-    AUDIXO_WORKER_URL=https://YOUR-WORKER-HTTPS-URL
-    AUDIXO_WORKER_TOKEN=THE-SAME-PRIVATE-TOKEN-AS-DOCKER-WORKER
-    VITE_SITE_URL=https://audixo.vercel.app
+1. Visit [Render](https://dashboard.render.com/), open **New → Blueprint**, and connect your existing AUDIXO GitHub repository.
+2. Select the `render.yaml` Blueprint. It creates an `audixo-media-worker` web service using `media-worker/Dockerfile`, an HTTPS host, a persistent `/app/data` disk, and a public `/live` health check.
+3. Render generates private `AUDIXO_WORKER_TOKEN` and `AUDIXO_ADMIN_TOKEN` values independently. **Do not paste either in GitHub, the browser app, a screenshot, or chat.** In Render's service environment settings, securely copy/reveal the **WORKER** token for Vercel (only). Keep the separate **ADMIN** token for the cookie setup page.
+4. When deployed, copy the HTTPS service origin, for example `https://audixo-media-worker.onrender.com`. The actual hostname is whatever Render provides you. Visiting `<YOUR-WORKER-URL>/live` should return `{"ok":true,"service":"audixo-media-worker"}`. (No secrets are returned.)
 
-Remove old `AUDIXO_YTDL_BASE_URL`, `AUDIXO_YTDL_AUTH_TOKEN`,
-`AUDIXO_YTDL_AUTH_SCHEME` and `AUDIXO_YTDL_COOKIE` from Vercel.
+Alternate Docker VPS deployment: create `media-worker/.env` locally using `media-worker/.env.example`, fill two **different** 32+ character secrets, and run:
 
-## Docker worker settings
+```bash
+docker build -t audixo-media-worker ./media-worker
+docker volume create audixo-private-data
+docker run -d --name audixo-media-worker --restart unless-stopped \
+  --env-file media-worker/.env \
+  -v audixo-private-data:/app/data -p 8080:8080 audixo-media-worker
+```
 
-On a Docker-capable server, deploy **the `media-worker/` folder** from this
-same repo. Set Docker build context/root directory to `media-worker`.
-Configure private environment variables on the worker host:
+Place a **trusted HTTPS reverse proxy** in front of VPS port 8080. Never expose cookies or worker tokens in GitHub.
 
-    AUDIXO_WORKER_TOKEN=LONG-RANDOM-PRIVATE-SECRET-ALSO-USED-IN-VERCEL
-    AUDIXO_ADMIN_TOKEN=A-DIFFERENT-LONG-RANDOM-PRIVATE-SECRET
-    PORT=8080
-    AUDIXO_DATA_DIR=/app/data
+## 4. Configure Vercel (same GitHub repository)
 
-Generate private 64-character hex tokens on your own computer (run twice):
+Keep the Vercel project's **Root Directory** set to repository root, NOT `media-worker/`:
 
-    node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+| Setting | Value |
+| --- | --- |
+| Framework Preset | Vite |
+| Install Command | `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Node | 22.x |
 
-Use the first value on worker + Vercel; second value only on worker.
-Never paste secret values into chats or GitHub.
+In Vercel → Project → Settings → Environment Variables add:
 
-The worker needs HTTPS, FFmpeg, yt-dlp, and **persistent `/app/data` storage**.
-Its Dockerfile installs yt-dlp + FFmpeg; for local Docker Compose usage:
+```text
+AUDIXO_WORKER_URL=https://YOUR-RENDER-SERVICE.onrender.com
+AUDIXO_WORKER_TOKEN=THE_EXACT_SAME_WORKER_TOKEN_GENERATED_ON_RENDER
+VITE_SITE_URL=https://audixo.vercel.app
+```
 
-    cd media-worker
-    cp .env.example .env
-    # replace placeholders in .env on your computer, do NOT commit it
-    docker compose up -d --build
+The example hostname must be replaced with your **real** worker URL. Use the token **only** in `AUDIXO_WORKER_TOKEN` (without `VITE_` prefix). Set Vercel variables for Production; include Preview only if you intend to enable preview deployments. Redeploy the website so server-side environment changes take effect. The converter now shows a single clear status message and a **Retry connection** button; when configured correctly it shows **Media worker connected**.
 
-Read the **Media Worker Deployment and Cookie Administration Guide** below.
-**Cookies are excluded** from the ZIP and must never be committed.
-The previously shared all-sites `cookies.txt` was not used.
+Remove unused legacy `AUDIXO_YTDL_BASE_URL`, `AUDIXO_YTDL_AUTH_TOKEN`, `AUDIXO_YTDL_AUTH_SCHEME`, and `AUDIXO_YTDL_COOKIE` variables. This project does **not** use a paid or external YTDL API.
 
-## Tests
+## 5. Optional: YouTube-only cookies (PRIVATE — NOT IN THIS ZIP)
 
-Website root:
+**Do not commit or upload the provided `cookies(1).txt` to GitHub.** The file you supplied contains active Google, YouTube, and unrelated sites' authentication/session tokens (not just YouTube). The original file must not be used directly as a public worker environment file. Because it was shared, revoke/refresh affected login sessions and generate a new YouTube-only cookie export.
 
-    npm ci
-    npm run typecheck
-    npm run test:converter
-    npm run test:tracks
-    npm run build
+For videos you own or are authorized to download, try public access **without cookies first**. If YouTube specifically requires login and you have rights to access the video:
 
-Worker folder:
+1. Export a **fresh** Netscape-format `cookies.txt` from an account/session you are authorized to use. Avoid browser-wide exports; a separate account or session is safer.
+2. Locally open `media-worker/tools/youtube-cookie-only-helper.html` in a browser and select the new export. It creates a filtered YouTube-only file **without uploading it anywhere**.
+3. Visit `https://YOUR-ACTUAL-WORKER-URL/admin` in your browser (HTTPS required). Enter the separate `AUDIXO_ADMIN_TOKEN` from Render; choose the filtered local file; click **Install Private Cookies**.
+4. The worker validates hostnames and saves the private file only on its persistent volume with file mode 0600. It is never served to clients or stored in the GitHub repository.
 
-    cd media-worker
-    npm test
+**Important:** Cookies expire, YouTube may block datacenter IPs, and login does not guarantee that a source is accessible. Do not expose a personal authenticated YouTube session to untrusted public traffic; consider keeping cookie mode disabled for a publicly accessible downloader.
 
-Synthetic worker tests check MP3/MP4 conversion without external YouTube
-access; actual public-video downloading must be tested on the deployed host.
+## 6. End-to-end download workflow (V57 fix)
 
-## Known deployment limitations
+`Browser → Vercel /api/media (private proxy) → Docker worker` for preview, conversion, and status.
 
-- GitHub file limits are for an individual browser upload, not a requirement
-  that a repository contain 99 files forever. This compact distribution has 99 files in one archive.
-- A static Vite site alone cannot execute the worker's yt-dlp/FFmpeg jobs.
-- Build success and real YouTube source access cannot be guaranteed until
-  actual cloud deployment, network connectivity and worker health pass.
-- Ensure you have permission for downloaded/redistributed media; the bundled
-  music demos may require distribution rights for public use.
+When ready:
 
+1. Worker verifies output MP3 bitrate or exact MP4 resolution with FFprobe.
+2. Browser requests a one-time signed download ticket from the Vercel proxy.
+3. Browser downloads the **file directly from the worker HTTPS domain**, bypassing the Vercel Function's 4.5 MB response-payload limit.
+4. Ticket expires in **2 minutes**, cannot expose the master token, and each job is downloadable only once. The worker deletes delivered output files.
 
----
+This change is essential for multi-megabyte MP3/MP4 files. The older V56 method streamed the entire output through a Vercel Function.
 
-## Media Worker Deployment and Cookie Administration Guide
+## 7. Test / troubleshoot
 
-# AUDIXO Private Media Worker — V56
+Worker tests use generated synthetic audio/video and a mock yt-dlp executable, **not** Google cookies or external YouTube downloads.
 
-This is a self-owned processing server. It does **not** call `ytdl.tiers.rest`.
-It uses `yt-dlp` + the bundled `yt-dlp-ejs` optional components (the Docker
-image installs `yt-dlp[default]`), the built-in Node 22 JavaScript runtime,
-and FFmpeg/FFprobe. The existing AUDIXO React/Vite UI remains hosted separately
-on Vercel. This worker needs a persistent Docker host and temporary disk.
+```bash
+npm ci
+npm run typecheck
+npm run test:converter
+npm run test:tracks
+npm run build
+cd media-worker
+npm test
+```
 
-## Step 1 — Use the media-worker folder in the existing AUDIXO GitHub repository
+Health check: `<worker HTTPS URL>/live` (public). Use the **AUDIXO converter connection banner** on the Vercel site to verify authenticated Vercel-to-worker requests. A public `/live` check alone does not prove Vercel credentials are correct.
 
-The project source contains NO credentials. Do not commit any cookies. This
-worker is already inside the **same GitHub repository** as the AUDIXO Vercel
-website, under `media-worker/`. Deploy **this subfolder** as a Docker service
-using a host that supports volumes and HTTPS, for example a managed
-container/VPS service. The platform must provide enough disk, RAM and CPU
-for your requested video resolutions.
+| UI condition | Likely issue | Action |
+| --- | --- | --- |
+| Worker setup required | Vercel env missing | Configure the Render worker and both Vercel vars, then redeploy |
+| Worker unreachable | Host asleep/down, DNS, TLS, URL mismatch | Inspect Render service and `/live` |
+| Worker rejected authentication | Tokens differ | Set identical private WORKER tokens on Render and Vercel |
+| YouTube access rejected | Source block/login/expired cookies | Test rights/availability, update yt-dlp or refresh authorized session |
+| Requested MP4 unavailable | Exact source resolution missing | Analyze again and choose from real source qualities |
+| Download doesn't start | Browser blocked automatic download or worker unavailable | Use the 2-minute manual link if not yet consumed; otherwise retry with a new conversion |
 
-## Step 2 — Configure the worker host
+**Verification limits:** An offline local test cannot prove that live YouTube source access or your hosted worker networking succeeds. Only a successful test with an authorized video on the deployed Render/Vercel setup can confirm end-to-end production operation.
 
-Set two PRIVATE environment variables on the container service:
+## 8. Existing V56 repository clean-up
 
-- `AUDIXO_WORKER_TOKEN` — a unique, cryptographically random 64-hex-character
-  token. Must match the one set on Vercel. At least 32 characters are required.
-- `AUDIXO_ADMIN_TOKEN` — a DIFFERENT random 64-hex-character token, used only
-  to install a YouTube-only cookie export into the worker.
+These obsolete files were consolidated/removed in the previous V56 112→99 merge. If they remain in your **existing GitHub repository**, delete them only after checking that no other local custom code references them:
 
-Optional: `AUDIXO_MAX_CONCURRENT=2`, `AUDIXO_MAX_JOBS_PER_10MIN=6`, `AUDIXO_DATA_DIR=/app/data`, `PORT=8080`.
+`src/styles/ax39.css`, `src/styles/ax40.css`, `src/pages/EchoTool.tsx`, `src/pages/SlowedReverbTool.tsx`, `src/pages/PitchTool.tsx`, `src/pages/SpatialTool.tsx`, `src/pages/Privacy.tsx`, `src/pages/Copyright.tsx`, `src/pages/NotFound.tsx`, `src/editor/StudioDisc.tsx`, `media-worker/.gitignore`, `media-worker/tests/integration.test.mjs`, `media-worker/README.md`.
 
-Generate secrets locally with Node:
+**V57:** `media-worker/docker-compose.yml` is intentionally replaced by the root `render.yaml` to stay within 99 files. The optional manual Docker commands above still work. Website/editor/track assets remain as in V56.
 
-    node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-
-Run twice for separate worker/admin tokens. Never paste them in chat or source
-code and do not prefix them with `VITE_`.
-
-For Docker Compose on a private machine:
-
-    cp .env.example .env
-    # Edit .env ONLY LOCALLY and replace placeholders with random tokens
-    docker compose up -d --build
-
-For a managed platform, configure the service root/build context as
-`media-worker/` in the same GitHub repository; the Dockerfile
-is `Dockerfile`, the public HTTP service listens on PORT (default 8080), and
-its HTTPS URL becomes the Vercel `AUDIXO_WORKER_URL`.
-
-### Persistent storage — required
-
-Mount `/app/data` as a **persistent volume**. This keeps cookie sessions and
-finished files across container restarts. Never mount a public bucket in its
-place. YouTube private sessions live in `/app/data/private/` (mode 0600).
-
-## Step 3 — Configure the existing AUDIXO Vercel project
-
-Set these PRIVATE environment variables in Vercel:
-
-    AUDIXO_WORKER_URL=https://YOUR-WORKER-HTTPS-DOMAIN
-    AUDIXO_WORKER_TOKEN=<SAME-LONG-SECRET-AS-WORKER>
-
-Set this PUBLIC build-time configuration if you know the domain:
-
-    VITE_SITE_URL=https://audixo.vercel.app
-
-Remove the old `AUDIXO_YTDL_BASE_URL`, `AUDIXO_YTDL_AUTH_TOKEN`,
-`AUDIXO_YTDL_AUTH_SCHEME`, and `AUDIXO_YTDL_COOKIE` entries; they are NOT used.
-Optional Cloudflare Turnstile config is preserved; it needs both its public
-site key and private verification key, as in prior AUDIXO versions.
-
-Vercel settings:
-- Framework: Vite
-- Root directory: project root
-- Install: `npm ci`
-- Build: `npm run build`
-- Output: `dist`
-- Node: 22.x
-
-A remote hosting account and the final backend service URL are needed to make
-this working source live. Cookies alone cannot run yt-dlp or FFmpeg inside a
-static Vite browser page.
-
-## Step 4 — Optional YouTube-only cookies (never put in GitHub)
-
-YouTube authentication is usually not needed for public clips, so **try without
-cookies first**. Logged-in cookies can expire or trigger account security
-checks and can put the account at risk. If access is restricted:
-
-1. Rotate/revoke sessions that were exposed in previously shared cookie dumps.
-2. Obtain a FRESH export with YouTube cookie records only. If your browser
-   exported all sites, open `tools/youtube-cookie-only-helper.html` locally,
-   choose the fresh export and save the filtered copy. This tool does not send
-   data over the network.
-3. Open `https://YOUR-WORKER-DOMAIN/admin` in your own browser.
-4. Paste your **worker ADMIN token** (not the Vercel worker token), select the
-   YouTube-only cookie file and select `Install Private Cookies`.
-5. You can now retry one *authorized* test video.
-
-The admin server rejects exports with any non-YouTube cookies. It never returns
-cookie values and only stores the file on the persistent worker volume.
-
-## Security boundaries
-
-- Only HTTPS YouTube URLs and exact video IDs accepted (SSRF defense).
-- Private worker token required for ALL `/health`, `/preview`, `/jobs` endpoints.
-- Unique 128-bit job IDs, separate job directories, max two concurrent jobs.
-- The frontend never receives the cookie file or worker token.
-- No signed YouTube stream URLs or session values in logs.
-- Only `.mp3`/`.mp4` final files pass FFprobe verification before being READY.
-- One-time media GET; source and output cleaned after completed file delivery.
-- On container restart, undelivered READY jobs with verified local files are
-  recoverable; in-progress jobs fail clearly rather than pretending success.
-- Start a new job if a file has already been delivered.
-- Place a host-level rate limit / abuse protection in front of the public UI.
-
-## Worker HTTP contract (private Vercel-to-worker)
-
-    GET  /health                 Bearer token
-    POST /preview                {"url":"https://www.youtube.com/watch?v=..."}
-    POST /jobs                   {"url":"...","format":"mp3","bitrate":320}
-    POST /jobs                   {"url":"...","format":"mp4","quality":"1080"}
-    GET  /jobs/{id}
-    GET  /jobs/{id}/events       SSE
-    GET  /jobs/{id}/file         One full GET
-    GET  /admin                  Browser-only cookie administration UI
-    POST /admin/cookies          Requires x-audixo-admin header
-
-MP4 preview is format-driven (not a fabricated global quality list). MP4
-requests re-evaluate current formats; unavailable quality returns HTTP 422
-`QUALITY_UNAVAILABLE`. FFmpeg final output height must equal requested value.
-MP3 bitrates are encoded by FFmpeg at 64/128/192/256/320 kbps and FFprobe
-validates actual bitrate before allowing file delivery.
-
-## Testing without YouTube or real cookies
-
-    npm test
-
-Worker regression tests use synthetic generated audio/video and a mock
-`yt-dlp` binary; no internet connection or private credentials are used.
-
-## Known limits
-
-- Reliable video conversion needs a persistent server, not Vercel static hosting.
-- Large 4K/8K conversions can be CPU-intensive, costly or slow.
-- YouTube source restrictions, PO-token requirements and expired sessions can
-  still make some authorized videos unavailable.
-- A personal authenticated YouTube session should not be shared broadly with
-  all visitors to a public downloader. Consider disabling cookies for general
-  public usage and rate-limiting the backend.
-- Only a successful test on the actual deployed worker can confirm that live
-  YouTube downloads and the host's networking work end-to-end.
-
-
-## Consolidated file map (V56 / GitHub browser upload)
-
-All original website routes and local test suites remain included. Files below
-were consolidated or eliminated because they were redundant/unreferenced:
-
-- `src/styles/ax39.css`
-- `src/styles/ax40.css`
-- `src/pages/EchoTool.tsx`
-- `src/pages/SlowedReverbTool.tsx`
-- `src/pages/PitchTool.tsx`
-- `src/pages/SpatialTool.tsx`
-- `src/pages/Privacy.tsx`
-- `src/pages/Copyright.tsx`
-- `src/pages/NotFound.tsx`
-- `src/editor/StudioDisc.tsx`
-- `media-worker/.gitignore`
-- `media-worker/tests/integration.test.mjs`
-- `media-worker/README.md`
-
-Path mapping: quick audio tool pages -> `src/pages/QuickTrim.tsx`; privacy/copyright -> `src/pages/Terms.tsx`; 404 -> `src/pages/Tool.tsx`; worker integration tests -> `media-worker/tests/core.test.mjs`; old CSS layers -> `src/styles/app.css`.
+Use only audio/video that you own or are legally permitted to download and transform. Respect platform rules and rights holders.

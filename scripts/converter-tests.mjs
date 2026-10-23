@@ -69,6 +69,7 @@ test('URL validation blocks non-YouTube and insecure SSRF',async()=>{
 test('job completion includes verified dimensions and file link',async()=>{
  const {response}=await invoke('status',{id:'a'.repeat(32),format:'mp4',quality:'720'},()=>({body:{job_id:'a'.repeat(32),status:'ready',title:'Test',actual_width:1280,actual_height:720,progress:100}}));
  assert.equal(response.body.state,'complete');assert.equal(response.body.reportedHeight,720);assert.equal(response.body.files.length,1);
+ assert.match(response.body.files[0].url,/action=ticket/);
 });
 test('MP4 quality mismatch fails closed, no fake file link',async()=>{
  const {response}=await invoke('status',{id:'a'.repeat(32),format:'mp4',quality:'1080'},()=>({body:{job_id:'a'.repeat(32),status:'ready',actual_width:1280,actual_height:720}}));
@@ -85,25 +86,40 @@ test('private worker authentication never appears in JSON',async()=>{
 });
 test('missing worker config yields clear error',async()=>{
  const old=process.env.AUDIXO_WORKER_URL;delete process.env.AUDIXO_WORKER_URL;
- try{const {response}=await invoke('health',{},()=>{throw Error('should not fetch')});assert.equal(response.code,503);assert.equal(response.body.code,'ORIGIN_UNAVAILABLE')}
+ try{const {response}=await invoke('health',{},()=>{throw Error('should not fetch')});assert.equal(response.code,503);assert.equal(response.body.code,'WORKER_NOT_CONFIGURED')}
  finally{process.env.AUDIXO_WORKER_URL=old}
 });
 
-test('HTML error response cannot be downloaded as a media file',async()=>{
- globalThis.fetch=async()=>new Response('<!doctype html><title>error</title>',{status:200,headers:{'Content-Type':'text/html'}})
- const response=res();
- try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{}},response);assert.equal(response.code,502);assert.equal(response.body.code,'WRONG_FILE_TYPE')}
- finally{globalThis.fetch=actualFetch}
+test('signed worker ticket lets the browser download directly without exposing the master token',async()=>{
+ const id='a'.repeat(32),expires=Date.now()+60_000;
+ const {response,calls}=await invoke('ticket',{id,format:'mp3'},url=>{
+  if(url.endsWith(`/jobs/${id}`))return {body:{job_id:id,status:'ready',format:'mp3'}};
+  if(url.endsWith(`/jobs/${id}/ticket`))return {body:{format:'mp3',path:`/download/${id}?expires=${expires}&sig=${'b'.repeat(64)}`}};
+  throw Error('unexpected '+url);
+ });
+ assert.equal(response.code,200);
+ assert.equal(response.body.url,`http://127.0.0.1:8080/download/${id}?expires=${expires}&sig=${'b'.repeat(64)}`);
+ assert.ok(!JSON.stringify(response.body).includes(process.env.AUDIXO_WORKER_TOKEN));
+ assert.equal(calls.length,2);
+ assert.equal(calls[1].headers.Authorization,'Bearer '+process.env.AUDIXO_WORKER_TOKEN);
 });
-test('Range preflight never consumes a one-time media file',async()=>{
- globalThis.fetch=async()=>{throw Error('Must not contact worker')}
- const response=res();
- try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{range:'bytes=0-0'}},response);assert.equal(response.code,416);assert.equal(response.body.code,'FILE_UNAVAILABLE')}
- finally{globalThis.fetch=actualFetch}
+test('worker tickets reject different hosts, invalid signatures and wrong formats',async()=>{
+ const id='b'.repeat(32),expires=Date.now()+60_000;
+ for(const path of [
+  `https://evil.example/download/${id}?expires=${expires}&sig=${'c'.repeat(64)}`,
+  `/download/${id}?expires=${expires}&sig=bad`,
+  `/download/${id}?expires=${expires}&sig=${'c'.repeat(64)}&extra=1`
+ ]){
+  const {response}=await invoke('ticket',{id,format:'mp4'},url=>url.endsWith('/ticket')?
+   {body:{format:'mp4',path}}:{body:{status:'ready',format:'mp4'}});
+  assert.equal(response.code,502,path);
+ }
+ const {response}=await invoke('ticket',{id,format:'mp4'},()=>({body:{status:'ready',format:'mp3'}}));
+ assert.equal(response.code,409);
 });
-test('incorrect MP4 byte signature is rejected before download',async()=>{
- globalThis.fetch=async()=>new Response(new TextEncoder().encode('NOTAVIDEODATA12345'),{status:200,headers:{'Content-Type':'video/mp4'}})
+test('old Vercel large-file response endpoint is disabled',async()=>{
+ globalThis.fetch=async()=>{throw Error('Should not contact worker for old downloads')};
  const response=res();
- try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{}},response);assert.equal(response.code,502);assert.equal(response.body.code,'WRONG_FILE_TYPE')}
+ try{await handler({method:'GET',query:{action:'file',id:'a'.repeat(32),format:'mp4'},headers:{}},response);assert.equal(response.code,410)}
  finally{globalThis.fetch=actualFetch}
 });

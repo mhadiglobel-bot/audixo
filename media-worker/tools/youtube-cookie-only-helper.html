@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUDIXO — YouTube-only Cookie Export</title>
+<style>body{font:16px system-ui,sans-serif;background:#f3f9fc;color:#1c3052;max-width:640px;margin:10vh auto;padding:24px}section{background:white;border:1px solid #d8e1ef;padding:26px;border-radius:24px;box-shadow:0 20px 50px #b0baca22}h1{font-size:27px}input{display:block;margin:18px 0}button{background:linear-gradient(90deg,#e64be6,#14c4e0);border:0;border-radius:14px;padding:14px 18px;font-weight:700;color:#0c2635;cursor:pointer}p{line-height:1.65}small{color:#50617d}</style>
+<section><h1>AUDIXO — YouTube cookies only</h1><p>This file opens locally in your browser. It does not upload anything or contact the internet.</p><p><strong>First sign out/revoke sessions exposed in any previously shared all-sites cookie export.</strong> Make a fresh export from a separate YouTube-only browser session.</p><label>Choose a fresh Netscape cookies.txt export<input type="file" accept=".txt,text/plain" id="source"></label><button id="convert">Filter and save YouTube cookies</button><p id="status" role="status"></p><small>Only hosts youtube.com and its subdomains are retained. Google and other sites' cookies are excluded.</small></section>
+<script>
+document.getElementById('convert').onclick=async()=>{
+ const file=document.getElementById('source').files[0],out=document.getElementById('status');
+ if(!file){out.textContent='Choose a file first.';return}
+ if(file.size>2000000){out.textContent='File is unexpectedly large.';return}
+ const lines=(await file.text()).split(/\r?\n/),valid=[];
+ for(const line of lines){if(!line||line.startsWith('#')&&!line.startsWith('#HttpOnly_'))continue;
+  const parts=line.split('\t');if(parts.length!==7)continue;
+  const domain=parts[0].replace(/^#HttpOnly_/,'').replace(/^\./,'').toLowerCase();
+  if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com'].includes(domain))valid.push(line)
+ }
+ if(!valid.length){out.textContent='No YouTube cookies found in this file.';return}
+ const blob=new Blob(['# Netscape HTTP Cookie File\n',...valid.map(line=>line+'\n')],{type:'text/plain'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='audixo-youtube-only-cookies.txt';link.click();URL.revokeObjectURL(url);
+ out.textContent=`Filtered ${valid.length} YouTube records. Save the file securely; do not upload it to GitHub or public chat.`
+};
+</script></html>

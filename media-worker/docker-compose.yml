@@ -1,0 +1,16 @@
+services:
+  audixo-media:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: '8080'
+      AUDIXO_DATA_DIR: /app/data
+      AUDIXO_WORKER_TOKEN: ${AUDIXO_WORKER_TOKEN:?Set a strong private token}
+      AUDIXO_ADMIN_TOKEN: ${AUDIXO_ADMIN_TOKEN:?Set a separate private admin token}
+      AUDIXO_MAX_CONCURRENT: '2'
+    volumes:
+      - audixo_private_data:/app/data
+    ports:
+      - '8080:8080'
+volumes:
+  audixo_private_data:

@@ -2,161 +2,113 @@ import {useEffect,useRef,useState} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,confirmedVideoOptions,type Mp3Bitrate} from '../components/QualityRail'
-import {downloadFile,verifyVideoOutput,explainMediaError,MediaServiceError,TERMINAL_JOB_CODES,mediaRequest,waitForJob,type MediaPreview,type MediaJob,type MediaKind} from '../services/media'
+import {mediaRequest,youtubeId,explainMediaError,MediaServiceError,outputName,type MediaPreview,type MediaKind,type DirectStream} from '../services/media'
+import {inspectLocalFile,downloadOriginalMp4,readDirectSource,encodeMp3Local,triggerBlobDownload,type LocalInfo,type Progress} from '../services/browserMedia'
 
-type Health={ready:boolean;authenticated?:boolean;maxConcurrent?:number;message?:string}
-type SavedJob={id:string;title:string;format:MediaKind;quality:string;mp3Bitrate?:Mp3Bitrate;duration:number;createdAt?:number}
-const KEY='audixo-conversion-job-v57'
-const shortTime=(seconds:number)=>!Number.isFinite(seconds)||seconds<=0?'Duration unavailable':[Math.floor(seconds/3600),Math.floor(seconds/60)%60,Math.floor(seconds%60)].filter((_,i)=>i>0||seconds>=3600).map((v,i)=>i===0?String(v):String(v).padStart(2,'0')).join(':')
-function savedJob():SavedJob|null{try{const value=JSON.parse(sessionStorage.getItem(KEY)||'null');return value&&/^[\w-]{1,128}$/.test(value.id)&&['mp3','mp4'].includes(value.format)&&Date.now()-Number(value.createdAt||0)<14*60_000?value:null}catch{return null}}
-const turnstileSiteKey=import.meta.env.VITE_AUDIXO_TURNSTILE_SITE_KEY?.trim()||''
-type TurnstileWidget={render:(container:HTMLElement,config:Record<string,unknown>)=>string;reset:(id:string)=>void;remove:(id:string)=>void}
-function HumanCheck({onVerified,resetKey}:{onVerified:(token:string)=>void;resetKey:number}){
- const root=useRef<HTMLDivElement|null>(null),widget=useRef<string|null>(null)
- useEffect(()=>{
-  if(!turnstileSiteKey||!root.current)return
-  let cancelled=false
-  const win=window as unknown as {turnstile?:TurnstileWidget}
-  const render=()=>{
-   if(cancelled||!root.current||!win.turnstile||widget.current!==null)return
-   widget.current=win.turnstile.render(root.current,{
-    sitekey:turnstileSiteKey,theme:'light',size:'compact',appearance:'always',
-    callback:(token:string)=>onVerified(token),
-    'expired-callback':()=>onVerified(''),
-    'error-callback':()=>onVerified('')
-   })
-  }
-  const existing=document.querySelector<HTMLScriptElement>('script[data-audixo-turnstile]')
-  const script=existing||document.createElement('script')
-  script.addEventListener('load',render)
-  if(!existing){script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.defer=true;script.dataset.audixoTurnstile='true';document.head.append(script)}
-  render()
-  return()=>{cancelled=true;script.removeEventListener('load',render);if(widget.current&&win.turnstile){win.turnstile.remove(widget.current);widget.current=null}}
- },[onVerified])
- useEffect(()=>{
-  if(resetKey&&widget.current){const win=window as unknown as {turnstile?:TurnstileWidget};win.turnstile?.reset(widget.current)}
- },[resetKey])
- if(!turnstileSiteKey)return null
- return <div className="ax52-bot-row"><span>Security check</span><div ref={root}/></div>
-}
-
+function shortTime(seconds:number){if(!Number.isFinite(seconds)||seconds<=0)return 'Duration unavailable';const hours=Math.floor(seconds/3600),mins=Math.floor(seconds/60)%60,secs=Math.floor(seconds%60);return hours?`${hours}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`:`${mins}:${String(secs).padStart(2,'0')}`}
 const aborted=(error:unknown)=>error instanceof DOMException&&error.name==='AbortError'
+const STATUS_START='Browser-first · no external conversion worker'
 
 export default function YouTubeConverter(){
  const [url,setUrl]=useState(''),[preview,setPreview]=useState<MediaPreview|null>(null)
+ const [local,setLocal]=useState<LocalInfo|null>(null)
  const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState<Mp3Bitrate>(320)
- const [busy,setBusy]=useState(''),[notice,setNotice]=useState(''),[job,setJob]=useState<MediaJob|null>(null),[manualDownload,setManualDownload]=useState('')
- const [humanToken,setHumanToken]=useState(''),[humanReset,setHumanReset]=useState(0),[health,setHealth]=useState<Health|null>(null)
- const [saved,setSaved]=useState<SavedJob|null>(savedJob),[completed,setCompleted]=useState<SavedJob|null>(null)
- const change=useRef(0),running=useRef<AbortController|null>(null)
- const effectiveMp3Bitrate=mp3Bitrate
- const downloadButtonText=busy||(format==='mp4'?(quality?`Download MP4 · ${quality}p`:preview?'MP4 not available for this video':'Analyze video for MP4'):`Download MP3 · ${effectiveMp3Bitrate} kbps`)
- useEffect(()=>{
-  const controller=new AbortController()
-  mediaRequest<Health>('health',{},controller.signal).then(setHealth).catch(e=>{if(!controller.signal.aborted)setHealth({ready:false,message:explainMediaError(e)})})
-  return()=>{controller.abort();running.current?.abort()}
- },[])
- const retryConnection=async()=>{
-  setHealth(null);setNotice('')
-  try{setHealth(await mediaRequest<Health>('health'))}
-  catch(error){setHealth({ready:false,message:explainMediaError(error)})}
- }
- const clear=()=>{change.current++;running.current?.abort();running.current=null;setUrl('');setPreview(null);setQuality('');setBusy('');setNotice('');setJob(null);setCompleted(null);setManualDownload('')}
- const updateUrl=(value:string)=>{change.current++;setUrl(value);setPreview(null);setQuality('');setJob(null);setCompleted(null);setManualDownload('');setNotice('')}
+ const [busy,setBusy]=useState(false),[progress,setProgress]=useState<Progress|null>(null),[notice,setNotice]=useState(''),[completed,setCompleted]=useState(false)
+ const picker=useRef<HTMLInputElement|null>(null),running=useRef<AbortController|null>(null),version=useRef(0)
+ useEffect(()=>()=>{running.current?.abort()},[])
+ const available=local?local.qualities:(preview?.qualities||[])
+ const active=!!(local||preview)
+ const selectedQuality=confirmedVideoOptions(available).some(item=>item.value===quality)
+ const audioReady=local?.audioAvailable||preview?.audioAvailable||false
+ const mp4Ready=!!selectedQuality
+ const canDownload=active&&(format==='mp3'?audioReady:mp4Ready)
+ const target=local?.title||preview?.title||''
+ const clear=()=>{version.current++;running.current?.abort();setUrl('');setPreview(null);setLocal(null);setQuality('');setBusy(false);setNotice('');setProgress(null);setCompleted(false);if(picker.current)picker.current.value=''}
+ const updateUrl=(value:string)=>{version.current++;setUrl(value);setPreview(null);setLocal(null);setQuality('');setNotice('');setProgress(null);setCompleted(false);if(picker.current)picker.current.value=''}
  const analyze=async()=>{
-  if(!health?.ready)return
-  const version=++change.current
-  setBusy('Analyzing video...');setNotice('');setPreview(null);setQuality('');setCompleted(null);setJob(null);setManualDownload('')
-  try{const info=await mediaRequest<MediaPreview>('meta',{url:url.trim()});if(version!==change.current)return;setPreview(info);setQuality(highestConfirmedQuality(info.qualities||[]));setMp3Bitrate(320)}
-  catch(e){if(version===change.current)setNotice(explainMediaError(e))}
-  finally{if(version===change.current)setBusy('')}
+  if(busy)return
+  if(!youtubeId(url)){setNotice('Paste a valid HTTPS YouTube video link (watch, shorts, live or youtu.be).');return}
+  const op=++version.current,controller=new AbortController();running.current?.abort();running.current=controller
+  setBusy(true);setProgress({stage:'Analyzing public YouTube metadata…'});setNotice('');setPreview(null);setLocal(null);setQuality('');setCompleted(false)
+  try{const info=await mediaRequest<MediaPreview>('meta',{url:url.trim()},controller.signal)
+   if(op!==version.current||controller.signal.aborted)return
+   setPreview(info);setQuality(highestConfirmedQuality(info.qualities));setProgress(null)
+   if(!info.audioAvailable&&!info.qualities?.length)setNotice('Title identified, but no browser-accessible MP3/MP4 source was confirmed. YouTube can restrict cross-origin downloads. You can use a local file instead.')
+  }catch(e){if(op===version.current&&!aborted(e))setNotice(explainMediaError(e))}
+  finally{if(op===version.current){setBusy(false);setProgress(null)}if(running.current===controller)running.current=null}
  }
- const save=(record:SavedJob)=>{setSaved(record);try{sessionStorage.setItem(KEY,JSON.stringify(record))}catch{}}
- const dropSaved=()=>{setSaved(null);try{sessionStorage.removeItem(KEY)}catch{}}
- const finish=async(record:SavedJob,controller:AbortController)=>{
-  setBusy(`Preparing ${record.format.toUpperCase()}...`)
-  const finished=await waitForJob(record.id,record.format,item=>{
-   setJob(item);setBusy(item.state==='queued'?'Queued on AUDIXO worker...':`${item.stage||'Processing'} ${record.format.toUpperCase()}${Number.isFinite(item.progress)?` · ${Math.round(item.progress||0)}%`:''}${item.downloadSpeed?` · ${item.downloadSpeed}`:''}${item.eta?` · ETA ${item.eta}`:''}`)
-  },controller.signal,record.format==='mp4'?record.quality:'')
-  const file=finished.files?.[0];if(!file)throw new Error('Conversion completed without a downloadable file.')
-  setJob(finished)
-  let detail=''
-  if(record.format==='mp4'){
-   setBusy('Preparing the one-time MP4 delivery...')
-   const output=await verifyVideoOutput(file,record.title,record.quality,finished,controller.signal)
-   // Origin removes each file after ONE GET; do not HEAD or metadata-preview it.
-   setManualDownload(await downloadFile(file,record.title,'mp4',controller.signal))
-   detail=output.verified?`Verified MP4 ${output.actual}p (${output.width} x ${output.height}) from AUDIXO worker status.`:`Requested ${record.quality}p MP4. The worker did not supply final dimensions; inspect the downloaded file to confirm actual resolution.`
-  }else{
-   const target=record.mp3Bitrate||320
-   const actual=finished.reportedKbps
-   if(actual&&Math.abs(actual-target)>8)throw new MediaServiceError(`The MP3 output is ${actual} kbps instead of the selected ${target} kbps. The incorrect file was not downloaded.`,'QUALITY_MISMATCH',422,true)
-   // AUDIXO V56 private worker encodes MP3 at the selected bitrate itself.
-   // One full GET only; do not consume one-time output for local re-encoding.
-   setManualDownload(await downloadFile(file,record.title,'mp3',controller.signal))
-   detail=actual?`MP3 encoded at ${actual} kbps (worker-verified).`:`MP3 requested at ${target} kbps. The server did not provide final bitrate metadata.`
-
-  }
-  if(controller.signal.aborted)return
-  // A one-time file cannot be fetched twice. A new download creates a new job.
-  dropSaved();setCompleted(record);setNotice(`Secure download link opened. Check your browser's downloads. ${detail}`)
+ const chooseLocal=async(file?:File)=>{
+  if(!file||busy)return
+  const op=++version.current,controller=new AbortController();running.current?.abort();running.current=controller
+  setBusy(true);setProgress({stage:'Reading local media metadata…'});setNotice('');setPreview(null);setLocal(null);setUrl('');setQuality('');setCompleted(false)
+  try{const info=await inspectLocalFile(file,controller.signal)
+   if(op!==version.current)return
+   setLocal(info);setQuality(highestConfirmedQuality(info.qualities));setProgress(null)
+   if(!info.qualities.length)setFormat('mp3')
+  }catch(e){if(op===version.current&&!aborted(e))setNotice(explainMediaError(e))}
+  finally{if(op===version.current){setBusy(false);setProgress(null)}if(running.current===controller)running.current=null}
  }
  const start=async()=>{
-  if(!health?.ready||!preview||busy||(turnstileSiteKey&&!humanToken))return
-  const recordFormat=format,recordQuality=quality
-  if(recordFormat==='mp4'){
-   const confirmed=confirmedVideoOptions(preview.qualities||[])
-   if(!recordQuality||!confirmed.some(item=>item.value===recordQuality)){
-    setNotice(!confirmed.length?'No downloadable MP4 resolutions were reported for this video.':`The selected resolution is not available. Choose one of: ${confirmed.map(item=>item.label).join(', ')}.`)
-    return
-   }
-  }
-  running.current?.abort();const controller=new AbortController();running.current=controller
-  setNotice('');setCompleted(null);setJob(null);setManualDownload('');setBusy(`Starting ${recordFormat.toUpperCase()}...`)
-  let createdHere=false
+  if(busy||!canDownload)return
+  const controller=new AbortController();running.current?.abort();running.current=controller
+  setBusy(true);setCompleted(false);setNotice('');setProgress({stage:'Preparing browser-only download…'})
   try{
-   // Exactly the selected quality; never silently create a lower-quality job.
-   const created=await mediaRequest<MediaJob>('convert',{url:preview.url,format:recordFormat,...(recordFormat==='mp4'?{quality:recordQuality}:{bitrate:mp3Bitrate}),...(turnstileSiteKey?{turnstileToken:humanToken}:{})},controller.signal)
-   if(created.state==='failed')throw new MediaServiceError(created.error||'Conversion rejected.',created.errorCode||'JOB_FAILED')
-   if(!created.id)throw new Error('The API did not return a job ID.')
-   const record:SavedJob={id:created.id,title:preview.title,format:recordFormat,quality:recordFormat==='mp3'?'':recordQuality,mp3Bitrate:recordFormat==='mp3'?mp3Bitrate:undefined,duration:preview.duration,createdAt:Date.now()}
-   save(record);createdHere=true;setJob(created);await finish(record,controller)
-  }catch(e){if(!aborted(e)){setNotice(explainMediaError(e));setCompleted(null);if(createdHere&&e instanceof MediaServiceError&&TERMINAL_JOB_CODES.has(e.code))dropSaved()}}
-  finally{if(turnstileSiteKey){setHumanToken('');setHumanReset(n=>n+1)}if(running.current===controller){running.current=null;setBusy('')}}
+   if(local){
+    if(format==='mp4'){if(!selectedQuality||local.qualities[0]?.value!==quality)throw new MediaServiceError('Only the original, confirmed MP4 resolution can be saved; browser upscaling is not supported.','QUALITY_UNAVAILABLE')
+     downloadOriginalMp4(local);setProgress({stage:'Local MP4 save requested',percent:100})
+    }else{
+     const mp3=await encodeMp3Local(local.file,mp3Bitrate,controller.signal,setProgress)
+     if(controller.signal.aborted)return
+     triggerBlobDownload(mp3,outputName(local.title,'mp3'))
+     setProgress({stage:'MP3 save requested',percent:100})
+    }
+   }else if(preview){
+    let stream:DirectStream|undefined
+    if(format==='mp4')stream=preview.streams.find(s=>s.kind==='mp4'&&s.quality===quality)
+    else stream=preview.streams.filter(s=>s.kind==='audio'||s.kind==='mp4').sort((a,b)=>((a.mimeType==='audio/mp4'?3:a.kind==='audio'?2:1)-(b.mimeType==='audio/mp4'?3:b.kind==='audio'?2:1))||((b.bitrate||0)-(a.bitrate||0)))[0]
+    if(!stream)throw new MediaServiceError('No browser-accessible source format was confirmed for this choice.','NO_BROWSER_STREAM')
+    const filename=outputName(preview.title,format)
+    const bytes=await readDirectSource(stream,format,controller.signal,setProgress,filename)
+    if(controller.signal.aborted)return
+    if(format==='mp4'){if(bytes)triggerBlobDownload(bytes,filename)}
+    else{
+     if(!bytes)throw new MediaServiceError('Audio stream was empty.','SOURCE_UNAVAILABLE')
+     const encoded=await encodeMp3Local(bytes,mp3Bitrate,controller.signal,setProgress)
+     if(controller.signal.aborted)return
+     triggerBlobDownload(encoded,filename)
+    }
+   }
+   if(!controller.signal.aborted){setCompleted(true);setNotice(`${format.toUpperCase()} file prepared. Check your browser's download/save prompt. Conversion stayed in your browser; no media bytes were routed through Vercel.`)}
+  }catch(e){if(!aborted(e))setNotice(explainMediaError(e))}
+  finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }
- const continueRecord=async(record:SavedJob)=>{
-  if(busy)return
-  const controller=new AbortController();running.current=controller;setNotice('')
-  try{await finish(record,controller)}catch(e){if(!aborted(e)){setNotice(explainMediaError(e));if(e instanceof MediaServiceError&&TERMINAL_JOB_CODES.has(e.code))dropSaved()}}
-  finally{if(running.current===controller){running.current=null;setBusy('')}}
- }
- const resume=()=>{if(saved)void continueRecord(saved)}
- const downloadAgain=()=>{if(completed)void start()}
- const stop=()=>{running.current?.abort();running.current=null;setBusy('');setNotice('Stopped checking. The remote job may continue; Resume checks the same job.')}
- const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Choose your MP3 bitrate',glyph:'\u266b'},{id:'mp4' as const,title:'MP4 Video',copy:'Download at the selected resolution',glyph:'\u25b6'}]
- return <SiteShell><Seo title="YouTube to MP3 & MP4 Downloader | AUDIXO" description="Analyze an authorized YouTube video, request MP3 audio, or choose only the MP4 resolutions verified by the conversion server." path="/tools/youtube-to-mp3"/>
-  <main className="page-shell ax39-converter">
-   <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / MEDIA CONVERTER</div><h1>One link.<br/><em>Sound or video.</em></h1><p>Choose MP3 audio or MP4 video in one clear workspace. Analyze the original title, select a supported format and let your conversion server handle the rest.</p><div className={`ax39-server ${health?.ready?'ready':health?'not-ready':'loading'}`}><i/>{health?.ready?'Media worker connected':health?'Worker setup or connection required':'Checking media worker'}{health?.ready&&health.maxConcurrent?` · ${health.maxConcurrent} concurrent jobs`:''}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · server encoded</div><div className="ax39-art-chip two">MP4 · source resolution</div></div></div>
-   <section className="ax39-converter-panel" aria-label="YouTube media converter">
-    <div className="ax39-converter-top"><div><small>FORMAT</small><strong>What would you like to save?</strong></div><span>01 / 03</span></div>
-    <div className="ax39-format-toggle" role="group" aria-label="Output file format">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={!!busy} onClick={()=>{setFormat(item.id);setNotice('');setCompleted(null);setJob(null)}}><span className="ax39-format-icon">{item.glyph}</span><span><strong>{item.title}</strong><small>{item.copy}</small></span><span className="ax46-format-switch" aria-hidden="true"><i/></span></button>)}</div>
-    <div className="ax39-steps">
-     <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste your YouTube link</h2><p>A clean source preview appears after Analyze. Use × to clear the field instantly.</p><div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="YouTube video URL" type="url" placeholder="Paste a YouTube video link…" value={url} disabled={!!busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy&&url.trim())void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear YouTube URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={!health?.ready||!!busy||!url.trim()} className="ax39-analyze" onClick={analyze}>{busy.startsWith('Analyzing')?'Checking…':'Analyze'} <span>↗</span></button></div>
-       {preview&&<div className="ax39-preview"><img src={preview.thumbnail} alt="Video thumbnail" loading="lazy" referrerPolicy="no-referrer"/><div><small>VIDEO IDENTIFIED · {shortTime(preview.duration)}</small><strong title={preview.title}>{preview.title}</strong><span>{preview.author||'YouTube source'}</span></div><b>✓</b></div>}
-      </div></div>
-     <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Set video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={preview?.duration||0} disabled={!!busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={preview?.qualities||[]} analyzed={!!preview} disabled={!!busy}/>}
-      </div></div>
-     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare & download</h2><p>File name keeps the analyzed video title, followed by <b>(Audixo {format.toUpperCase()})</b>.</p><HumanCheck onVerified={setHumanToken} resetKey={humanReset}/><p className="ax52-usage-note">Use media you are permitted to download or transform.</p><button type="button" className="ax39-create ax42-download" disabled={!health?.ready||!preview||!!busy||(turnstileSiteKey&&!humanToken)||(format==='mp4'&&(!quality||!confirmedVideoOptions(preview.qualities||[]).some(item=>item.value===quality)))} onClick={start}><span>{downloadButtonText}</span><b>↓</b></button>
-       {busy&&!busy.startsWith('Analyzing')&&<div className="ax39-progress" role="status"><div><strong>{busy}</strong><button onClick={stop}>Stop checking</button></div><span><i style={{width:`${Math.min(99,Math.max(0,Number(job?.progress)||0))}%`}}/></span><small>{job?.message||'Live processing progress appears as your audio/video is prepared; the server cleans up the file after a single download.'}{job?.downloadPart&&job.downloadPartsTotal?` · Stream ${job.downloadPart}/${job.downloadPartsTotal}`:''}</small></div>}
-       {saved&&!busy&&health?.ready&&<button className="ax39-resume" onClick={resume}>↻ Resume earlier {saved.format.toUpperCase()} job</button>}
-       {completed&&!busy&&<button className="ax39-resume" onClick={downloadAgain}>Start a new download job</button>}
-       {completed&&!busy&&manualDownload&&<a className="ax57-manual-download" href={manualDownload} rel="noreferrer">Download didn't start? Click here within 2 minutes ↗</a>}
-      </div></div>
-    </div>
-    <div className="ax39-converter-bottom"><span>Original video title</span><span>MP3 or MP4</span><span>Download progress</span></div>
-   </section>
-   {health&&!health.ready&&<div role="status" className="ax39-alert ax57-worker-alert"><span>{health.message||'Media worker is not connected. Deploy its Docker service and configure Vercel backend variables.'}</span><button type="button" onClick={()=>void retryConnection()}>Retry connection ↻</button></div>}
-   {notice&&(!health||health.ready)&&<div role="status" className="ax39-alert" data-type={/Secure download link opened/i.test(notice)?'success':'info'}>{notice}</div>}
-  </main>
- </SiteShell>
+ const cancel=()=>{running.current?.abort();running.current=null;setBusy(false);setProgress(null);setNotice('Operation cancelled. No media was uploaded to AUDIXO.')}
+ const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Encode in your browser at your chosen bitrate',glyph:'♫'},{id:'mp4' as const,title:'MP4 Video',copy:'Save only the source-confirmed resolution',glyph:'▶'}]
+ const cta=format==='mp3'?`Download MP3 · ${mp3Bitrate} kbps`:`Download MP4${quality?` · ${quality}p`:''}`
+ const cannotDownload=active&&!canDownload
+ return <SiteShell><Seo title="YouTube to MP3 & MP4 | AUDIXO" description="Inspect public YouTube metadata, choose verified browser-direct formats where permitted, or convert a local audio file to MP3 in your browser." path="/tools/youtube-to-mp3"/>
+ <main className="page-shell ax39-converter ax59-converter">
+  <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / MEDIA CONVERTER</div><h1>One link.<br/><em>Sound or video.</em></h1><p>Analyze a public video, choose a source-verified format, or use a local file. Files are processed in your browser where source access permits it.</p><div className="ax39-server ready"><i/>{STATUS_START}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · browser encoded</div><div className="ax39-art-chip two">MP4 · source quality</div></div></div>
+  <section className="ax39-converter-panel" aria-label="AUDIXO media converter">
+   <div className="ax39-converter-top"><div><small>FORMAT</small><strong>What would you like to save?</strong></div><span>01 / 03</span></div>
+   <div className="ax39-format-toggle" role="group" aria-label="Output format">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={busy} onClick={()=>{setFormat(item.id);setNotice('');setCompleted(false);if(item.id==='mp4')setQuality(highestConfirmedQuality(available))}}><span className="ax39-format-icon">{item.glyph}</span><span><strong>{item.title}</strong><small>{item.copy}</small></span><span className="ax46-format-switch" aria-hidden="true"><i/></span></button>)}</div>
+   <div className="ax39-steps">
+    <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste your YouTube link</h2><p>We analyze public metadata, then check whether media permits direct browser access.</p>
+     <div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="YouTube video URL" type="url" inputMode="url" placeholder="Paste a YouTube video link…" value={url} disabled={busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={busy||!url.trim()} className="ax39-analyze" onClick={()=>void analyze()}>{busy&&progress?.stage.includes('Analyzing')?'Checking…':'Analyze'} <span>↗</span></button></div>
+     <div className="ax59-local-row"><span>Or work entirely offline with media you own</span><input ref={picker} type="file" accept="audio/*,video/mp4,video/webm,.m4a,.wav,.flac,.mp3,.mp4,.webm" aria-label="Choose a local audio or MP4 video" hidden onChange={e=>void chooseLocal(e.currentTarget.files?.[0])}/><button type="button" disabled={busy} onClick={()=>picker.current?.click()}>+ Choose local file</button></div>
+     {active&&<div className="ax39-preview">{preview?.thumbnail?<img src={preview.thumbnail} alt="Video thumbnail" loading="lazy" referrerPolicy="no-referrer"/>:<div className="ax59-local-icon" aria-hidden="true">♫</div>}<div><small>{local?'LOCAL FILE':'YOUTUBE METADATA'} · {shortTime(local?.duration||preview?.duration||0)}</small><strong title={target}>{target}</strong><span>{local?'Stored on this device':preview?.author||'Public YouTube video'}</span></div><b>✓</b></div>}
+    </div></div>
+    <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Choose video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={local?.duration||preview?.duration||0} disabled={busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={available} analyzed={active} disabled={busy}/>}</div></div>
+    <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare &amp; download</h2><p>The file name uses the original title plus <b>(Audixo {format.toUpperCase()})</b>.</p><p className="ax52-usage-note">Only download or transform content you own or have permission to use. No browser extension, account cookies, or download server required.</p>
+     <button type="button" className="ax39-create ax42-download" disabled={!canDownload||busy} onClick={()=>void start()}><span>{busy?'Working in your browser…':cta}</span><b>↓</b></button>
+     {cannotDownload&&<div className="ax59-limitation" role="status">{format==='mp3'?'No direct audio stream was confirmed. YouTube may block access from independent websites. You can still choose a local file and encode real MP3 at the selected bitrate.':'No source-verified MP4 format available. Changing resolution cannot unlock a stream; try an authorized local MP4 file.'}</div>}
+     {busy&&progress&&<div className="ax39-progress ax59-progress" role="status"><div><strong>{progress.stage}</strong><button type="button" onClick={cancel}>Cancel</button></div>{typeof progress.percent==='number'?<progress max="100" value={progress.percent} aria-label="Media processing progress"/>:<span className="ax59-progress-indeterminate" aria-hidden="true"/>}<small>{typeof progress.percent==='number'?`${progress.percent}% · `:''}{typeof progress.bytes==='number'?`${(progress.bytes/1048576).toFixed(1)} MB transferred directly · `:''}No large file passes through Vercel.</small></div>}
+     {completed&&!busy&&<div className="ax59-complete" role="status">✓ Save requested. Check your device downloads.</div>}
+    </div></div>
+   </div>
+   <div className="ax39-converter-bottom"><span>Original source title</span><span>MP3 / MP4</span><span>Browser-first delivery</span></div>
+  </section>
+  {notice&&<div className="ax39-alert ax59-alert" role="status" data-type={completed?'success':'info'}>{notice}</div>}
+  <p className="ax59-source-note">Browser privacy controls may prevent YouTube media downloads. AUDIXO never bypasses authentication, relays full media through Vercel, or claims unavailable formats are supported.</p>
+ </main></SiteShell>
 }

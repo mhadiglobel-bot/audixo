@@ -13,7 +13,7 @@ import { fitScale } from './editing'
 import { addCut, addEffect, addTrim, manualGroup, rebuildEdits, removeEdit, retainSources, targetsFor,duplicateAudio,clearEdits } from './editRack'
 import AppliedEdits from './AppliedEdits'
 import Recorder from './Recorder'
-import { decodeAudio, playProject, renderProject } from './audioEngine'
+import { decodeAudio, detectPhraseEndings, playProject, renderProject } from './audioEngine'
 import { downloadBlob, encodeMp3, encodeWav } from './encoder'
 import { saveMixToLibrary } from './library'
 import { localMetadata } from '../services/media'
@@ -39,6 +39,12 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
   setScale(fitScale(seconds??fullSource,(timelineHost.current?.clientWidth||window.innerWidth-48)-190))
  }
  const hit=useMemo(()=>findClip(project,selectedId),[project,selectedId]),duration=project.tracks.some(t=>t.clips.length)?projectDuration(project):0
+ const phraseCount=useMemo(()=>{
+  if(!hit?.clip)return null
+  const clip=hit.clip,raw=buffers.current.get(clip.bufferId)
+  if(!raw||clip.fx.reverse)return null
+  return detectPhraseEndings(raw,clip.offset,clip.duration,Number(clip.fx.phrasePauseMs??450)).length
+ },[hit?.clip.bufferId,hit?.clip.offset,hit?.clip.duration,hit?.clip.fx.phrasePauseMs,hit?.clip.fx.reverse,revision])
  const select=(trackId:string,id:string)=>{setSelectedId(id);setSelection(s=>({...s,trackId}))}
  const changeRange=(id:string,a:number,b:number)=>{stop();const h=findClip(projectRef.current,id),source=h&&buffers.current.get(h.clip.bufferId);if(source)commit(p=>addTrim(p,id,a,b,source.duration));setTime(0)}
  const importFiles=async(files:File[],initialMutes:Set<string>=new Set())=>{
@@ -101,7 +107,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
   <Transport name={project.name} playing={playing} time={time} duration={duration} onPlay={togglePlay} onImport={()=>input.current?.click()} onExport={()=>duration&&setExportOpen(true)} onLibrary={()=>setLibraryOpen(true)} onRecord={()=>setRecordOpen(v=>!v)} onDuplicate={duplicate} onKeepRange={keepRange} onUndo={()=>travel('past')} onRedo={()=>travel('future')} canUndo={!!history.current.past.length} canRedo={!!history.current.future.length} sourceStart={hit?.clip.offset||0} sourceEnd={hit?hit.clip.offset+hit.clip.duration:0} sourceDuration={hit?buffers.current.get(hit.clip.bufferId)?.duration||0:0} onSource={(a,b)=>hit&&changeRange(hit.clip.id,a,b)} selected={!!hit} cutMode={cutMode} onCutMode={v=>{setCutMode(v);if(hit)setSelection({start:hit.clip.start+clipTimelineDuration(hit.clip)*.35,end:hit.clip.start+clipTimelineDuration(hit.clip)*.65,trackId:hit.track.id})}} selection={selection} onSelection={setSelection} onCut={applyCut} allTracks={allTracks} onAllTracks={setAllTracks} onFit={()=>fit()} scale={scale} onScale={setScale}/>
   {recordOpen&&<Recorder onFinish={file=>importFiles([file])} onClose={()=>setRecordOpen(false)}/>}
   <div className="ax25-studio-context"><div><span className="ax25-context-dot"/><strong>{hit?.track.name||'Choose a track to edit'}</strong><small>{hit?(cutMode?'Changes target the highlighted range.':'Changes target the selected track.'):'Import audio or select a waveform to open its controls.'}</small></div><span>CONTROL DOCK <b>→</b></span></div>
-  <div className={`ax-studio-body ${controls?'with-controls':''}`}><div ref={timelineHost}><Timeline project={project} buffers={buffers.current} pxPerSec={scale} selectedClipId={selectedId} playhead={time} selection={selection} cutMode={cutMode} onSelect={select} onRange={changeRange} onSelection={setSelection} onSeek={v=>{stop();setTime(v)}} onPatchTrack={patchTrack} onRemoveTrack={id=>{stop();commit(p=>{retainSources(p);p.sources=p.sources!.filter(t=>t.id!==id);p.edits=(p.edits||[]).map(op=>({...op,targets:op.targets.filter(t=>t.trackId!==id)})).filter(op=>op.targets.length);rebuildEdits(p)});setSelectedId(null)}} onImport={()=>input.current?.click()}/></div>{controls&&<Inspector clip={hit?.clip||null} track={hit?.track||null} selection={cutMode?selection:{start:0,end:0,trackId:null}} onPatchClipFx={patchFx} onCheckpoint={()=>{checkpoint();gestureTargets.current=activeTargets()}} onEditEnd={()=>{gestureTargets.current=null}} onPreset={applyPreset} onMakeRegion={isolate} onReset={resetSound}/>}</div>
+  <div className={`ax-studio-body ${controls?'with-controls':''}`}><div ref={timelineHost}><Timeline project={project} buffers={buffers.current} pxPerSec={scale} selectedClipId={selectedId} playhead={time} selection={selection} cutMode={cutMode} onSelect={select} onRange={changeRange} onSelection={setSelection} onSeek={v=>{stop();setTime(v)}} onPatchTrack={patchTrack} onRemoveTrack={id=>{stop();commit(p=>{retainSources(p);p.sources=p.sources!.filter(t=>t.id!==id);p.edits=(p.edits||[]).map(op=>({...op,targets:op.targets.filter(t=>t.trackId!==id)})).filter(op=>op.targets.length);rebuildEdits(p)});setSelectedId(null)}} onImport={()=>input.current?.click()}/></div>{controls&&<Inspector clip={hit?.clip||null} track={hit?.track||null} phraseCount={phraseCount} selection={cutMode?selection:{start:0,end:0,trackId:null}} onPatchClipFx={patchFx} onCheckpoint={()=>{checkpoint();gestureTargets.current=activeTargets()}} onEditEnd={()=>{gestureTargets.current=null}} onPreset={applyPreset} onMakeRegion={isolate} onReset={resetSound}/>}</div>
   <AppliedEdits project={project} selectedTrack={hit?.track.id} onRemove={id=>{stop();commit(p=>removeEdit(p,id));fit();setTime(0)}} onReset={()=>{stop();commit(p=>{clearEdits(p)});fit();setTime(0)}} onUnmute={id=>patchTrack(id,{muted:false})}/>
   <footer className="ax-studio-footer"><span>Your mix · {project.tracks.length} tracks</span><span>Space to preview · Ctrl / ⌘ Z to undo</span></footer>
   <input ref={input} type="file" hidden multiple accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg" onChange={e=>{importFiles(Array.from(e.target.files||[]));e.target.value=''}}/>

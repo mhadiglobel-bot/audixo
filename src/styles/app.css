@@ -2945,3 +2945,56 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:700px){.ax59-converter .ax59-quality-summary{font-size:10px}.ax59-converter .ax59-bitrate-buttons{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.ax59-converter .ax59-bitrate-buttons button{min-height:57px;padding:8px 2px}.ax59-converter .ax59-bitrate-buttons button strong{font-size:13px}.ax59-converter .ax59-bitrate-buttons button strong small{font-size:8px}.ax59-converter .ax59-bitrate-buttons button span{font-size:8px}.ax59-converter .ax59-video-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:400px){.ax59-converter .ax59-bitrate-buttons button strong{font-size:11px}.ax59-converter .ax59-bitrate-buttons button strong small{font-size:7px}.ax59-converter .ax59-bitrate-buttons button span{font-size:7px}.ax59-converter .ax59-video-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.ax59-converter .ax59-local-row button{width:100%}}
 @media(prefers-reduced-motion:reduce){.ax59-converter .ax59-progress-indeterminate::after{animation:none}}
+
+/* AUDIXO V60: scoped polish only. Existing page identity remains unchanged. */
+.ax52-metrics-shell{margin-top:16px!important;margin-bottom:20px!important}
+.ax52-metrics-shell .ax46-metric-grid{gap:12px!important}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card{
+ min-height:186px!important;max-height:none!important;padding:15px 16px!important;
+ border-radius:20px!important;overflow:hidden!important;
+ box-shadow:0 9px 24px rgba(56,77,134,.05)!important;
+}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>header{margin-bottom:7px!important;font-size:9px!important}
+.ax52-metrics-shell .ax46-metric-category{font-size:9px!important;letter-spacing:.09em!important}
+.ax52-metrics-shell .ax46-metric-value{
+ font-size:clamp(29px,2.5vw,40px)!important;line-height:1.06!important;
+ padding:2px 0 3px!important;margin:5px 0 1px!important;min-height:0!important;
+ white-space:nowrap!important;overflow:hidden!important;
+}
+.ax52-metrics-shell .ax46-metric-value>span{overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;padding:2px!important}
+.ax52-metrics-shell .ax46-metric-subtitle{font-size:11px!important;min-height:0!important;line-height:1.25!important;white-space:nowrap!important;text-overflow:ellipsis!important;overflow:hidden!important}
+.ax52-metrics-shell .ax46-metric-content p{font-size:10px!important;line-height:1.4!important;min-height:0!important;margin:6px 0 8px!important}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a{padding-top:9px!important;font-size:10px!important}
+@media(max-width:930px){.ax52-metrics-shell .ax46-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:400px){.ax52-metrics-shell .ax46-metric-grid{gap:9px!important}.ax52-metrics-shell .ax39-metric-card.ax46-metric-card{min-height:174px!important;padding:12px!important}.ax52-metrics-shell .ax46-metric-value{font-size:30px!important}.ax52-metrics-shell .ax46-metric-content p{font-size:9px!important}}
+
+/* Track strip: hover pauses the animation; grab/drag works without waiting for a loop. */
+.ax49-track-marquee{cursor:grab;overscroll-behavior-x:contain;scroll-snap-type:none;user-select:none;-webkit-user-select:none}
+.ax49-track-marquee.is-grabbing{cursor:grabbing;scroll-behavior:auto!important}
+.ax49-track-marquee.is-grabbing .ax49-track-item{pointer-events:none}
+.ax49-track-marquee:focus-visible{outline:3px solid rgba(139,102,255,.48);outline-offset:2px;border-radius:12px}
+@media(hover:none){.ax49-track-marquee{touch-action:pan-x}}
+.ax49-tabs{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:700px){.ax49-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:370px){.ax49-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* New controls belong to the existing Studio dock, not a site-wide redesign. */
+.ax60-polish-quick{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 13px}
+.ax60-polish-quick button{border:1px solid #dfdff3;background:#f9f9ff;border-radius:10px;padding:8px 11px;color:#62549e;font-weight:850;font-size:11px;cursor:pointer;min-height:36px}
+.ax60-polish-quick button:hover{background:#eee9ff;border-color:#b3a3e9}
+.ax60-stem-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 18px;align-items:center;margin:13px 0 16px;padding:13px 15px;border:1px solid #e4e8f5;background:#fcfcff;border-radius:17px;box-shadow:0 5px 19px rgba(46,57,103,.025)}
+.ax60-stem-tool-intro{display:grid;gap:4px;min-width:0}
+.ax60-stem-tool-intro strong{font-size:13px;color:#273a61;font-weight:900}
+.ax60-stem-tool-intro small{font-size:10px;color:#7a879d;line-height:1.45}
+.ax60-stem-buttons{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}
+.ax60-stem-buttons button,.ax60-stem-mute-list button{border:1px solid #d7daed;border-radius:10px;background:#fff;padding:9px 12px;color:#654caa;cursor:pointer;font-size:11px;font-weight:850;min-height:38px;transition:background .16s,border-color .16s}
+.ax60-stem-buttons button:first-child{background:#f1edff;border-color:#cfc4f4}
+.ax60-stem-buttons button:disabled{opacity:.45;cursor:not-allowed}
+.ax60-stem-buttons .ax60-cancel{background:#fff4f5;border-color:#f4c9d0;color:#a54257}
+.ax60-stem-mute-list{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px;border-top:1px solid #e9eaf5;padding-top:11px}
+.ax60-stem-mute-list button{display:flex;gap:9px;align-items:center;padding:7px 10px;min-height:35px;background:#f8f8ff;color:#707d9b}
+.ax60-stem-mute-list button.is-on{background:#effcf8;border-color:#a5dbc7;color:#13765c}
+.ax60-stem-mute-list button b{font-size:9px;opacity:.8}
+@media(max-width:850px){.ax60-stem-tools{grid-template-columns:1fr}.ax60-stem-buttons{justify-content:flex-start}}
+@media(max-width:500px){.ax60-stem-tools{margin:10px 0;padding:11px}.ax60-stem-buttons button{flex:1 1 130px}.ax60-stem-mute-list button{flex:1 1 135px;justify-content:space-between}}
+.ax60-phrase-notice{display:block;color:#73809e;font-size:10px;line-height:1.6;margin:7px 0 0}

@@ -20,6 +20,10 @@ export type ClipFx = {
   reverbTone: number
   warmth: number
   harshness: number
+  metallicCut: number
+  metallicFrequency: number
+  transientSoftness: number
+  lofiAmount: number
   rumbleCut: boolean
   compressor: boolean
   limiter: boolean

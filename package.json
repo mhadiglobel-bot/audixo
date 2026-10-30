@@ -1,7 +1,7 @@
 {
   "name": "audixo-studio",
   "private": true,
-  "version": "59.0.0",
+  "version": "60.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:ssr": "node scripts/seo-build.mjs --check",
     "test:tracks": "node scripts/seo-build.mjs --self-test",
-    "test:converter": "node --test scripts/converter-tests.mjs"
+    "test:converter": "node --test scripts/converter-tests.mjs",
+    "test:studio": "node --test scripts/studio-v60-tests.cjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

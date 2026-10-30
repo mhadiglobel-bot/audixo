@@ -176,6 +176,30 @@ function buildClipChain(ctx:BaseAudioContext,clip:AudioClip,track:AudioTrack,des
     const hiss=ctx.createBiquadFilter();hiss.type='highshelf';hiss.frequency.value=7300;hiss.gain.value=-harshness*5.5
     processed.connect(metal);metal.connect(hiss);processed=hiss
   }
+  const metallicCut=clamp(Number(clip.fx.metallicCut??0),0,1)
+  if(metallicCut>0){
+    // A controllable resonant *reduction*; no synthetic percussion/noise is added.
+    const notch=ctx.createBiquadFilter();notch.type='peaking'
+    notch.frequency.value=clamp(Number(clip.fx.metallicFrequency??4200),1800,9000)
+    notch.Q.value=3.2;notch.gain.value=-15*metallicCut
+    processed.connect(notch);processed=notch
+  }
+  const lofi=clamp(Number(clip.fx.lofiAmount??0),0,1)
+  if(lofi>0){
+    // Smooth low-pass coloration without vinyl crackle or fake noise layers.
+    const lowpass=ctx.createBiquadFilter();lowpass.type='lowpass'
+    lowpass.frequency.value=18000*Math.pow(0.12,lofi)
+    lowpass.Q.value=.65
+    processed.connect(lowpass);processed=lowpass
+  }
+  const transient=clamp(Number(clip.fx.transientSoftness??0),0,1)
+  if(transient>0){
+    // Broad transient softening, NOT source separation / selective drum removal.
+    const softener=ctx.createDynamicsCompressor()
+    softener.threshold.value=-8-22*transient;softener.ratio.value=1+7*transient
+    softener.attack.value=.0015;softener.release.value=.105;softener.knee.value=8
+    processed.connect(softener);processed=softener
+  }
   if(clip.fx.compressor){const comp=makeCompressor(ctx);processed.connect(comp);processed=comp}
   const sum=ctx.createGain(),dry=ctx.createGain()
   const dw=clamp(Number(clip.fx.delayWet??0),0,1),rw=clamp(Number(clip.fx.reverb??0),0,1)

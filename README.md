@@ -1,61 +1,79 @@
-# AUDIXO V59 · Browser-First Media Converter
+# AUDIXO V60 — Studio Audio & Homepage UI Repair
 
-Single GitHub repository, 99-file upload compatible. Based on the provided AUDIXO V58 package. **Other site pages, Open Studio, presets, vocal FX, editor and site visuals are preserved.**
+**GitHub/Vercel deployment package | 94 files | Based on the user's V59 source.**
 
-## Architecture: before / after
+This patch fixes the TypeScript build blocker visible in the supplied Vercel screenshot and improves *existing* Open Studio FX, the homepage Live Sound Lab, phonk carousel usability and the four homepage metrics/CTA cards. It does **not** redesign the website, replace the V59 browser-first downloader, or add any hosted media worker.
 
-| | Before (V58) | Now (V59) |
-|---|---|---|
-| Page | AUDIXO React/Vite | Same existing AUDIXO page and 3 steps |
-| Analyze | Calls a separate authenticated worker | Lightweight `POST /api/media?action=meta` on Vercel, retrieving public YouTube metadata and checking browser-direct format access |
-| MP3 | Requires a persistent Docker encoder | Bundled LAME encoder runs in a web worker on user's device, for *browser-accessible audio* or imported local media |
-| MP4 | Requires a persistent Docker merger | Downloads only a verified, progressive MP4 source directly to browser; local MP4 is saved unchanged |
-| Large media | Worker-host payload | Browser fetches permitted source directly; Vercel never proxies media bytes |
-| Secrets/cookies | Worker tokens and optional private cookies | **No user cookies or worker secrets** |
+## 1. Build blocker fixed
 
-## Important technical limit
+V59 removed `localMetadata` from `src/services/media.ts`, but three existing screens still imported it:
 
-**A normal website cannot universally download YouTube media in the browser.** YouTube's media servers frequently disallow cross-origin fetches or issue source URLs that only work in their own player/network context. Browser CORS protections cannot be changed from AUDIXO, a cookie file cannot fix CORS, and no worker/proxy/extension means certain (or most) YouTube downloads will remain unavailable. AUDIXO now reports this clearly rather than showing fake quality or promising a download. We intentionally do not bypass login, protected content, signatures or platform restrictions.
+- `src/editor/AudioStudio.tsx`
+- `src/pages/Vocals.tsx`
+- `src/quick/QuickAudioWorkbench.tsx`
 
-**What works without external infrastructure:**
+V60 restores `export function localMetadata(file: File): Promise<number>` using a temporary local object URL, an HTML audio element, a 15-second timeout and cleanup. No audio is uploaded to a server. A new regression test checks **all local TypeScript imports against their actual exports**, so the same missing-export mistake is easier to catch before the next deploy.
 
-1. Public YouTube metadata analysis (title, thumbnail, uploader, duration when genuinely reported) through YouTube's own public pages/oEmbed. Live source availability is not guaranteed.
-2. Source quality discovery only when a native, progressive `video/mp4` URL actually exists and HEAD advertises browser CORS access. Even then, direct fetch can fail due to expiring/IP-bound URLs; the UI handles errors.
-3. Browser-side MP3 encoding of imported local audio/video (where the browser can decode it), at **actual selected encoding targets 64, 128, 192, 256, or 320 kbps**. A higher target cannot improve source fidelity.
-4. MP4 copy/export at the original local MP4 resolution; no invented 480p/720p/1080p upscaling. Browser-direct MP4 uses the native `showSaveFilePicker` streaming path when supported; memory-limited Blob fallback elsewhere.
-5. Accurate progress where supported, cancellation, Unicode-friendly safe titles and clear unsupported-source errors.
+## 2. Studio sound changes
 
-## 1000 concurrent visitors
+The original timeline, fades, speed, pan, 8D/16D motion, per-clip FX, undo/edit history and export code remain intact.
 
-Vercel only performs lightweight metadata/format discovery. Metadata for one public ID is deduplicated in one function instance and cached ~35 seconds, without credentials. This **reduces** repeated work but is not a global cache; 1000 active visitors will still trigger Vercel requests and public YouTube rate limits. Browser conversion runs on the clients' devices. No guarantee of 1000 concurrent success is made without load testing and upstream permission.
+- **Lo-fi warmth**: low-pass color, without adding crackle, artificial vinyl noise or tabla-like sounds.
+- **Metallic ring reduction**: adjustable frequency (1.8–9 kHz) and up to -15 dB cut via a peaking filter. It suppresses a frequency band, not an individual sound source.
+- **Transient softening**: fast attack compressor to reduce harsh percussive peaks, not a selective drum remover.
+- **Vocal warmth and harshness**: existing EQ improvements retained.
+- **Reverb**: continued spacious non-rhythmic room sound, separate from delay repeats.
+- **Phrase-end Smart Echo**: existing Studio pause detection retained, with adjustable pause threshold, tap count, delay and decay.
+- **Four additional presets**, for **34** total: Cave Whisper, Clean Lo-fi, Metallic Softener, Deep Drum Bass.
 
-## Deploy to GitHub + Vercel
+### Voice vs. drums/instruments — accurate separation
 
-1. Extract ZIP and upload the **contents**, not the ZIP, to the existing GitHub repository root (under 100 files). Do not upload `node_modules`, cookies or `.env`.
-2. In Vercel, select the same repository root as the **Root Directory**. Framework Vite; install command `npm ci`, build command `npm run build`, output directory `dist`.
-3. `api/media.ts` is the sole lightweight metadata function. It does not need any `AUDIXO_WORKER_*` variables, media host or cookie setup. Remove obsolete worker variables from Vercel settings only after confirming nothing else uses them.
-4. Deploy as Preview first; inspect build logs, test desktop and Android, and then promote only a verified build. The included source does **not** automatically deploy or change your live production site.
+In **Open Studio**, select a decoded clip and use **Stem & percussion control**:
 
-## User acceptance tests
+1. **AI stem split** runs the existing `demucs-web` model *locally in the browser* where supported. Initial model download is large (approximately 172 MB); performance and success depend on device memory, GPU/WASM support and network.
+2. **Fast preview** is a local frequency-based approximation. It is *not* real drum/instrument isolation.
+3. Generated `Lyrics / Vocals`, `Drums`, `Bass`, and `Other instruments` tracks have separate **mute/playing** buttons. The original is muted, not erased. A separate full `Music` stem is initially muted because it overlaps the other instrumental stems; this avoids doubling the sound.
 
-- Type invalid or local/private URL: immediate friendly refusal, no server fetch.
-- Paste public YouTube URL: Analyze returns only source-derived details. No assumed resolution. On restricted sources, disabled Download with clear reason.
-- Select local WAV/MP3/M4A: choose 64, 128, 192, 256, 320; convert to MP3 and verify file plays at requested kbps (where player reports it).
-- Select local MP4: MP4 toggle shows only source's actual pixel height. Download original file unchanged; MP3 toggle encodes audio when browser decoder supports it.
-- Direct source with CORS, when available: browser downloads data directly from origin, not via `/api/media`.
-- Cancel during transfer or encode: operation stops and UI resets without fabricated completion.
-- Check responsive layout, existing Audio Studio, PWA and other pages.
+**Limits:** This workflow supports selected source clips up to five minutes (two minutes on mobile), and requires a selected source starting near time zero for precise timing. True removal of a specific cymbal, tabla, or steel strike from a fully mixed song is not guaranteed. Use AI stems and adjust `Other instruments`/`Drums` to audition what is separable.
 
-## Tests and QA
+## 3. Homepage changes
 
-`npm run test:converter` runs deterministic metadata, validation, caching, format availability and no-heavy-proxy tests. `npm run build` runs the TypeScript typecheck, Vite and SEO generation. Full build needs project dependencies; do not claim deployment success without running build on Vercel and a real-browser smoke test.
+- Four homepage metric/action cards are **compact**, with 2×2 layout on tablets/phones, without changing their navigation links or global styles.
+- Phonk/song strip **stops its automatic scrolling on hover**, and resumes after mouse leaves. Mouse, touch and pointer **grab/drag** can browse songs immediately; drags suppress accidental song-clicks. Keyboard arrows can scroll when the strip has focus.
+- **Live Sound Lab** adds the Studio Tone/Polish controls, including Lo-fi, ring cut, transient softening, smooth room size/tone, and Echo `Continuous` vs `Smart pauses` (with adjustable threshold and finite repeat taps).
+- Live Smart Pause uses **audio-energy gaps**, not lyric transcription; dense backing music can prevent reliable phrase detection. Full Studio works on the imported source waveform with more detailed phrase detection.
 
-### Changed files
+## 4. Existing downloader architecture retained
 
-- Replaced: `api/media.ts`, `src/pages/YouTubeConverter.tsx`, `src/services/media.ts`, `src/components/QualityRail.tsx`, `scripts/converter-tests.mjs`, `README.md`.
-- Added: `src/services/browserMedia.ts`, `src/services/converter.worker.ts`.
-- Scoped CSS appended: `src/styles/app.css`.
-- Removed obsolete, unrelated-to-studio worker deployment: `media-worker/`, `render.yaml`.
-- All other AUDIXO source assets remain byte-for-byte unchanged from V58.
+V59's browser-first MP3/MP4 tool remains as it was: Vercel handles only lightweight metadata; browser-side download/encode is limited by source access and CORS. V60 does **not** reintroduce Docker, Render, external download APIs, a media proxy or secrets. **A browser-only website still cannot guarantee YouTube downloads** when a source blocks cross-origin access; such requests must fail safely and accurately.
 
-No third-party conversion APIs, extra hosting, browser extensions, cloud payload queues, user cookie extraction, or permanent media server.
+## 5. Install, QA and deployment
+
+Use **Node.js 20+** with registry access:
+
+```bash
+npm ci
+npm run test:studio
+npm run test:converter
+npm run build
+```
+
+`npm run build` includes ONNX runtime asset preparation, `tsc --noEmit`, Vite output and SEO page generation. For Vercel:
+
+1. Extract the ZIP and upload its **contents** into your current GitHub repository root (not the ZIP itself).
+2. Preserve project root in Vercel; framework **Vite**; install `npm ci`; build `npm run build`; output `dist`.
+3. **Preview deploy first**. Confirm TypeScript output no longer reports `localMetadata` TS2305 errors.
+4. Test Studio import/play, FX on/off and WAV/MP3 export; test AI/Fast stems separately; test hover/drag and CTA layout on desktop + mobile.
+5. Only promote/redeploy production after preview validation.
+
+No `.env`, Google/YouTube cookies, user session data or credentials are bundled.
+
+## 6. Validation completed here
+
+- **9/9 Studio automated checks passed** (syntax, missing export, local-import compatibility, presets, WebAudio mock graph, stems, carousel, CTA, live controls).
+- **12/12 converter regression tests passed.**
+- **Real headless Chromium WebAudio offline rendering**: a 4.5-kHz generated test tone was reduced by approximately **15 dB** with metallic cut 100%.
+- **CSS-only Chromium layout fixture**: 1280, 760, 390, 320px, with no horizontal overflow and compact cards.
+- **Full `npm ci` + production `npm run build`: NOT VERIFIED in this container**, because the npm registry package tarballs were unavailable locally (`ENOTCACHED` in offline mode and prior DNS failures). No real full-site browser E2E/audio audition or live Vercel preview was performed. These are release gates, not assumed passes.
+
+See `AUDIXO-V60-QA.md` for the changed-file list and final acceptance checklist.

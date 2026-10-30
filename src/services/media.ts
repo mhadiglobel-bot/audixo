@@ -34,3 +34,23 @@ export function explainMediaError(error:unknown):string{
 }
 export const sanitizeFilename=(s:string)=>s.replace(/[\\/<>|:*?"\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().replace(/[. ]+$/,'').slice(0,145)||'AUDIXO media'
 export const outputName=(title:string,format:MediaKind)=>`${sanitizeFilename(title)} (Audixo ${format.toUpperCase()}).${format}`
+
+/** Read local media duration without uploading content; returns seconds. */
+export function localMetadata(file: File): Promise<number> {
+ return new Promise((resolve,reject)=>{
+  const audio=document.createElement('audio');
+  const objectUrl=URL.createObjectURL(file);
+  let settled=false;
+  const done=(error?:Error)=>{
+   if(settled)return;settled=true;clearTimeout(timer);
+   const duration=audio.duration;audio.onloadedmetadata=null;audio.onerror=null;
+   audio.removeAttribute('src');audio.load();URL.revokeObjectURL(objectUrl);
+   if(error)reject(error);else resolve(duration);
+  };
+  const timer=window.setTimeout(()=>done(new Error('Local metadata timed out')),15000);
+  audio.preload='metadata';
+  audio.onloadedmetadata=()=>Number.isFinite(audio.duration)&&audio.duration>0?done():done(new Error('Audio duration unavailable'));
+  audio.onerror=()=>done(new Error('Unsupported local audio format'));
+  audio.src=objectUrl;
+ });
+}

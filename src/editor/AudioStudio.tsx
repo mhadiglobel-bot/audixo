@@ -17,6 +17,7 @@ import { decodeAudio, detectPhraseEndings, playProject, renderProject } from './
 import { downloadBlob, encodeMp3, encodeWav } from './encoder'
 import { saveMixToLibrary } from './library'
 import { localMetadata } from '../services/media'
+import { separateLocally } from '../services/localStems'
 
 type Settings={format:'mp3'|'wav';kbps:number;normalize:boolean;stereoRepair:boolean;saveToLibrary:boolean;libraryName:string}
 export type InitialAudio={name:string;blob:Blob;muted?:boolean}
@@ -29,6 +30,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
  const [streamFile,setStreamFile]=useState<File|null>(null),[streamDuration,setStreamDuration]=useState(0)
  const [recordOpen,setRecordOpen]=useState(recordOnOpen)
  const input=useRef<HTMLInputElement>(null),timelineHost=useRef<HTMLDivElement>(null),controller=useRef<any>(null),frame=useRef(0),initialized=useRef(false),messageTimer=useRef(0)
+ const separation=useRef<AbortController|null>(null)
  const toast=(m:string)=>{setMessage(m);clearTimeout(messageTimer.current);messageTimer.current=window.setTimeout(()=>setMessage(''),6000)}
  const update=(next:AudioProject)=>{const before=findClip(projectRef.current,selectedId);projectRef.current=next;setProject(next);if(before){const source=before.clip.sourceId||before.clip.id;const matching=next.tracks.find(t=>t.id===before.track.id)?.clips;const chosen=matching?.find(c=>(c.sourceId||c.id)===source&&c.offset<=before.clip.offset+.001&&c.offset+c.duration>before.clip.offset+.001)||matching?.find(c=>(c.sourceId||c.id)===source);setSelectedId(chosen?.id||null)}}
  const checkpoint=()=>{history.current.past.push(cloneProject(projectRef.current));if(history.current.past.length>40)history.current.past.shift();history.current.future=[];setRevision(v=>v+1)}
@@ -77,6 +79,61 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
  const applyPreset=(preset:any)=>{if(!selectedId)return;stop();const targets=activeTargets();commit(p=>addEffect(p,targets,preset.patch,preset.name,`preset:${preset.id||preset.name}`))}
  const isolate=()=>toast('Your selected range is already the effect target. Choose a sound to apply it.')
  const patchTrack=(id:string,patch:any)=>{stop();commit(p=>{retainSources(p);Object.assign(p.sources!.find(t=>t.id===id)||{},patch);rebuildEdits(p)})}
+ /** Bring the already supported local stem engine into Full Studio itself.
+  * Accurate AI mode uses the existing model. Fast mode is an explicitly labeled
+  * frequency approximation, not a true isolated drum/instrument separation.
+  */
+ const splitSelected=async(mode:'studio'|'fast')=>{
+  if(!hit||busy||separation.current)return
+  const raw=buffers.current.get(hit.clip.bufferId),original=hit.clip
+  if(!raw){toast('Select a decoded audio clip to separate.');return}
+  if(original.start>.05){toast('For correct timing, select the first clip in the track before splitting stems.');return}
+  if(original.duration>300){toast('Stem separation supports up to five minutes. Trim to a shorter selection first.');return}
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&original.duration>120){toast('On mobile, trim to two minutes before separating stems.');return}
+  const start=Math.max(0,Math.round(original.offset*raw.sampleRate))
+  const length=Math.min(raw.length-start,Math.max(1,Math.round(original.duration*raw.sampleRate)))
+  if(length<256){toast('This audio clip is too short to separate.');return}
+  await stop()
+  const controller=new AbortController();separation.current=controller
+  setBusy(mode==='studio'?'Preparing local AI separation…':'Preparing fast local stem preview…')
+  try{
+   // Copy only the selected source range rather than uploading any audio.
+   const cropped=new AudioBuffer({length,numberOfChannels:Math.min(2,raw.numberOfChannels),sampleRate:raw.sampleRate})
+   for(let c=0;c<cropped.numberOfChannels;c++)cropped.copyToChannel(raw.getChannelData(c).subarray(start,start+length),c)
+   const parts=await separateLocally(encodeWav(cropped),progress=>{
+    if(!controller.signal.aborted)setBusy(`${progress.message} ${Math.round(Math.min(1,Math.max(0,progress.progress))*100)}%`)
+   },controller.signal,mode)
+   if(controller.signal.aborted)throw new DOMException('Cancelled','AbortError')
+   const created=[] as ReturnType<typeof createTrack>[]
+   for(const part of parts){
+    const buf=await decodeAudio(await part.blob.arrayBuffer()),id=uid('stem')
+    buffers.current.set(id,buf)
+    const stemTrack=createTrack(part.name,projectRef.current.tracks.length+created.length)
+    stemTrack.muted=part.name==='Music' // Music overlaps Drums+Bass+Other: never double-play both.
+    stemTrack.clips=[createClip({bufferId:id,fileName:`${part.name}.wav`,duration:buf.duration})]
+    created.push(stemTrack)
+   }
+   if(controller.signal.aborted)throw new DOMException('Cancelled','AbortError')
+   commit(project=>{
+    retainSources(project)
+    const old=project.sources!.find(t=>t.id===hit.track.id)
+    if(old)old.muted=true // Keep source for reversible editing, not doubled in output.
+    project.sources!.push(...created)
+    rebuildEdits(project)
+   })
+   setAllTracks(true)
+   const vocal=created.find(t=>t.name==='Lyrics / Vocals')||created[0]
+   if(vocal)select(vocal.id,`${vocal.clips[0].id}:0.000000`)
+   fit();setTime(0)
+   toast(mode==='fast'?'Fast preview stems added. These are frequency-based approximations; mute Drums or Other to compare.':'AI stems added. Source muted to prevent doubling; mix Drums, Bass and Other independently.')
+  }catch(error){
+   if(controller.signal.aborted)toast('Stem separation cancelled without changing the project.')
+   else toast(error instanceof Error?error.message:'Could not separate this source.')
+  }finally{if(separation.current===controller)separation.current=null;setBusy('')}
+ }
+ const stemNames=['Lyrics / Vocals','Music','Drums','Bass','Other instruments']
+ const stemsInProject=project.tracks.filter(t=>stemNames.includes(t.name))
+
  useEffect(()=>{
   const handler=(event:Event)=>{
    const mode=(event as CustomEvent<{mode:string}>).detail?.mode
@@ -99,13 +156,24 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
 
  const resetSound=()=>{if(!hit)return;stop();const origin=hit.clip.sourceId||hit.clip.id;commit(p=>{p.edits=(p.edits||[]).filter(op=>!(op.kind==='effect'&&op.targets.some(t=>t.trackId===hit.track.id&&t.sourceId===origin)));rebuildEdits(p)})}
  const exportAudio=async(s:Settings)=>{if(!duration)return;await stop();setBusy('Rendering your mix…');try{const {buffer}=await renderProject(projectRef.current,buffers.current,{normalize:s.normalize,stereoRepair:s.stereoRepair});setBusy(`Encoding ${s.format.toUpperCase()}…`);const blob=s.format==='mp3'?await encodeMp3(buffer,s.kbps):encodeWav(buffer);downloadBlob(blob,`${safeFileName(project.name)}.${s.format}`);if(s.saveToLibrary)await saveMixToLibrary({name:s.libraryName||project.name,blob,format:s.format,kbps:s.kbps,duration:buffer.duration});setExportOpen(false);emitAudixoSuccess();toast('Your audio download is ready.')}catch(e){toast(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}}
- useEffect(()=>()=>{stop();clearTimeout(messageTimer.current)},[stop])
+ useEffect(()=>()=>{separation.current?.abort();stop();clearTimeout(messageTimer.current)},[stop])
  useEffect(()=>{const fn=(e:KeyboardEvent)=>{if(['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.code==='Space'){e.preventDefault();togglePlay()}if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();travel(e.shiftKey?'future':'past')}};window.addEventListener('keydown',fn);return()=>window.removeEventListener('keydown',fn)})
  void revision;void focusToolId
  if(streamFile)return <StreamingStudio file={streamFile} duration={streamDuration} onBack={()=>{setStreamFile(null);setStreamDuration(0)}}/>
  return <div className="ax-studio" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();importFiles(Array.from(e.dataTransfer.files))}}>
   <Transport name={project.name} playing={playing} time={time} duration={duration} onPlay={togglePlay} onImport={()=>input.current?.click()} onExport={()=>duration&&setExportOpen(true)} onLibrary={()=>setLibraryOpen(true)} onRecord={()=>setRecordOpen(v=>!v)} onDuplicate={duplicate} onKeepRange={keepRange} onUndo={()=>travel('past')} onRedo={()=>travel('future')} canUndo={!!history.current.past.length} canRedo={!!history.current.future.length} sourceStart={hit?.clip.offset||0} sourceEnd={hit?hit.clip.offset+hit.clip.duration:0} sourceDuration={hit?buffers.current.get(hit.clip.bufferId)?.duration||0:0} onSource={(a,b)=>hit&&changeRange(hit.clip.id,a,b)} selected={!!hit} cutMode={cutMode} onCutMode={v=>{setCutMode(v);if(hit)setSelection({start:hit.clip.start+clipTimelineDuration(hit.clip)*.35,end:hit.clip.start+clipTimelineDuration(hit.clip)*.65,trackId:hit.track.id})}} selection={selection} onSelection={setSelection} onCut={applyCut} allTracks={allTracks} onAllTracks={setAllTracks} onFit={()=>fit()} scale={scale} onScale={setScale}/>
   {recordOpen&&<Recorder onFinish={file=>importFiles([file])} onClose={()=>setRecordOpen(false)}/>}
+  <section className="ax60-stem-tools" aria-label="Voice and instrument editing tools">
+   <div className="ax60-stem-tool-intro"><strong>Stem & percussion control</strong><small>Split a selected clip locally; use real separated stems to mute drums or bright instruments. Tone shaping alone cannot fully remove individual sounds.</small></div>
+   <div className="ax60-stem-buttons">
+    <button type="button" disabled={!hit||!!busy} onClick={()=>void splitSelected('studio')}>✦ AI stem split</button>
+    <button type="button" disabled={!hit||!!busy} onClick={()=>void splitSelected('fast')}>↝ Fast preview</button>
+    {busy&&separation.current&&<button type="button" className="ax60-cancel" onClick={()=>separation.current?.abort()}>Cancel</button>}
+   </div>
+   {!!stemsInProject.length&&<div className="ax60-stem-mute-list" role="group" aria-label="Mute individual separated stems">
+    {stemsInProject.map(t=><button type="button" key={t.id} aria-pressed={!t.muted} className={!t.muted?'is-on':''} onClick={()=>patchTrack(t.id,{muted:!t.muted})}><span>{t.name}</span><b>{t.muted?'Muted':'Playing'}</b></button>)}
+   </div>}
+  </section>
   <div className="ax25-studio-context"><div><span className="ax25-context-dot"/><strong>{hit?.track.name||'Choose a track to edit'}</strong><small>{hit?(cutMode?'Changes target the highlighted range.':'Changes target the selected track.'):'Import audio or select a waveform to open its controls.'}</small></div><span>CONTROL DOCK <b>→</b></span></div>
   <div className={`ax-studio-body ${controls?'with-controls':''}`}><div ref={timelineHost}><Timeline project={project} buffers={buffers.current} pxPerSec={scale} selectedClipId={selectedId} playhead={time} selection={selection} cutMode={cutMode} onSelect={select} onRange={changeRange} onSelection={setSelection} onSeek={v=>{stop();setTime(v)}} onPatchTrack={patchTrack} onRemoveTrack={id=>{stop();commit(p=>{retainSources(p);p.sources=p.sources!.filter(t=>t.id!==id);p.edits=(p.edits||[]).map(op=>({...op,targets:op.targets.filter(t=>t.trackId!==id)})).filter(op=>op.targets.length);rebuildEdits(p)});setSelectedId(null)}} onImport={()=>input.current?.click()}/></div>{controls&&<Inspector clip={hit?.clip||null} track={hit?.track||null} phraseCount={phraseCount} selection={cutMode?selection:{start:0,end:0,trackId:null}} onPatchClipFx={patchFx} onCheckpoint={()=>{checkpoint();gestureTargets.current=activeTargets()}} onEditEnd={()=>{gestureTargets.current=null}} onPreset={applyPreset} onMakeRegion={isolate} onReset={resetSound}/>}</div>
   <AppliedEdits project={project} selectedTrack={hit?.track.id} onRemove={id=>{stop();commit(p=>removeEdit(p,id));fit();setTime(0)}} onReset={()=>{stop();commit(p=>{clearEdits(p)});fit();setTime(0)}} onUnmute={id=>patchTrack(id,{muted:false})}/>

@@ -129,8 +129,8 @@ export const DEMO_TRACKS:DemoTrack[]=[
  }
 ]
 
-type FxTab='Clip'|'Tone'|'Space'|'Echo'|'Motion'|'Style'
-const FX_TABS:FxTab[]=['Clip','Tone','Space','Echo','Motion','Style']
+type FxTab='Clip'|'Tone'|'Polish'|'Space'|'Echo'|'Motion'|'Style'
+const FX_TABS:FxTab[]=['Clip','Tone','Polish','Space','Echo','Motion','Style']
 const NEUTRAL:ClipFx={...defaultClipFx}
 const LIMIT=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v))
 const decibels=(db:number)=>Math.pow(10,db/20)
@@ -141,38 +141,65 @@ type SoundGraph={
  ctx:AudioContext; source:MediaElementAudioSourceNode;
  dry:GainNode; wet:GainNode; inGain:GainNode;
  bass:BiquadFilterNode;mid:BiquadFilterNode;treble:BiquadFilterNode;
+ rumble:BiquadFilterNode;warmBass:BiquadFilterNode;warmAir:BiquadFilterNode;metal:BiquadFilterNode;hiss:BiquadFilterNode;notch:BiquadFilterNode;lofi:BiquadFilterNode;soften:DynamicsCompressorNode;
  pan:StereoPannerNode; delay:DelayNode;feedback:GainNode;delayReturn:GainNode;
- reverb:ConvolverNode;reverbReturn:GainNode;mix:GainNode;
+ phrasePreDelay:DelayNode;phraseGate:GainNode;phraseAnalyser:AnalyserNode;phraseTaps:{delay:DelayNode;send:GainNode}[];
+ reverb:ConvolverNode;roomTone:BiquadFilterNode;reverbReturn:GainNode;mix:GainNode;
  analyser:AnalyserNode;compressor:DynamicsCompressorNode;master:GainNode;
 }
 
-function makeImpulse(ctx:AudioContext){
- const len=Math.floor(ctx.sampleRate*.9),b=ctx.createBuffer(2,len,ctx.sampleRate)
+function makeImpulse(ctx:AudioContext,seconds=1.2){
+ const len=Math.max(256,Math.floor(ctx.sampleRate*seconds)),b=ctx.createBuffer(2,len,ctx.sampleRate)
+ // Diffuse/damped room tail. No tuned ringing, metallic plate impulse or synthetic percussion.
  let seed=8719
- for(let ch=0;ch<2;ch++){const a=b.getChannelData(ch);for(let i=0;i<len;i++){
-  seed=(Math.imul(seed,1664525)+1013904223)|0
-  a[i]=(seed/2147483648)*Math.pow(1-i/len,2.3)*.42
- }}return b
+ for(let ch=0;ch<2;ch++){
+  const a=b.getChannelData(ch);let damped=0
+  for(let i=0;i<len;i++){
+   seed=(Math.imul(seed,1664525)+1013904223)|0
+   const white=seed/2147483648
+   damped=damped*.78+white*.22
+   const env=Math.pow(1-i/len,2.55)
+   a[i]=(white*.35+damped*.65)*env*.5
+  }
+ }
+ return b
 }
 function createGraph(media:HTMLAudioElement):SoundGraph{
  const ctx=new window.AudioContext()
  const source=ctx.createMediaElementSource(media)
  const dry=ctx.createGain(),wet=ctx.createGain(),inGain=ctx.createGain()
  const bass=ctx.createBiquadFilter(),mid=ctx.createBiquadFilter(),treble=ctx.createBiquadFilter()
+ const rumble=ctx.createBiquadFilter(),warmBass=ctx.createBiquadFilter(),warmAir=ctx.createBiquadFilter()
+ const metal=ctx.createBiquadFilter(),hiss=ctx.createBiquadFilter(),notch=ctx.createBiquadFilter(),lofi=ctx.createBiquadFilter(),soften=ctx.createDynamicsCompressor()
+ rumble.type='highpass';rumble.frequency.value=18;rumble.Q.value=.71
+ warmBass.type='lowshelf';warmBass.frequency.value=240
+ warmAir.type='highshelf';warmAir.frequency.value=5500
+ metal.type='peaking';metal.frequency.value=3350;metal.Q.value=1.35
+ hiss.type='highshelf';hiss.frequency.value=7300
+ notch.type='peaking';notch.frequency.value=4200;notch.Q.value=3.2
+ lofi.type='lowpass';lofi.frequency.value=18000;lofi.Q.value=.65
+ soften.threshold.value=0;soften.ratio.value=1;soften.attack.value=.0015;soften.release.value=.105;soften.knee.value=8
  const pan=ctx.createStereoPanner(),delay=ctx.createDelay(1.5),feedback=ctx.createGain(),delayReturn=ctx.createGain()
- const reverb=ctx.createConvolver(),reverbReturn=ctx.createGain(),mix=ctx.createGain(),analyser=ctx.createAnalyser(),compressor=ctx.createDynamicsCompressor(),master=ctx.createGain()
+ const phrasePreDelay=ctx.createDelay(2),phraseGate=ctx.createGain(),phraseAnalyser=ctx.createAnalyser(),phraseSilent=ctx.createGain()
+ phraseAnalyser.fftSize=512;phraseAnalyser.smoothingTimeConstant=.12;phraseSilent.gain.value=0
+ const phraseTaps=Array.from({length:5},()=>({delay:ctx.createDelay(7),send:ctx.createGain()}))
+ const reverb=ctx.createConvolver(),roomTone=ctx.createBiquadFilter(),reverbReturn=ctx.createGain(),mix=ctx.createGain(),analyser=ctx.createAnalyser(),compressor=ctx.createDynamicsCompressor(),master=ctx.createGain()
  bass.type='lowshelf';bass.frequency.value=170
  mid.type='peaking';mid.frequency.value=1050;mid.Q.value=.8
  treble.type='highshelf';treble.frequency.value=4000
- reverb.buffer=makeImpulse(ctx)
+ roomTone.type='lowpass';roomTone.frequency.value=6000;roomTone.Q.value=.7
+ reverb.buffer=makeImpulse(ctx,1.2)
  source.connect(dry);dry.connect(mix)
- source.connect(inGain);inGain.connect(bass);bass.connect(mid);mid.connect(treble);treble.connect(pan);pan.connect(wet);wet.connect(mix)
- pan.connect(delay);delay.connect(delayReturn);delayReturn.connect(wet);delay.connect(feedback);feedback.connect(delay)
- pan.connect(reverb);reverb.connect(reverbReturn);reverbReturn.connect(wet)
+ source.connect(inGain);inGain.connect(rumble);rumble.connect(bass);bass.connect(mid);mid.connect(treble);treble.connect(warmBass);warmBass.connect(warmAir);warmAir.connect(metal);metal.connect(hiss);hiss.connect(notch);notch.connect(lofi);lofi.connect(soften);soften.connect(pan);pan.connect(wet);wet.connect(mix)
+ pan.connect(phraseAnalyser);phraseAnalyser.connect(phraseSilent);phraseSilent.connect(mix)
+ pan.connect(phrasePreDelay);phrasePreDelay.connect(phraseGate)
+ phraseGate.connect(delay);delay.connect(delayReturn);delayReturn.connect(wet);delay.connect(feedback);feedback.connect(delay)
+ for(const tap of phraseTaps){phraseGate.connect(tap.delay);tap.delay.connect(tap.send);tap.send.connect(wet);tap.send.gain.value=0}
+ pan.connect(reverb);reverb.connect(roomTone);roomTone.connect(reverbReturn);reverbReturn.connect(wet)
  mix.connect(compressor);compressor.connect(analyser);analyser.connect(master);master.connect(ctx.destination)
  compressor.threshold.value=-4;compressor.ratio.value=2.8;compressor.knee.value=8
  analyser.fftSize=256;analyser.smoothingTimeConstant=.79
- return {ctx,source,dry,wet,inGain,bass,mid,treble,pan,delay,feedback,delayReturn,reverb,reverbReturn,mix,analyser,compressor,master}
+ return {ctx,source,dry,wet,inGain,bass,mid,treble,rumble,warmBass,warmAir,metal,hiss,notch,lofi,soften,pan,delay,feedback,delayReturn,phrasePreDelay,phraseGate,phraseAnalyser,phraseTaps,reverb,roomTone,reverbReturn,mix,analyser,compressor,master}
 }
 function setAudioParams(graph:SoundGraph,media:HTMLAudioElement,p:ClipFx,compare:number,volume:number,nowMotion=0){
  const t=graph.ctx.currentTime,s=.025
@@ -183,10 +210,32 @@ function setAudioParams(graph:SoundGraph,media:HTMLAudioElement,p:ClipFx,compare
  set(graph.wet.gain,mix)
  set(graph.inGain.gain,decibels(LIMIT(p.gainDb,-12,9)))
  set(graph.bass.gain,LIMIT(p.bassDb,-12,12));set(graph.mid.gain,LIMIT(p.midDb,-12,12));set(graph.treble.gain,LIMIT(p.trebleDb,-12,12))
+ set(graph.rumble.frequency,p.rumbleCut?78:18)
+ const warmth=LIMIT(p.warmth??0,0,1),harshness=LIMIT(p.harshness??0,0,1),metallic=LIMIT(p.metallicCut??0,0,1),lofi=LIMIT(p.lofiAmount??0,0,1),softness=LIMIT(p.transientSoftness??0,0,1)
+ set(graph.warmBass.gain,warmth*3.4);set(graph.warmAir.gain,-warmth*2.6)
+ set(graph.metal.gain,-harshness*8);set(graph.hiss.gain,-harshness*5.5)
+ set(graph.notch.frequency,LIMIT(p.metallicFrequency??4200,1800,9000));set(graph.notch.gain,-metallic*15)
+ set(graph.lofi.frequency,18000*Math.pow(.12,lofi))
+ set(graph.soften.threshold,softness>0?-8-22*softness:0);set(graph.soften.ratio,1+7*softness)
+
  set(graph.pan.pan,LIMIT(p.pan+nowMotion,-1,1))
- set(graph.delay.delayTime,LIMIT(p.delayMs/1000,.005,1.35))
- set(graph.feedback.gain,LIMIT(p.feedback,0,.68));set(graph.delayReturn.gain,LIMIT(p.delayWet,0,.58))
- set(graph.reverbReturn.gain,LIMIT(p.reverb,0,.70))
+ const phraseMode=p.echoBehavior==='phrase'
+ const tapGap=LIMIT(p.delayMs/1000,.06,1.35)
+ set(graph.phrasePreDelay.delayTime,phraseMode?LIMIT(p.phrasePauseMs/1000+.31,.51,1.65):0)
+ set(graph.delay.delayTime,tapGap)
+ set(graph.feedback.gain,phraseMode?0:LIMIT(p.feedback,0,.8))
+ set(graph.delayReturn.gain,phraseMode?0:LIMIT(p.delayWet,0,1))
+ if(!phraseMode)set(graph.phraseGate.gain,1)
+ else set(graph.phraseGate.gain,0)
+ graph.phraseTaps.forEach((tap,i)=>{
+  set(tap.delay.delayTime,Math.min(6.9,tapGap*(i+1)))
+  const repetitions=Math.round(LIMIT(p.echoRepeats,1,5))
+  set(tap.send.gain,phraseMode&&i<repetitions?LIMIT(p.delayWet,0,1)*Math.pow(LIMIT(p.feedback,.12,.8),i):0)
+ })
+ set(graph.reverbReturn.gain,Math.sin(LIMIT(p.reverb,0,1)*Math.PI/2))
+ set(graph.roomTone.frequency,1000+LIMIT(p.reverbTone,0,1)*11000)
+ const desiredRoom=.38+2.2*LIMIT(p.reverbSize,0,1)
+ if(Math.abs((graph.reverb.buffer?.duration||0)-desiredRoom)>.025)graph.reverb.buffer=makeImpulse(graph.ctx,desiredRoom)
  set(graph.compressor.threshold,p.compressor?-18:0)
  set(graph.compressor.ratio,p.compressor?3.2:1)
  set(graph.master.gain,LIMIT(volume/100,0,1)*.82)
@@ -219,6 +268,9 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
  const [presetId,setPresetId]=useState(''),[error,setError]=useState(''),[cueEnabled,setCueEnabled]=useState(false)
  const meterDom=useRef<HTMLDivElement|null>(null),selected=useRef<number|null>(null),pendingStart=useRef<number|null>(null),lastMeterFrame=useRef(0)
  const trackPlaying=useRef(false),lastFrame=useRef(0),lastMotion=useRef(0)
+ // Detect genuine 250ms+ quiet sections instead of echoing every sung syllable.
+ // This is audio-energy detection, not a lyrics transcription algorithm.
+ const phraseState=useRef({wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0})
  const contextRef=useRef<AudioContext|null>(null)
   const setTrack=(v:number|null)=>{selected.current=v;setTrackIndex(v)}
  const ensureGraph=()=>{
@@ -236,12 +288,14 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
  })},[])
  const applyPreset=useCallback((preset:SoundPreset)=>{
   setPresetId(preset.id)
+  phraseState.current={wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0}
   setParams({...NEUTRAL,...preset.patch})
   setCompare(100)
   setError(preset.patch.reverse?'Reverse playback requires the full Studio. Other preset settings are previewed live.':'')
  },[])
  const selectTrack=useCallback((i:number)=>{
   if(i<0||i>=DEMO_TRACKS.length||!mediaRef.current)return
+  phraseState.current={wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0}
   setTrack(i);setParams({...NEUTRAL});setPresetId('');setCompare(100);setActiveTab('Clip');setError('')
   const media=mediaRef.current,track=DEMO_TRACKS[i]
   pendingStart.current=track.from
@@ -262,6 +316,7 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
  const seek=useCallback((v:number)=>{
   const i=selected.current,media=mediaRef.current;if(i===null||!media)return
   const track=DEMO_TRACKS[i],position=track.from+LIMIT(v,0,Math.max(0,track.duration-.12))
+  phraseState.current={wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0}
   if(media.readyState>=1)media.currentTime=position;else pendingStart.current=position
   setProgress(LIMIT(v,0,track.duration))
  },[])
@@ -306,6 +361,29 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
     if(now-lastFrame.current>225){lastFrame.current=now;setProgress(LIMIT(pos,0,tr.duration))}
    }
    if(g&&media&&!media.paused){
+    if(params.echoBehavior==='phrase'&&now-phraseState.current.lastRead>=64){
+      const state=phraseState.current
+      state.lastRead=now
+      const samples=new Float32Array(g.phraseAnalyser.fftSize)
+      g.phraseAnalyser.getFloatTimeDomainData(samples)
+      let energy=0
+      for(let i=0;i<samples.length;i++)energy+=samples[i]*samples[i]
+      const rms=Math.sqrt(energy/samples.length)
+      const moment=g.ctx.currentTime
+      const audible=rms>.018
+      if(audible){
+       if(!state.wasLoud){state.speechStart=moment;state.triggered=false}
+       state.wasLoud=true;state.lastLoud=moment
+      }else if(state.wasLoud&&!state.triggered&&moment-state.lastLoud>=LIMIT(params.phrasePauseMs/1000,.25,1.25)&&state.lastLoud-state.speechStart>=.18){
+       const gate=g.phraseGate.gain
+       gate.cancelScheduledValues(moment)
+       gate.setValueAtTime(0,moment)
+       gate.linearRampToValueAtTime(1,moment+.015)
+       gate.setValueAtTime(1,moment+.22)
+       gate.linearRampToValueAtTime(0,moment+.29)
+       state.triggered=true;state.wasLoud=false
+      }
+    }
     if(params.motionMode!=='off'&&now-lastMotion.current>42){lastMotion.current=now;const depth=LIMIT(params.motionDepth,0,1),freq=LIMIT(params.motionHz,.03,.8)
       const m=Math.sin(g.ctx.currentTime*Math.PI*2*freq)*depth*(params.motionMode==='16d'?.98:.82)
       g.pan.pan.setTargetAtTime(LIMIT(params.pan+m,-1,1),g.ctx.currentTime,.03)
@@ -327,7 +405,7 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
   }
   frame=requestAnimationFrame(draw)
   return()=>{cancelAnimationFrame(frame);document.documentElement.style.removeProperty('--audixo-audio-pulse');document.documentElement.style.removeProperty('--audixo-disc-scale')}
- },[isPlaying,params.motionMode,params.motionDepth,params.motionHz,params.pan])
+ },[isPlaying,params.motionMode,params.motionDepth,params.motionHz,params.pan,params.echoBehavior,params.phrasePauseMs])
  useEffect(()=>{
   const onSuccess=()=>{if(cueEnabled&&!trackPlaying.current)playChime()}
   window.addEventListener('audixo:export-success',onSuccess)
@@ -371,6 +449,8 @@ function TrackArt({index}:{index:number}){
 function MusicStrip(){
  const {trackIndex,isPlaying,selectTrack}=useSound()
  const stripRef=useRef<HTMLDivElement|null>(null)
+ const hover=useRef(false),drag=useRef<{x:number;scroll:number;pointer:number;moved:boolean}|null>(null),holdUntil=useRef(0),blockClickUntil=useRef(0)
+ const [grabbing,setGrabbing]=useState(false)
  useEffect(()=>{
   const node=stripRef.current
   if(!node||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
@@ -385,17 +465,15 @@ function MusicStrip(){
   observer?.observe(node)
   const step=(now:number)=>{
    const delta=last?Math.min((now-last)/1000,.05):0;last=now
-   // Accumulate sub-pixel movement instead of losing it to scrollLeft rounding.
-   // Do not move a focused control out from under keyboard users.
-   if(cycle>0&&!document.hidden&&!node.contains(document.activeElement)){
+   // Pointer hover, touch drag, focused controls and a brief settle period all pause motion.
+   if(cycle>0&&!document.hidden&&!hover.current&&!drag.current&&now>holdUntil.current&&!node.contains(document.activeElement)){
     position=(position+delta*(window.innerWidth<820?22:30))%cycle
     node.scrollLeft=position
    }else position=node.scrollLeft
    frame=window.requestAnimationFrame(step)
   }
-  const manual=()=>{position=node.scrollLeft}
-  node.addEventListener('touchend',manual,{passive:true})
-  node.addEventListener('wheel',manual,{passive:true})
+  const manual=()=>{position=node.scrollLeft;holdUntil.current=performance.now()+1200}
+  node.addEventListener('touchend',manual,{passive:true});node.addEventListener('wheel',manual,{passive:true})
   frame=window.requestAnimationFrame(step)
   return()=>{window.cancelAnimationFrame(frame);observer?.disconnect();node.removeEventListener('touchend',manual);node.removeEventListener('wheel',manual)}
  },[])
@@ -408,8 +486,17 @@ function MusicStrip(){
    <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i>
   </button>)}
  </div>
- return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · TAP TO PREVIEW</small></div>
-  <div ref={stripRef} className="ax49-track-marquee" role="group" aria-label="Choose a track to preview">{renderLane('primary')}{renderLane('clone')}</div>
+ return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · HOVER TO PAUSE · DRAG TO BROWSE</small></div>
+  <div ref={stripRef} className={`ax49-track-marquee ${grabbing?'is-grabbing':''}`} role="group" aria-label="Choose a track to preview"
+   onPointerEnter={()=>{hover.current=true}} onPointerLeave={()=>{hover.current=false}}
+   onPointerDown={e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag.current={x:e.clientX,scroll:e.currentTarget.scrollLeft,pointer:e.pointerId,moved:false}}}
+   onPointerMove={e=>{const d=drag.current;if(!d||d.pointer!==e.pointerId)return;const delta=e.clientX-d.x;if(Math.abs(delta)>6||d.moved){d.moved=true;setGrabbing(true);if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId);e.currentTarget.scrollLeft=d.scroll-delta}}}
+   onPointerUp={e=>{const d=drag.current;if(d?.moved){blockClickUntil.current=performance.now()+400;holdUntil.current=performance.now()+1600}drag.current=null;setGrabbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
+   onPointerCancel={()=>{drag.current=null;setGrabbing(false)}}
+   onClickCapture={e=>{if(performance.now()<blockClickUntil.current){e.preventDefault();e.stopPropagation()}}}
+   onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();e.currentTarget.scrollBy({left:e.key==='ArrowRight'?190:-190,behavior:'smooth'});holdUntil.current=performance.now()+2000}}}
+   tabIndex={0}
+  >{renderLane('primary')}{renderLane('clone')}</div>
  </div>
 }
 
@@ -423,16 +510,17 @@ function LivePanel(){
  const visible=useMemo(()=>soundPresets.filter(p=>`${p.name} ${p.group}`.toLowerCase().includes(filter.toLowerCase())),[filter])
  return <div className="ax49-panel">
   <div className="ax49-panel-title"><span>LIVE FX / NON-STOP EDITING</span><strong>Shape every second.</strong><small>Every slider updates the playing track instantly.</small></div>
-  <div className="ax49-tabs" role="tablist" aria-label="Live sound controls">{FX_TABS.map((tab,i)=><button key={tab} role="tab" type="button" aria-selected={activeTab===tab} className={activeTab===tab?'active':''} onClick={()=>setActiveTab(tab)}><span aria-hidden="true">{['◫','♫','◌','↝','◎','✦'][i]}</span>{tab}</button>)}</div>
+  <div className="ax49-tabs" role="tablist" aria-label="Live sound controls">{FX_TABS.map((tab,i)=><button key={tab} role="tab" type="button" aria-selected={activeTab===tab} className={activeTab===tab?'active':''} onClick={()=>setActiveTab(tab)}><span aria-hidden="true">{['◫','♫','✧','◌','↝','◎','✦'][i]}</span>{tab}</button>)}</div>
   <div className="ax49-tab-body" role="tabpanel">
   {activeTab==='Clip'&&<><p>Control the song's speed and level while it plays.</p><LiveRange name="Speed" value={params.speed} min={.65} max={1.4} step={.05} unit="×" onChange={speed=>change({speed})}/><LiveRange name="Gain" value={params.gainDb} min={-9} max={8} unit=" dB" onChange={gainDb=>change({gainDb})}/><div className="ax49-toggle-row"><span><strong>Keep pitch on speed changes</strong><small>Works on supported browsers</small></span><button type="button" role="switch" aria-checked={params.preservePitch} onClick={()=>change({preservePitch:!params.preservePitch})} className={params.preservePitch?'on':''}><i/></button></div></>}
   {activeTab==='Tone'&&<><p>Fine-tune the lows, mids and highs without interrupting playback.</p><LiveRange name="Bass" value={params.bassDb} min={-12} max={12} unit=" dB" onChange={bassDb=>change({bassDb})}/><LiveRange name="Mid" value={params.midDb} min={-12} max={12} unit=" dB" onChange={midDb=>change({midDb})}/><LiveRange name="Treble" value={params.trebleDb} min={-12} max={12} unit=" dB" onChange={trebleDb=>change({trebleDb})}/><LiveRange name="Tape pitch" value={params.tapePitchSemitones} min={-6} max={6} unit=" st" onChange={tapePitchSemitones=>change({tapePitchSemitones,preservePitch:false})}/></>}
-  {activeTab==='Space'&&<><p>Add depth and room reflections; the dry audio remains available.</p><LiveRange name="Reverb" value={Math.round(params.reverb*100)} min={0} max={65} unit="%" onChange={v=>change({reverb:v/100})}/><LiveRange name="Stereo balance" value={Math.round(params.pan*100)} min={-100} max={100} unit="%" onChange={v=>change({pan:v/100})}/></>}
-  {activeTab==='Echo'&&<><p>Control the repeat time, intensity and decay live.</p><LiveRange name="Delay time" value={params.delayMs} min={40} max={750} step={10} unit=" ms" onChange={delayMs=>change({delayMs})}/><LiveRange name="Echo mix" value={Math.round(params.delayWet*100)} min={0} max={55} unit="%" onChange={v=>change({delayWet:v/100})}/><LiveRange name="Feedback" value={Math.round(params.feedback*100)} min={0} max={65} unit="%" onChange={v=>change({feedback:v/100})}/></>}
+  {activeTab==='Polish'&&<><p>Clean lo-fi texture and ringing reduction, with no artificial hiss or added drum sounds. For actual drum removal, separate stems in Full Studio.</p><LiveRange name="Lo-fi warmth" value={Math.round((params.lofiAmount??0)*100)} min={0} max={100} unit="%" onChange={v=>change({lofiAmount:v/100})}/><LiveRange name="Vocal warmth" value={Math.round((params.warmth??0)*100)} min={0} max={100} unit="%" onChange={v=>change({warmth:v/100})}/><LiveRange name="Metallic ring reduction" value={Math.round((params.metallicCut??0)*100)} min={0} max={100} unit="%" onChange={v=>change({metallicCut:v/100})}/><LiveRange name="Ring frequency" value={params.metallicFrequency??4200} min={1800} max={9000} step={100} unit=" Hz" onChange={metallicFrequency=>change({metallicFrequency})}/><LiveRange name="Percussion peak softening" value={Math.round((params.transientSoftness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({transientSoftness:v/100})}/><LiveRange name="Harshness reduction" value={Math.round((params.harshness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({harshness:v/100})}/></>}
+  {activeTab==='Space'&&<><p>Add smooth, damped room depth without metallic plate ringing or syllable repeats.</p><LiveRange name="Reverb" value={Math.round(params.reverb*100)} min={0} max={100} unit="%" onChange={v=>change({reverb:v/100})}/><LiveRange name="Room size" value={Math.round(params.reverbSize*100)} min={0} max={100} unit="%" onChange={v=>change({reverbSize:v/100})}/><LiveRange name="Room brightness" value={Math.round(params.reverbTone*100)} min={0} max={100} unit="%" onChange={v=>change({reverbTone:v/100})}/><LiveRange name="Stereo balance" value={Math.round(params.pan*100)} min={-100} max={100} unit="%" onChange={v=>change({pan:v/100})}/></>}
+  {activeTab==='Echo'&&<><p>Choose continuous echo or pause-triggered phrase tails. Smart mode detects quiet gaps, not exact written lyrics.</p><div className="ax49-motion-options" role="group" aria-label="Repeat timing"><button type="button" aria-pressed={params.echoBehavior==='continuous'} className={params.echoBehavior==='continuous'?'active':''} onClick={()=>change({echoBehavior:'continuous'})}>Continuous</button><button type="button" aria-pressed={params.echoBehavior==='phrase'} className={params.echoBehavior==='phrase'?'active':''} onClick={()=>change({echoBehavior:'phrase',delayMs:params.delayMs||355,delayWet:params.delayWet||.35})}>Smart pauses</button></div><LiveRange name="Delay time" value={params.delayMs} min={40} max={750} step={10} unit=" ms" onChange={delayMs=>change({delayMs})}/><LiveRange name="Echo mix" value={Math.round(params.delayWet*100)} min={0} max={100} unit="%" onChange={v=>change({delayWet:v/100})}/><LiveRange name="Feedback / tail decay" value={Math.round(params.feedback*100)} min={0} max={80} unit="%" onChange={v=>change({feedback:v/100})}/>{params.echoBehavior==='phrase'&&<><LiveRange name="Minimum pause" value={params.phrasePauseMs} min={250} max={1200} step={50} unit=" ms" onChange={phrasePauseMs=>change({phrasePauseMs})}/><LiveRange name="Repeat taps" value={params.echoRepeats} min={1} max={5} unit="" onChange={echoRepeats=>change({echoRepeats})}/><small className="ax60-phrase-notice">Smart repeats are triggered only when a sustained quiet gap follows an audible phrase. Dense percussion can reduce detection accuracy.</small></>}</>}
   {activeTab==='Motion'&&<><p>Animate the stereo field for headphones. Try 8D or 16D.</p><div className="ax49-motion-options" role="group" aria-label="Spatial audio mode">{(['off','8d','16d'] as const).map(mode=><button type="button" key={mode} aria-pressed={params.motionMode===mode} onClick={()=>change({motionMode:mode})} className={params.motionMode===mode?'active':''}>{mode==='off'?'Off':mode.toUpperCase()}</button>)}</div><LiveRange name="Orbit depth" value={Math.round(params.motionDepth*100)} min={0} max={100} unit="%" onChange={v=>change({motionDepth:v/100})}/><LiveRange name="Orbit speed" value={params.motionHz} min={.06} max={.6} step={.02} unit=" Hz" onChange={motionHz=>change({motionHz})}/></>}
-  {activeTab==='Style'&&<><div className="ax49-preset-bar"><span><strong>30 studio presets</strong><small>{chosen?`Now using: ${chosen.name}`:'Tap a preset to apply it live'}</small></span><input aria-label="Search audio presets" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Find preset..." type="search"/></div><div className="ax49-preset-list">{visible.map(p=><button type="button" key={p.id} className={presetId===p.id?'active':''} aria-pressed={presetId===p.id} onClick={()=>applyPreset(p)}><span>{String(soundPresets.indexOf(p)+1).padStart(2,'0')}</span><span><strong>{p.name}</strong><small>{p.group} · {p.note}</small></span><b>{presetId===p.id?'✓':'↗'}</b></button>)}</div></>}
+  {activeTab==='Style'&&<><div className="ax49-preset-bar"><span><strong>{soundPresets.length} studio presets</strong><small>{chosen?`Now using: ${chosen.name}`:'Tap a preset to apply it live'}</small></span><input aria-label="Search audio presets" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Find preset..." type="search"/></div><div className="ax49-preset-list">{visible.map(p=><button type="button" key={p.id} className={presetId===p.id?'active':''} aria-pressed={presetId===p.id} onClick={()=>applyPreset(p)}><span>{String(soundPresets.indexOf(p)+1).padStart(2,'0')}</span><span><strong>{p.name}</strong><small>{p.group} · {p.note}</small></span><b>{presetId===p.id?'✓':'↗'}</b></button>)}</div></>}
   </div>
-  {activeTab!=='Style'&&<button type="button" className="ax49-see-presets" onClick={()=>setActiveTab('Style')}>Try all 30 Studio presets <span>↗</span></button>}
+  {activeTab!=='Style'&&<button type="button" className="ax49-see-presets" onClick={()=>setActiveTab('Style')}>Try all {soundPresets.length} Studio presets <span>↗</span></button>}
   {trackIndex!==null&&<div className="ax49-applied"><i/><span>{chosen?`Preset: ${chosen.name}`:'Custom live settings'}{chosen&&' · You can adjust any control without stopping the song.'}</span></div>}
  </div>
 }

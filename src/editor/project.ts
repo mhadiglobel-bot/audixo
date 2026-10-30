@@ -5,7 +5,7 @@ export const trackColors = ['#39ff14','#43e8ed','#7aafff','#f098de','#b7d5cc','#
 
 export const defaultClipFx: ClipFx = {
   gainDb: 0, pan: 0, bassDb: 0, midDb: 0, trebleDb: 0,
-  delayMs: 0, echoBehavior: 'continuous', phrasePauseMs: 450, echoRepeats: 3, echoMode: 'classic', feedback: 0.2, delayWet: 0, reverb: 0, reverbSize: .55, reverbTone: .42, warmth: 0, harshness: 0, rumbleCut: false,
+  delayMs: 0, echoBehavior: 'continuous', phrasePauseMs: 450, echoRepeats: 3, echoMode: 'classic', feedback: 0.2, delayWet: 0, reverb: 0, reverbSize: .55, reverbTone: .42, warmth: 0, harshness: 0, metallicCut: 0, metallicFrequency: 4200, transientSoftness: 0, lofiAmount: 0, rumbleCut: false,
   compressor: false, limiter: true, fadeIn: 0, fadeOut: 0,
   reverse: false, speed: 1, preservePitch: false, tapePitchSemitones: 0,
   motionMode: 'off', motionDepth: 0.78, motionHz: 0.16,
@@ -18,7 +18,7 @@ export const soundPresets: SoundPreset[] = [
  {id:'phrase-trail',name:'Phrase Trail',note:'automatic vocal pause echo · no word-by-word repeats',group:'Vocals',accent:'cyan',patch:{echoBehavior:'phrase',phrasePauseMs:450,echoRepeats:3,delayMs:355,delayWet:.47,feedback:.37,echoMode:'wide',reverb:.15,reverbTone:.34,harshness:.18,limiter:true}},
  {id:'soft-pause',name:'Soft Pause Echo',note:'one gentle repeat at longer pauses',group:'Song edit',accent:'blue',patch:{echoBehavior:'phrase',phrasePauseMs:700,echoRepeats:1,delayMs:380,delayWet:.28,feedback:.18,echoMode:'classic',reverb:.22,reverbSize:.55,limiter:true}},
  {id:'bass-smooth',name:'Bass + Smooth Voice',note:'round bass / less harsh metallic edge',group:'Tone',accent:'green',patch:{bassDb:3,trebleDb:-1.4,warmth:.48,harshness:.67,rumbleCut:true,compressor:true,limiter:true}},
- {id:'lofi-vocal',name:'Lo-fi Vocal',note:'warm vocals · smooth highs · no repeats',group:'Vocals',accent:'green',patch:{warmth:.6,harshness:.38,bassDb:2,midDb:1,trebleDb:-3,reverb:.18,reverbSize:.3,reverbTone:.25,delayWet:0,compressor:true,limiter:true}},
+ {id:'lofi-vocal',name:'Lo-fi Vocal',note:'warm vocals · smooth highs · no repeats',group:'Vocals',accent:'green',patch:{warmth:.6,harshness:.38,lofiAmount:.52,bassDb:2,midDb:1,trebleDb:-3,reverb:.18,reverbSize:.3,reverbTone:.25,delayWet:0,compressor:true,limiter:true}},
  {id:'echo-vocal',name:'Echo Vocal',note:'phrase-end repeats · skips gaps between words',group:'Vocals',accent:'orange',patch:{delayMs:320,echoBehavior:'phrase',phrasePauseMs:450,echoRepeats:3,echoMode:'classic',delayWet:.4,feedback:.34,reverb:.12,reverbSize:.42,limiter:true}},
   { id:'slowed-reverb', name:'Slowed + Reverb', note:'0.86x · tape-style slow', group:'Song edit', accent:'violet', patch:{ speed:.86, preservePitch:false, reverb:.34, delayMs:110, delayWet:.07, feedback:.15, bassDb:1.2, compressor:true } },
   { id:'slowed-reverb-pitch-lock', name:'Slowed + Reverb · Pitch Lock', note:'0.86x · vocal pitch stays close', group:'Song edit', accent:'green', patch:{ speed:.86, preservePitch:true, reverb:.32, delayMs:105, delayWet:.06, feedback:.12, compressor:true, limiter:true } },
@@ -96,8 +96,15 @@ const soundFlavors:Array<[string,string,string,Partial<ClipFx>]>= [
  ['Gentle Edges','Finish','smooth entrance and exit',{fadeIn:1.2,fadeOut:2.5,compressor:true,limiter:true}]
 ]
 soundPresets.push(...soundFlavors.map(([name,group,note,patch],i)=>({id:'sound-'+i,name,group,note,patch,accent:i%3?'cyan':'green'})))
-// Audixo keeps exactly 30 focused effect presets; the 60 music/beat layers live in the separate sound bank.
+// Keep the original 30 curated sounds; expose four additional targeted textures.
 soundPresets.length=30
+soundPresets.push(
+ {id:'cave-whisper',name:'Cave Whisper',group:'Space',note:'deep diffuse voice · no repeat taps',accent:'violet',patch:{reverb:.64,reverbSize:.92,reverbTone:.22,harshness:.42,warmth:.38,delayWet:0,delayMs:0,compressor:true,limiter:true}},
+ {id:'clean-lofi',name:'Clean Lo-fi',group:'Texture',note:'warm low-pass character · zero crackle added',accent:'green',patch:{lofiAmount:.68,warmth:.45,trebleDb:-1.5,delayWet:0,metallicCut:.28,compressor:true,limiter:true}},
+ {id:'metal-softener',name:'Metallic Softener',group:'Texture',note:'tame ring, hiss and hard transient peaks',accent:'cyan',patch:{metallicCut:.75,metallicFrequency:4200,harshness:.65,transientSoftness:.44,rumbleCut:true,limiter:true}},
+ {id:'deep-drum-bass',name:'Deep Drum Bass',group:'Texture',note:'body and bass with less bright percussion',accent:'blue',patch:{bassDb:4,trebleDb:-2.5,transientSoftness:.24,metallicCut:.25,metallicFrequency:5700,limiter:true}}
+)
+
 
 export function createProject(name = 'Untitled Mix'): AudioProject {
   return { id: uid('project'), name, tracks: [], master: { gainDb:0, limiter:true, normalizeOnExport:true, stereoRepair:true } }

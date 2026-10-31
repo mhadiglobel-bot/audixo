@@ -10,17 +10,16 @@ import type {ClipFx,SoundPreset} from '../editor/types'
 // phonk tracks use their own local files and dedicated cover art.
 const REEL='/demo/audixo-sample-reel.mp3?v=51'
 const PHONK_REEL='/demo/audixo-phonk-v61-reel.mp3'
-const PHONK_COVERS='/demo/audixo-phonk-v61-covers.webp'
 const COVER_SPRITE='/demo/audixo-cover-sprite.webp?v=51'
-export type DemoTrack={id:string;title:string;by:string;src:string;from:number;duration:number;coverIndex?:number;coverFamily?:'phonk';tag:string}
+export type DemoTrack={id:string;title:string;by:string;src:string;from:number;duration:number;coverIndex?:number;coverSrc?:string;tag:string}
 const reelTrack=(id:string,title:string,by:string,from:number,duration:number,coverIndex:number,tag='USER CLIP'):DemoTrack=>({id,title,by,src:REEL,from,duration,coverIndex,tag})
 export const DEMO_TRACKS:DemoTrack[]=[
- {id:'montagem-aghanim',title:'Montagem Aghanim',by:'Phonk Drop',src:PHONK_REEL,from:0.000000,duration:48.587755,coverIndex:0,coverFamily:'phonk',tag:'NEW DROP'},
- {id:'montagem-elder',title:'Montagem Elder',by:'Phonk Drop',src:PHONK_REEL,from:48.767755,duration:69.955918,coverIndex:1,coverFamily:'phonk',tag:'NEW DROP'},
- {id:'comeback-2',title:'Comeback 2',by:'Dark Phonk',src:PHONK_REEL,from:118.903673,duration:66.063673,coverIndex:2,coverFamily:'phonk',tag:'NEW DROP'},
- {id:'montagem-aghanim-slowed',title:'Montagem Aghanim Slowed',by:'LXNGVX',src:PHONK_REEL,from:185.147346,duration:67.500408,coverIndex:3,coverFamily:'phonk',tag:'SLOWED'},
- {id:'montagem-tiktak',title:'Montagem Tiktak',by:'Phonk Drop',src:PHONK_REEL,from:252.827754,duration:96.026122,coverIndex:4,coverFamily:'phonk',tag:'NEW DROP'},
- {id:'hero',title:'HERO!',by:'Night Drive',src:PHONK_REEL,from:349.033876,duration:56.111020,coverIndex:5,coverFamily:'phonk',tag:'NEW DROP'},
+ {id:'montagem-aghanim',title:'Montagem Aghanim',by:'Phonk Drop',src:PHONK_REEL,from:0.000000,duration:48.587755,coverSrc:'/demo/phonk-covers/montagem-aghanim.webp',tag:'NEW DROP'},
+ {id:'montagem-elder',title:'Montagem Elder',by:'Phonk Drop',src:PHONK_REEL,from:48.767755,duration:69.955918,coverSrc:'/demo/phonk-covers/montagem-elder.webp',tag:'NEW DROP'},
+ {id:'comeback-2',title:'Comeback 2',by:'Dark Phonk',src:PHONK_REEL,from:118.903673,duration:66.063673,coverSrc:'/demo/phonk-covers/comeback-2.webp',tag:'NEW DROP'},
+ {id:'montagem-aghanim-slowed',title:'Montagem Aghanim Slowed',by:'LXNGVX',src:PHONK_REEL,from:185.147346,duration:67.500408,coverSrc:'/demo/phonk-covers/montagem-aghanim-slowed.webp',tag:'SLOWED'},
+ {id:'montagem-tiktak',title:'Montagem Tiktak',by:'Phonk Drop',src:PHONK_REEL,from:252.827754,duration:96.026122,coverSrc:'/demo/phonk-covers/montagem-tiktak.webp',tag:'NEW DROP'},
+ {id:'hero',title:'HERO!',by:'Night Drive',src:PHONK_REEL,from:349.033876,duration:56.111020,coverSrc:'/demo/phonk-covers/hero.webp',tag:'NEW DROP'},
  reelTrack('teu-perfume','Teu Perfume','Orch Mix',0,79.36106576,0),
  reelTrack('te-conoci','Te Conocí','bxkq x PXLWYSE - Remix',79.51106576,29.83290249,1),
  reelTrack('aura-farming','Aura Farming','Mustafa Saboori',109.49396825,34.73979592,2),
@@ -351,25 +350,22 @@ export function youtubeVideoId(source:string):string|null{
 function TrackArt({index}:{index:number}){
  const track=DEMO_TRACKS[index]
  const cell=track?.coverIndex??0
- // Bundled cover atlases are fixed at build time; every song gets its own exact tile.
- const isPhonk=track?.coverFamily==='phonk'
- const columns=isPhonk?3:5,rows=isPhonk?2:3
- return <span className={`ax49-track-art ${isPhonk?'ax61-track-art ax61-new-cover':'ax51-supplied-cover'}`}
+ if(track?.coverSrc)return <span className="ax49-track-art ax61-track-art is-direct-cover" data-cover-source="user-supplied" data-cover-id={track?.id} aria-hidden="true"><img src={track.coverSrc} alt="" loading="lazy" decoding="async"/></span>
+ return <span className="ax49-track-art ax51-supplied-cover"
   data-cover-source="user-supplied" data-cover-id={track?.id}
-  style={{'--cover-x':`${(cell%columns)*100/(columns-1)}%`,'--cover-y':`${Math.floor(cell/columns)*100/(rows-1)}%`,'--cover-image':`url(${isPhonk?PHONK_COVERS:COVER_SPRITE})`} as CSSProperties}
+  style={{'--cover-x':`${(cell%5)*25}%`,'--cover-y':`${Math.floor(cell/5)*50}%`,'--cover-image':`url(${COVER_SPRITE})`} as CSSProperties}
   aria-hidden="true"/>
 }
 
 function MusicStrip(){
  const {trackIndex,isPlaying,selectTrack}=useSound()
- const stripRef=useRef<HTMLDivElement|null>(null)
- const drag=useRef<{x:number;scroll:number;pointer:number;moved:boolean}|null>(null),blockClickUntil=useRef(0)
- const [grabbing,setGrabbing]=useState(false),[ready,setReady]=useState(false)
- const pickedAt=useRef({index:-1,time:0})
+ const zoneRef=useRef<HTMLDivElement|null>(null)
+ const [ready,setReady]=useState(false)
+ const [order,setOrder]=useState(()=>DEMO_TRACKS.map((_,i)=>i))
+ const draggingIndex=useRef<number|null>(null)
  useEffect(()=>{
-  const node=stripRef.current
+  const node=zoneRef.current
   if(!node)return
-  // Drop animation starts when the user first reaches the Sound Lab, not on initial page load.
   if(typeof IntersectionObserver==='undefined'){setReady(true);return}
   const observer=new IntersectionObserver(entries=>{
    if(entries.some(entry=>entry.isIntersecting)){setReady(true);observer.disconnect()}
@@ -377,29 +373,32 @@ function MusicStrip(){
   observer.observe(node)
   return()=>observer.disconnect()
  },[])
- const renderLane=(copy:'primary'|'clone')=><div className={`ax49-track-lane ax61-track-lane ${copy==='clone'?'ax61-track-lane-clone':''}`} data-strip-lane={copy} aria-hidden={copy==='clone'||undefined}>
-  {DEMO_TRACKS.map((track,i)=><button key={`${copy}-${track.id}`} data-demo-track-id={track.id} data-demo-copy={copy}
-   className={`ax49-track-item ax61-track-card ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i}
-   aria-label={`Play ${track.title}`} tabIndex={copy==='clone'?-1:0}
-   style={{'--stack-tilt':`${((i%5)-2)*1.8}deg`,'--stack-delay':`${Math.min(i*.022,.4)}s`} as CSSProperties}
-   onPointerDown={event=>{if((event.pointerType==='mouse'||event.pointerType==='pen')&&event.button===0){pickedAt.current={index:i,time:performance.now()};selectTrack(i)}}}
-   onClick={event=>{if(i!==pickedAt.current.index||performance.now()-pickedAt.current.time>700)selectTrack(i);if(event.detail>0)event.currentTarget.blur()}}>
-   <TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small><b>{track.tag}</b></span>
-   <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i>
-  </button>)}
- </div>
- return <div className="ax49-strip-section ax61-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · GLASS CRATE · DRAG TO BROWSE</small></div>
-  <p className="ax61-strip-note">Six fresh phonk drops with their matching artwork. Grab a card to play; drag left or right to browse the collection.</p>
-  <div className="ax61-track-bin">
-   <div ref={stripRef} className={`ax49-track-marquee ax61-track-marquee ${grabbing?'is-grabbing':''} ${ready?'is-ready':''}`} role="group" aria-label="Choose a track to preview"
-    onPointerDown={e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag.current={x:e.clientX,scroll:e.currentTarget.scrollLeft,pointer:e.pointerId,moved:false}}}
-    onPointerMove={e=>{const d=drag.current;if(!d||d.pointer!==e.pointerId)return;const delta=e.clientX-d.x;if(Math.abs(delta)>6||d.moved){d.moved=true;setGrabbing(true);if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId);e.currentTarget.scrollLeft=d.scroll-delta}}}
-    onPointerUp={e=>{const d=drag.current;if(d?.moved)blockClickUntil.current=performance.now()+400;drag.current=null;setGrabbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
-    onPointerCancel={()=>{drag.current=null;setGrabbing(false)}}
-    onClickCapture={e=>{if(performance.now()<blockClickUntil.current){e.preventDefault();e.stopPropagation()}}}
-    onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();e.currentTarget.scrollBy({left:e.key==='ArrowRight'?210:-210,behavior:'smooth'})}}}
-    tabIndex={0}
-   >{renderLane('primary')}{renderLane('clone')}</div>
+ const moveCard=useCallback((from:number,to:number)=>{
+  if(from===to||from<0||to<0)return
+  setOrder(prev=>{
+   const next=[...prev],dragged=next.splice(from,1)[0]
+   next.splice(to,0,dragged)
+   return next
+  })
+ },[])
+ return <div className="ax49-strip-section ax61-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · GLASS BIN · PICK, DRAG & REORDER</small></div>
+  <p className="ax61-strip-note">All songs now sit inside one big bin. Grab any slim card, move it forward or backward, then tap the same card to play it instantly.</p>
+  <div className="ax61-track-bin ax61-track-board" ref={zoneRef} role="group" aria-label="Choose and rearrange tracks">
+   {order.map((trackRealIndex,visualIndex)=>{
+    const track=DEMO_TRACKS[trackRealIndex]
+    return <button key={track.id} type="button" draggable
+     className={`ax49-track-item ax61-track-card ${trackIndex===trackRealIndex?'active':''} ${ready?'is-ready':''}`}
+     aria-pressed={trackIndex===trackRealIndex} aria-label={`Play ${track.title}`}
+     style={{'--stack-tilt':`${((visualIndex%4)-1.5)*1.2}deg`,'--drop-delay':`${Math.min(visualIndex*.03,.36)}s`} as CSSProperties}
+     onClick={event=>{if(!(event.currentTarget as HTMLButtonElement).dataset.dragged)selectTrack(trackRealIndex);delete (event.currentTarget as HTMLButtonElement).dataset.dragged;if(event.detail>0)event.currentTarget.blur()}}
+     onDragStart={event=>{draggingIndex.current=visualIndex;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',String(trackRealIndex));event.currentTarget.classList.add('is-dragging')}}
+     onDragEnd={event=>{draggingIndex.current=null;event.currentTarget.classList.remove('is-dragging');event.currentTarget.dataset.dragged='true';window.setTimeout(()=>{delete event.currentTarget.dataset.dragged},80)}}
+     onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect='move'}}
+     onDrop={event=>{event.preventDefault();const from=draggingIndex.current;if(from===null)return;moveCard(from,visualIndex)}}>
+     <TrackArt index={trackRealIndex}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small><b>{track.tag}</b></span>
+     <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===trackRealIndex&&isPlaying?'♫':'↕'}</i>
+    </button>
+   })}
   </div>
  </div>
 }

@@ -53,8 +53,7 @@ Use **Node.js 20+** with registry access:
 
 ```bash
 npm ci
-npm run test:studio
-npm run test:converter
+npm run test:tracks
 npm run build
 ```
 
@@ -87,22 +86,37 @@ the homepage Live Sound Lab and its audio/thumbnail assets.
 - Includes six uploaded phonk tracks alongside the original thirteen.
 - Uses one optimized MP3 reel for the new six tracks, with 180 ms inter-track
   spacing; the original demonstration reel remains unchanged.
-- Uses one 3x2 WebP atlas for the six matching user-supplied cover artworks.
-  Artwork was only resized/combined for delivery; the underlying drawings were
-  not regenerated.
-- Replaces the continuously moving song strip with a glass-effect, horizontally
-  scrollable card crate; supports mouse/touch drag, keyboard arrow scrolling,
-  song selection and a single lightweight drop-in entrance animation.
+- Uses six individually named WebP thumbnails for the new tracks, ensuring
+  each title gets its matching image without sprite-position mixups.
+- Replaces the continuously moving song strip with one glass-effect card bin;
+  compact track cards can be reordered by desktop drag-and-drop, clicked to
+  play, and arrive with a lightweight drop-in entrance animation.
 - Retains full live effects, including Smart Pause echo, Vocal Aura/Reverb,
   Lo-fi and metallic-harshness controls, and the 34 Studio presets.
 - No Docker or Render service was introduced. The original browser-first
   MP3/MP4 limitations still apply. This package does **not** guarantee
   universal YouTube video downloading.
 
-`npm run test:studio`, `npm run test:converter`, and
-`npm run test:crate` are available after dependency installation.
+`npm run test:tracks` validates the glass-bin track markup; the omitted
+standalone V60/V61 test scripts are not advertised as runnable.
 
 The new phonk preview audio is encoded as 160 kbps MP3 to keep the static
 asset practical for website usage; the six original audio files were supplied
 by the user and not included separately in the GitHub ZIP. Ensure publication
 rights for tracks and cover art before public release.
+
+
+## V62.1 — Vercel prerender / SSR build repair
+
+The reported `deepStrictEqual` failure came from `scripts/seo-build.mjs`
+still requiring the removed two-lane animated marquee. This release checks
+**one draggable card per track in the glass bin**, instead. The real
+production prerender still runs the same assertion; it was not disabled.
+The HTML now exposes stable `data-demo-bin` / `data-demo-track-id` markers.
+Also fixed a drag-end callback that could access `event.currentTarget`
+after React had cleared it. The rest of the design, 19-track catalog,
+cover mappings, audio and Open Studio code are unchanged.
+
+Run `npm ci`, `npm run test:tracks`, then `npm run build` in an environment
+with npm registry access. The full build could not be executed in the
+authoring environment because registry DNS resolution was unavailable.

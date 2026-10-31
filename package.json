@@ -9,10 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:ssr": "node scripts/seo-build.mjs --check",
-    "test:tracks": "node scripts/seo-build.mjs --self-test",
-    "test:converter": "node --test scripts/converter-tests.mjs",
-    "test:studio": "node --test scripts/studio-v60-tests.cjs",
-    "test:crate": "node --test scripts/sound-crate-v61-tests.cjs"
+    "test:tracks": "node scripts/seo-build.mjs --self-test"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

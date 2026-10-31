@@ -383,16 +383,16 @@ function MusicStrip(){
  },[])
  return <div className="ax49-strip-section ax61-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · GLASS BIN · PICK, DRAG & REORDER</small></div>
   <p className="ax61-strip-note">All songs now sit inside one big bin. Grab any slim card, move it forward or backward, then tap the same card to play it instantly.</p>
-  <div className="ax61-track-bin ax61-track-board" ref={zoneRef} role="group" aria-label="Choose and rearrange tracks">
+  <div className="ax61-track-bin ax61-track-board" ref={zoneRef} role="group" data-demo-bin="reorderable" aria-label="Choose and rearrange tracks">
    {order.map((trackRealIndex,visualIndex)=>{
     const track=DEMO_TRACKS[trackRealIndex]
-    return <button key={track.id} type="button" draggable
+    return <button key={track.id} type="button" draggable data-demo-track-id={track.id}
      className={`ax49-track-item ax61-track-card ${trackIndex===trackRealIndex?'active':''} ${ready?'is-ready':''}`}
      aria-pressed={trackIndex===trackRealIndex} aria-label={`Play ${track.title}`}
      style={{'--stack-tilt':`${((visualIndex%4)-1.5)*1.2}deg`,'--drop-delay':`${Math.min(visualIndex*.03,.36)}s`} as CSSProperties}
      onClick={event=>{if(!(event.currentTarget as HTMLButtonElement).dataset.dragged)selectTrack(trackRealIndex);delete (event.currentTarget as HTMLButtonElement).dataset.dragged;if(event.detail>0)event.currentTarget.blur()}}
      onDragStart={event=>{draggingIndex.current=visualIndex;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',String(trackRealIndex));event.currentTarget.classList.add('is-dragging')}}
-     onDragEnd={event=>{draggingIndex.current=null;event.currentTarget.classList.remove('is-dragging');event.currentTarget.dataset.dragged='true';window.setTimeout(()=>{delete event.currentTarget.dataset.dragged},80)}}
+     onDragEnd={event=>{const card=event.currentTarget;draggingIndex.current=null;card.classList.remove('is-dragging');card.dataset.dragged='true';window.setTimeout(()=>{delete card.dataset.dragged},80)}}
      onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect='move'}}
      onDrop={event=>{event.preventDefault();const from=draggingIndex.current;if(from===null)return;moveCard(from,visualIndex)}}>
      <TrackArt index={trackRealIndex}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small><b>{track.tag}</b></span>

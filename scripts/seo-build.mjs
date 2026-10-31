@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import {readFile,writeFile,mkdir,rm} from 'node:fs/promises'
 import path from 'node:path'
 
-/** Count logical tracks separately from the visual clone used for the marquee.
- * The production build and --self-test call this exact same assertion function.
+/** Validate the V62 glass bin's actual SSR markup, not the retired marquee.
+ * The production build and --self-test use the SAME assertion function.
+ * The bin renders exactly one draggable card per catalog track (no clone lane).
  */
 export function checkTrackMarkup(html,tracks){
  const ids=tracks.map(t=>t.id)
@@ -12,29 +13,43 @@ export function checkTrackMarkup(html,tracks){
  const audio=html.match(/<audio\b[^>]*src="\/demo\/audixo-sample-reel\.mp3(?:\?v=[\w.-]+)?"[^>]*>/g)||[]
  assert.equal(audio.length,1,'Home must render one persistent demo player')
  assert.ok(!/\bautoplay\b/i.test(audio[0]),'Initial audio autoplay is not permitted')
+ const bins=html.match(/<div\b[^>]*data-demo-bin="reorderable"[^>]*>/g)||[]
+ assert.equal(bins.length,1,'Home must render exactly one reorderable glass bin')
+ assert.ok(/\brole="group"/.test(bins[0]),'The song bin must have an accessible group role')
  const buttons=(html.match(/<button\b[^>]*data-demo-track-id="[^"]+"[^>]*>/g)||[])
  const attr=(tag,key)=>tag.match(new RegExp(key+'="([^"]*)"'))?.[1]
- for(const lane of ['primary','clone']){
-  const items=buttons.filter(tag=>attr(tag,'data-demo-copy')===lane)
-  assert.deepEqual(items.map(tag=>attr(tag,'data-demo-track-id')),ids,`${lane}: each catalog track must render once in order`)
-  if(lane==='clone')assert.ok(items.every(tag=>attr(tag,'tabindex')==='-1'),'Clones must not enter keyboard tab order')
- }
- assert.equal(buttons.length,ids.length*2,'Only primary and clone rows may contain track buttons')
- assert.match(html,/<div\b[^>]*data-strip-lane="clone"[^>]*aria-hidden="true"/,'Clone lane must be hidden from assistive technology')
+ assert.deepEqual(buttons.map(tag=>attr(tag,'data-demo-track-id')),ids,'One draggable card per track, in catalog order')
+ assert.ok(buttons.every(tag=>/\bdraggable(?:\s|=|>)/i.test(tag)),'Every track card must be draggable')
+ assert.ok(buttons.every(tag=>/\baria-label="Play /.test(tag)),'Each song card must have a play label')
+ assert.ok(!html.includes('data-strip-lane='),'The retired marquee clone lanes must not render')
  return {uniqueTracks:ids.length,renderedTiles:buttons.length}
 }
 export function runTrackRegression(){
  const fixture=n=>{
   const tracks=Array.from({length:n},(_,i)=>({id:'track-'+i}))
-  const lane=copy=>`<div data-strip-lane="${copy}"${copy==='clone'?' aria-hidden="true"':''}>`+tracks.map(t=>`<button data-demo-track-id="${t.id}" data-demo-copy="${copy}" tabindex="${copy==='clone'?-1:0}"></button>`).join('')+'</div>'
-  return {tracks,html:'<audio src="/demo/audixo-sample-reel.mp3" preload="metadata"></audio>'+lane('primary')+lane('clone')}
+  const bin='<div class="ax61-track-bin" data-demo-bin="reorderable" role="group">'+tracks.map(t=>`<button type="button" draggable="true" data-demo-track-id="${t.id}" aria-label="Play ${t.id}"></button>`).join('')+'</div>'
+  return {tracks,html:'<audio src="/demo/audixo-sample-reel.mp3" preload="metadata"></audio>'+bin}
  }
  let count=0
- for(const n of [1,10,13,20]){const f=fixture(n);assert.equal(checkTrackMarkup(f.html,f.tracks).renderedTiles,n*2);count++}
- const {html,tracks}=fixture(13)
- for(const bad of [html.replace('data-demo-track-id="track-0"','data-demo-track-id="wrong"'),html.replace('<audio ','<audio autoplay="" '),html.replace('tabindex="-1"','tabindex="0"'),html.replace('aria-hidden="true"','aria-hidden="false"'),html.replace('data-demo-copy="clone"','data-demo-copy="primary"')]){assert.throws(()=>checkTrackMarkup(bad,tracks));count++}
+ for(const n of [1,6,13,19]){
+  const f=fixture(n)
+  assert.equal(checkTrackMarkup(f.html,f.tracks).renderedTiles,n)
+  count++
+ }
+ const {html,tracks}=fixture(19)
+ const malformed=[
+  html.replace('data-demo-track-id="track-0"','data-demo-track-id="wrong"'),
+  html.replace('<audio ','<audio autoplay="" '),
+  html.replace('data-demo-bin="reorderable"','data-demo-bin="marquee"'),
+  html.replace('role="group"','role="list"'),
+  html.replace('draggable="true"','title="undraggable"'),
+  html.replace('aria-label="Play track-0"','title="No label"'),
+  html.replace('</div>','<div data-strip-lane="clone"></div></div>'),
+  html.replace('data-demo-track-id="track-1"','data-demo-track-id="track-0"')
+ ]
+ for(const bad of malformed){assert.throws(()=>checkTrackMarkup(bad,tracks));count++}
  assert.throws(()=>checkTrackMarkup(html,[...tracks,tracks[0]]));count++
- console.log(`Track-markup regression passed: ${count} cases (including 10/20 and 13/26).`)
+ console.log(`Glass-bin markup regression passed: ${count} cases; unique draggable cards, no duplicate strip, one player, no autoplay.`)
 }
 if(process.argv.includes('--self-test')){runTrackRegression();process.exit(0)}
 
@@ -73,7 +88,7 @@ if(process.argv.includes('--check')){
  const routes=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),'/__ssr-not-found-check__']
  for(const route of routes)renderPage(route)
  await rm('.build',{recursive:true,force:true})
- console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; ${DEMO_TRACKS.length} unique tracks and one hidden clone lane; no autoplay.`)
+ console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; ${DEMO_TRACKS.length} unique draggable cards in one glass bin; no autoplay.`)
  process.exit(0)
 }
 

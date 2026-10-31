@@ -1,7 +1,7 @@
 {
   "name": "audixo-studio",
   "private": true,
-  "version": "60.0.0",
+  "version": "61.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "test:ssr": "node scripts/seo-build.mjs --check",
     "test:tracks": "node scripts/seo-build.mjs --self-test",
     "test:converter": "node --test scripts/converter-tests.mjs",
-    "test:studio": "node --test scripts/studio-v60-tests.cjs"
+    "test:studio": "node --test scripts/studio-v60-tests.cjs",
+    "test:crate": "node --test scripts/sound-crate-v61-tests.cjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

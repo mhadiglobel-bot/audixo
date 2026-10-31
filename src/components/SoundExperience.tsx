@@ -4,129 +4,36 @@ import {defaultClipFx,soundPresets} from '../editor/project'
 import type {ClipFx,SoundPreset} from '../editor/types'
 
 
-// V49: One persistent media element and one Web Audio graph. Effects change node
+// One persistent media element and one Web Audio graph. Effects change node
 // parameters in place; React route changes never re-create the music player.
-// The supplied audio excerpts were combined into ONE seekable MP3 reel.
+// Legacy demo cuts still live inside one seekable reel, while newer user-supplied
+// phonk tracks use their own local files and dedicated cover art.
 const REEL='/demo/audixo-sample-reel.mp3?v=51'
-export type DemoTrack={id:string;title:string;by:string;from:number;duration:number;coverIndex:number;tag:string}
+const PHONK_REEL='/demo/audixo-phonk-v61-reel.mp3'
+const PHONK_COVERS='/demo/audixo-phonk-v61-covers.webp'
+const COVER_SPRITE='/demo/audixo-cover-sprite.webp?v=51'
+export type DemoTrack={id:string;title:string;by:string;src:string;from:number;duration:number;coverIndex?:number;coverFamily?:'phonk';tag:string}
+const reelTrack=(id:string,title:string,by:string,from:number,duration:number,coverIndex:number,tag='USER CLIP'):DemoTrack=>({id,title,by,src:REEL,from,duration,coverIndex,tag})
 export const DEMO_TRACKS:DemoTrack[]=[
- {
-  "id": "teu-perfume",
-  "title": "Teu Perfume",
-  "by": "Orch Mix",
-  "from": 0.0,
-  "duration": 79.36106576,
-  "coverIndex": 0,
-  "tag": "USER CLIP"
- },
- {
-  "id": "te-conoci",
-  "title": "Te Conoc\u00ed",
-  "by": "bxkq x PXLWYSE - Remix",
-  "from": 79.51106576,
-  "duration": 29.83290249,
-  "coverIndex": 1,
-  "tag": "USER CLIP"
- },
- {
-  "id": "aura-farming",
-  "title": "Aura Farming",
-  "by": "Mustafa Saboori",
-  "from": 109.49396825,
-  "duration": 34.73979592,
-  "coverIndex": 2,
-  "tag": "USER CLIP"
- },
- {
-  "id": "montagem-ahora",
-  "title": "Montagem Ahora",
-  "by": "NUEKI x QMIIR",
-  "from": 144.38376417,
-  "duration": 31.79698413,
-  "coverIndex": 3,
-  "tag": "USER CLIP"
- },
- {
-  "id": "montagem-illuminal",
-  "title": "Montagem Illuminal",
-  "by": "Funk / Phonk",
-  "from": 176.3307483,
-  "duration": 37.24099773,
-  "coverIndex": 4,
-  "tag": "USER CLIP"
- },
- {
-  "id": "montagem-royal",
-  "title": "Montagem Royal",
-  "by": "Slowed",
-  "from": 213.72174603,
-  "duration": 48.3929932,
-  "coverIndex": 5,
-  "tag": "USER CLIP"
- },
- {
-  "id": "baila-lento",
-  "title": "Baila Lento",
-  "by": "Funk / Phonk",
-  "from": 262.26473923,
-  "duration": 29.6129932,
-  "coverIndex": 6,
-  "tag": "USER CLIP"
- },
- {
-  "id": "tiki-tiki",
-  "title": "Tiki Tiki",
-  "by": "Funk / Phonk",
-  "from": 292.02773243,
-  "duration": 87.08501134,
-  "coverIndex": 7,
-  "tag": "USER CLIP"
- },
- {
-  "id": "funk-sigilo",
-  "title": "Funk Sigilo",
-  "by": "Funk / Phonk",
-  "from": 379.26274376,
-  "duration": 23.15800454,
-  "coverIndex": 8,
-  "tag": "USER CLIP"
- },
- {
-  "id": "funk-power",
-  "title": "Funk Power",
-  "by": "Funk / Phonk",
-  "from": 402.5707483,
-  "duration": 35.19501134,
-  "coverIndex": 9,
-  "tag": "USER CLIP"
- },
- {
-  "id": "veki-veki",
-  "title": "VEKI VEKI",
-  "by": "DJZRX",
-  "from": 437.91575964,
-  "duration": 42.9921542,
-  "coverIndex": 10,
-  "tag": "USER CLIP"
- },
- {
-  "id": "siento-conmigo",
-  "title": "SIENTO CONMIGO",
-  "by": "Slowed TikTok",
-  "from": 481.05791383,
-  "duration": 48.26356009,
-  "coverIndex": 11,
-  "tag": "USER CLIP"
- },
- {
-  "id": "montagem-alquimia",
-  "title": "MONTAGEM ALQUIMIA",
-  "by": "Funk / Phonk",
-  "from": 529.47147392,
-  "duration": 66.5476644,
-  "coverIndex": 12,
-  "tag": "USER CLIP"
- }
+ {id:'montagem-aghanim',title:'Montagem Aghanim',by:'Phonk Drop',src:PHONK_REEL,from:0.000000,duration:48.587755,coverIndex:0,coverFamily:'phonk',tag:'NEW DROP'},
+ {id:'montagem-elder',title:'Montagem Elder',by:'Phonk Drop',src:PHONK_REEL,from:48.767755,duration:69.955918,coverIndex:1,coverFamily:'phonk',tag:'NEW DROP'},
+ {id:'comeback-2',title:'Comeback 2',by:'Dark Phonk',src:PHONK_REEL,from:118.903673,duration:66.063673,coverIndex:2,coverFamily:'phonk',tag:'NEW DROP'},
+ {id:'montagem-aghanim-slowed',title:'Montagem Aghanim Slowed',by:'LXNGVX',src:PHONK_REEL,from:185.147346,duration:67.500408,coverIndex:3,coverFamily:'phonk',tag:'SLOWED'},
+ {id:'montagem-tiktak',title:'Montagem Tiktak',by:'Phonk Drop',src:PHONK_REEL,from:252.827754,duration:96.026122,coverIndex:4,coverFamily:'phonk',tag:'NEW DROP'},
+ {id:'hero',title:'HERO!',by:'Night Drive',src:PHONK_REEL,from:349.033876,duration:56.111020,coverIndex:5,coverFamily:'phonk',tag:'NEW DROP'},
+ reelTrack('teu-perfume','Teu Perfume','Orch Mix',0,79.36106576,0),
+ reelTrack('te-conoci','Te Conocí','bxkq x PXLWYSE - Remix',79.51106576,29.83290249,1),
+ reelTrack('aura-farming','Aura Farming','Mustafa Saboori',109.49396825,34.73979592,2),
+ reelTrack('montagem-ahora','Montagem Ahora','NUEKI x QMIIR',144.38376417,31.79698413,3),
+ reelTrack('montagem-illuminal','Montagem Illuminal','Funk / Phonk',176.3307483,37.24099773,4),
+ reelTrack('montagem-royal','Montagem Royal','Slowed',213.72174603,48.3929932,5),
+ reelTrack('baila-lento','Baila Lento','Funk / Phonk',262.26473923,29.6129932,6),
+ reelTrack('tiki-tiki','Tiki Tiki','Funk / Phonk',292.02773243,87.08501134,7),
+ reelTrack('funk-sigilo','Funk Sigilo','Funk / Phonk',379.26274376,23.15800454,8),
+ reelTrack('funk-power','Funk Power','Funk / Phonk',402.5707483,35.19501134,9),
+ reelTrack('veki-veki','VEKI VEKI','DJZRX',437.91575964,42.9921542,10),
+ reelTrack('siento-conmigo','SIENTO CONMIGO','Slowed TikTok',481.05791383,48.26356009,11),
+ reelTrack('montagem-alquimia','MONTAGEM ALQUIMIA','Funk / Phonk',529.47147392,66.5476644,12),
 ]
 
 type FxTab='Clip'|'Tone'|'Polish'|'Space'|'Echo'|'Motion'|'Style'
@@ -297,11 +204,16 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
   if(i<0||i>=DEMO_TRACKS.length||!mediaRef.current)return
   phraseState.current={wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0}
   setTrack(i);setParams({...NEUTRAL});setPresetId('');setCompare(100);setActiveTab('Clip');setError('')
-  const media=mediaRef.current,track=DEMO_TRACKS[i]
+  const media=mediaRef.current,track=DEMO_TRACKS[i],currentSource=media.dataset.demoSrc||REEL
   pendingStart.current=track.from
   try{
+   if(currentSource!==track.src){
+    media.dataset.demoSrc=track.src
+    media.src=track.src
+    media.load()
+   }
    ensureGraph()
-   if(media.readyState>=1){media.currentTime=track.from;pendingStart.current=null}
+   if(media.readyState>=1&&currentSource===track.src){media.currentTime=track.from;pendingStart.current=null}
    // play() is intentionally invoked INSIDE the actual click handler for browser consent.
    const p=media.play()
    void p.then(()=>{if(!media.paused){trackPlaying.current=true;setPlaying(true)}}).catch(()=>{setPlaying(false);setError('Playback needs a user gesture. Tap Play again.')})
@@ -439,64 +351,56 @@ export function youtubeVideoId(source:string):string|null{
 function TrackArt({index}:{index:number}){
  const track=DEMO_TRACKS[index]
  const cell=track?.coverIndex??0
- // Locally bundled, user-supplied original cover art. No external lookup/hotlink.
- return <span className="ax49-track-art ax51-supplied-cover"
+ // Bundled cover atlases are fixed at build time; every song gets its own exact tile.
+ const isPhonk=track?.coverFamily==='phonk'
+ const columns=isPhonk?3:5,rows=isPhonk?2:3
+ return <span className={`ax49-track-art ${isPhonk?'ax61-track-art ax61-new-cover':'ax51-supplied-cover'}`}
   data-cover-source="user-supplied" data-cover-id={track?.id}
-  style={{'--cover-x':`${(cell%5)*25}%`,'--cover-y':`${Math.floor(cell/5)*50}%`} as CSSProperties}
+  style={{'--cover-x':`${(cell%columns)*100/(columns-1)}%`,'--cover-y':`${Math.floor(cell/columns)*100/(rows-1)}%`,'--cover-image':`url(${isPhonk?PHONK_COVERS:COVER_SPRITE})`} as CSSProperties}
   aria-hidden="true"/>
 }
 
 function MusicStrip(){
  const {trackIndex,isPlaying,selectTrack}=useSound()
  const stripRef=useRef<HTMLDivElement|null>(null)
- const hover=useRef(false),drag=useRef<{x:number;scroll:number;pointer:number;moved:boolean}|null>(null),holdUntil=useRef(0),blockClickUntil=useRef(0)
- const [grabbing,setGrabbing]=useState(false)
+ const drag=useRef<{x:number;scroll:number;pointer:number;moved:boolean}|null>(null),blockClickUntil=useRef(0)
+ const [grabbing,setGrabbing]=useState(false),[ready,setReady]=useState(false)
+ const pickedAt=useRef({index:-1,time:0})
  useEffect(()=>{
   const node=stripRef.current
-  if(!node||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
-  let frame=0,last=0,position=0,cycle=0
-  const measure=()=>{
-   const primary=node.querySelector<HTMLElement>('[data-strip-lane="primary"]')
-   const clone=node.querySelector<HTMLElement>('[data-strip-lane="clone"]')
-   if(primary&&clone)cycle=clone.offsetLeft-primary.offsetLeft
-  }
-  measure()
-  const observer=typeof ResizeObserver!=='undefined'?new ResizeObserver(measure):null
-  observer?.observe(node)
-  const step=(now:number)=>{
-   const delta=last?Math.min((now-last)/1000,.05):0;last=now
-   // Pointer hover, touch drag, focused controls and a brief settle period all pause motion.
-   if(cycle>0&&!document.hidden&&!hover.current&&!drag.current&&now>holdUntil.current&&!node.contains(document.activeElement)){
-    position=(position+delta*(window.innerWidth<820?22:30))%cycle
-    node.scrollLeft=position
-   }else position=node.scrollLeft
-   frame=window.requestAnimationFrame(step)
-  }
-  const manual=()=>{position=node.scrollLeft;holdUntil.current=performance.now()+1200}
-  node.addEventListener('touchend',manual,{passive:true});node.addEventListener('wheel',manual,{passive:true})
-  frame=window.requestAnimationFrame(step)
-  return()=>{window.cancelAnimationFrame(frame);observer?.disconnect();node.removeEventListener('touchend',manual);node.removeEventListener('wheel',manual)}
+  if(!node)return
+  // Drop animation starts when the user first reaches the Sound Lab, not on initial page load.
+  if(typeof IntersectionObserver==='undefined'){setReady(true);return}
+  const observer=new IntersectionObserver(entries=>{
+   if(entries.some(entry=>entry.isIntersecting)){setReady(true);observer.disconnect()}
+  },{threshold:.18})
+  observer.observe(node)
+  return()=>observer.disconnect()
  },[])
- const renderLane=(copy:'primary'|'clone')=><div className="ax49-track-lane" data-strip-lane={copy} aria-hidden={copy==='clone'||undefined}>
+ const renderLane=(copy:'primary'|'clone')=><div className={`ax49-track-lane ax61-track-lane ${copy==='clone'?'ax61-track-lane-clone':''}`} data-strip-lane={copy} aria-hidden={copy==='clone'||undefined}>
   {DEMO_TRACKS.map((track,i)=><button key={`${copy}-${track.id}`} data-demo-track-id={track.id} data-demo-copy={copy}
-   className={`ax49-track-item ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i}
+   className={`ax49-track-item ax61-track-card ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i}
    aria-label={`Play ${track.title}`} tabIndex={copy==='clone'?-1:0}
-   onClick={event=>{selectTrack(i);if(event.detail>0)event.currentTarget.blur()}}>
-   <TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small></span>
+   style={{'--stack-tilt':`${((i%5)-2)*1.8}deg`,'--stack-delay':`${Math.min(i*.022,.4)}s`} as CSSProperties}
+   onPointerDown={event=>{if((event.pointerType==='mouse'||event.pointerType==='pen')&&event.button===0){pickedAt.current={index:i,time:performance.now()};selectTrack(i)}}}
+   onClick={event=>{if(i!==pickedAt.current.index||performance.now()-pickedAt.current.time>700)selectTrack(i);if(event.detail>0)event.currentTarget.blur()}}>
+   <TrackArt index={i}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small><b>{track.tag}</b></span>
    <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i>
   </button>)}
  </div>
- return <div className="ax49-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · HOVER TO PAUSE · DRAG TO BROWSE</small></div>
-  <div ref={stripRef} className={`ax49-track-marquee ${grabbing?'is-grabbing':''}`} role="group" aria-label="Choose a track to preview"
-   onPointerEnter={()=>{hover.current=true}} onPointerLeave={()=>{hover.current=false}}
-   onPointerDown={e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag.current={x:e.clientX,scroll:e.currentTarget.scrollLeft,pointer:e.pointerId,moved:false}}}
-   onPointerMove={e=>{const d=drag.current;if(!d||d.pointer!==e.pointerId)return;const delta=e.clientX-d.x;if(Math.abs(delta)>6||d.moved){d.moved=true;setGrabbing(true);if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId);e.currentTarget.scrollLeft=d.scroll-delta}}}
-   onPointerUp={e=>{const d=drag.current;if(d?.moved){blockClickUntil.current=performance.now()+400;holdUntil.current=performance.now()+1600}drag.current=null;setGrabbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
-   onPointerCancel={()=>{drag.current=null;setGrabbing(false)}}
-   onClickCapture={e=>{if(performance.now()<blockClickUntil.current){e.preventDefault();e.stopPropagation()}}}
-   onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();e.currentTarget.scrollBy({left:e.key==='ArrowRight'?190:-190,behavior:'smooth'});holdUntil.current=performance.now()+2000}}}
-   tabIndex={0}
-  >{renderLane('primary')}{renderLane('clone')}</div>
+ return <div className="ax49-strip-section ax61-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · GLASS CRATE · DRAG TO BROWSE</small></div>
+  <p className="ax61-strip-note">Six fresh phonk drops with their matching artwork. Grab a card to play; drag left or right to browse the collection.</p>
+  <div className="ax61-track-bin">
+   <div ref={stripRef} className={`ax49-track-marquee ax61-track-marquee ${grabbing?'is-grabbing':''} ${ready?'is-ready':''}`} role="group" aria-label="Choose a track to preview"
+    onPointerDown={e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag.current={x:e.clientX,scroll:e.currentTarget.scrollLeft,pointer:e.pointerId,moved:false}}}
+    onPointerMove={e=>{const d=drag.current;if(!d||d.pointer!==e.pointerId)return;const delta=e.clientX-d.x;if(Math.abs(delta)>6||d.moved){d.moved=true;setGrabbing(true);if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId);e.currentTarget.scrollLeft=d.scroll-delta}}}
+    onPointerUp={e=>{const d=drag.current;if(d?.moved)blockClickUntil.current=performance.now()+400;drag.current=null;setGrabbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
+    onPointerCancel={()=>{drag.current=null;setGrabbing(false)}}
+    onClickCapture={e=>{if(performance.now()<blockClickUntil.current){e.preventDefault();e.stopPropagation()}}}
+    onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();e.currentTarget.scrollBy({left:e.key==='ArrowRight'?210:-210,behavior:'smooth'})}}}
+    tabIndex={0}
+   >{renderLane('primary')}{renderLane('clone')}</div>
+  </div>
  </div>
 }
 
@@ -514,7 +418,7 @@ function LivePanel(){
   <div className="ax49-tab-body" role="tabpanel">
   {activeTab==='Clip'&&<><p>Control the song's speed and level while it plays.</p><LiveRange name="Speed" value={params.speed} min={.65} max={1.4} step={.05} unit="×" onChange={speed=>change({speed})}/><LiveRange name="Gain" value={params.gainDb} min={-9} max={8} unit=" dB" onChange={gainDb=>change({gainDb})}/><div className="ax49-toggle-row"><span><strong>Keep pitch on speed changes</strong><small>Works on supported browsers</small></span><button type="button" role="switch" aria-checked={params.preservePitch} onClick={()=>change({preservePitch:!params.preservePitch})} className={params.preservePitch?'on':''}><i/></button></div></>}
   {activeTab==='Tone'&&<><p>Fine-tune the lows, mids and highs without interrupting playback.</p><LiveRange name="Bass" value={params.bassDb} min={-12} max={12} unit=" dB" onChange={bassDb=>change({bassDb})}/><LiveRange name="Mid" value={params.midDb} min={-12} max={12} unit=" dB" onChange={midDb=>change({midDb})}/><LiveRange name="Treble" value={params.trebleDb} min={-12} max={12} unit=" dB" onChange={trebleDb=>change({trebleDb})}/><LiveRange name="Tape pitch" value={params.tapePitchSemitones} min={-6} max={6} unit=" st" onChange={tapePitchSemitones=>change({tapePitchSemitones,preservePitch:false})}/></>}
-  {activeTab==='Polish'&&<><p>Clean lo-fi texture and ringing reduction, with no artificial hiss or added drum sounds. For actual drum removal, separate stems in Full Studio.</p><LiveRange name="Lo-fi warmth" value={Math.round((params.lofiAmount??0)*100)} min={0} max={100} unit="%" onChange={v=>change({lofiAmount:v/100})}/><LiveRange name="Vocal warmth" value={Math.round((params.warmth??0)*100)} min={0} max={100} unit="%" onChange={v=>change({warmth:v/100})}/><LiveRange name="Metallic ring reduction" value={Math.round((params.metallicCut??0)*100)} min={0} max={100} unit="%" onChange={v=>change({metallicCut:v/100})}/><LiveRange name="Ring frequency" value={params.metallicFrequency??4200} min={1800} max={9000} step={100} unit=" Hz" onChange={metallicFrequency=>change({metallicFrequency})}/><LiveRange name="Percussion peak softening" value={Math.round((params.transientSoftness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({transientSoftness:v/100})}/><LiveRange name="Harshness reduction" value={Math.round((params.harshness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({harshness:v/100})}/></>}
+  {activeTab==='Polish'&&<><p>Clean lo-fi texture and ringing reduction, with no artificial hiss or added drum sounds. For actual drum removal, separate stems in Full Studio.</p><div className="ax60-polish-quick"><button type="button" onClick={()=>change({lofiAmount:.44,warmth:.42,harshness:.18,metallicCut:.2,transientSoftness:.18})}>Lo-fi Better</button><button type="button" onClick={()=>change({lofiAmount:.26,warmth:.54,harshness:.38,metallicCut:.62,metallicFrequency:3900,transientSoftness:.3})}>Echo Vibe Clean</button><button type="button" onClick={()=>change({lofiAmount:.18,warmth:.58,harshness:.45,metallicCut:.72,metallicFrequency:3400,transientSoftness:.4})}>Cave Smooth</button></div><LiveRange name="Lo-fi warmth" value={Math.round((params.lofiAmount??0)*100)} min={0} max={100} unit="%" onChange={v=>change({lofiAmount:v/100})}/><LiveRange name="Vocal warmth" value={Math.round((params.warmth??0)*100)} min={0} max={100} unit="%" onChange={v=>change({warmth:v/100})}/><LiveRange name="Metallic ring reduction" value={Math.round((params.metallicCut??0)*100)} min={0} max={100} unit="%" onChange={v=>change({metallicCut:v/100})}/><LiveRange name="Ring frequency" value={params.metallicFrequency??4200} min={1800} max={9000} step={100} unit=" Hz" onChange={metallicFrequency=>change({metallicFrequency})}/><LiveRange name="Percussion peak softening" value={Math.round((params.transientSoftness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({transientSoftness:v/100})}/><LiveRange name="Harshness reduction" value={Math.round((params.harshness??0)*100)} min={0} max={100} unit="%" onChange={v=>change({harshness:v/100})}/></>}
   {activeTab==='Space'&&<><p>Add smooth, damped room depth without metallic plate ringing or syllable repeats.</p><LiveRange name="Reverb" value={Math.round(params.reverb*100)} min={0} max={100} unit="%" onChange={v=>change({reverb:v/100})}/><LiveRange name="Room size" value={Math.round(params.reverbSize*100)} min={0} max={100} unit="%" onChange={v=>change({reverbSize:v/100})}/><LiveRange name="Room brightness" value={Math.round(params.reverbTone*100)} min={0} max={100} unit="%" onChange={v=>change({reverbTone:v/100})}/><LiveRange name="Stereo balance" value={Math.round(params.pan*100)} min={-100} max={100} unit="%" onChange={v=>change({pan:v/100})}/></>}
   {activeTab==='Echo'&&<><p>Choose continuous echo or pause-triggered phrase tails. Smart mode detects quiet gaps, not exact written lyrics.</p><div className="ax49-motion-options" role="group" aria-label="Repeat timing"><button type="button" aria-pressed={params.echoBehavior==='continuous'} className={params.echoBehavior==='continuous'?'active':''} onClick={()=>change({echoBehavior:'continuous'})}>Continuous</button><button type="button" aria-pressed={params.echoBehavior==='phrase'} className={params.echoBehavior==='phrase'?'active':''} onClick={()=>change({echoBehavior:'phrase',delayMs:params.delayMs||355,delayWet:params.delayWet||.35})}>Smart pauses</button></div><LiveRange name="Delay time" value={params.delayMs} min={40} max={750} step={10} unit=" ms" onChange={delayMs=>change({delayMs})}/><LiveRange name="Echo mix" value={Math.round(params.delayWet*100)} min={0} max={100} unit="%" onChange={v=>change({delayWet:v/100})}/><LiveRange name="Feedback / tail decay" value={Math.round(params.feedback*100)} min={0} max={80} unit="%" onChange={v=>change({feedback:v/100})}/>{params.echoBehavior==='phrase'&&<><LiveRange name="Minimum pause" value={params.phrasePauseMs} min={250} max={1200} step={50} unit=" ms" onChange={phrasePauseMs=>change({phrasePauseMs})}/><LiveRange name="Repeat taps" value={params.echoRepeats} min={1} max={5} unit="" onChange={echoRepeats=>change({echoRepeats})}/><small className="ax60-phrase-notice">Smart repeats are triggered only when a sustained quiet gap follows an audible phrase. Dense percussion can reduce detection accuracy.</small></>}</>}
   {activeTab==='Motion'&&<><p>Animate the stereo field for headphones. Try 8D or 16D.</p><div className="ax49-motion-options" role="group" aria-label="Spatial audio mode">{(['off','8d','16d'] as const).map(mode=><button type="button" key={mode} aria-pressed={params.motionMode===mode} onClick={()=>change({motionMode:mode})} className={params.motionMode===mode?'active':''}>{mode==='off'?'Off':mode.toUpperCase()}</button>)}</div><LiveRange name="Orbit depth" value={Math.round(params.motionDepth*100)} min={0} max={100} unit="%" onChange={v=>change({motionDepth:v/100})}/><LiveRange name="Orbit speed" value={params.motionHz} min={.06} max={.6} step={.02} unit=" Hz" onChange={motionHz=>change({motionHz})}/></>}
@@ -529,7 +433,7 @@ export function SoundPlayground(){
  const {trackIndex,isPlaying,toggle,volume,setVolume,progress,seek,compare,setCompare,error,meterRef}=useSound()
  const track=trackIndex!==null?DEMO_TRACKS[trackIndex]:null
  return <section className="ax49-sound-playground" aria-labelledby="audixo-playground-title">
-  <header className="ax49-play-head"><div className="ax25-kicker"><i/> AUDIXO / LIVE SOUND LAB</div><h2 id="audixo-playground-title">Hear the beat.<br/><em>Shape it live.</em></h2><p>Choose a track and shape its sound while it plays.</p></header>
+  <header className="ax49-play-head"><div className="ax25-kicker"><i/> AUDIXO / LIVE SOUND LAB</div><h2 id="audixo-playground-title">Hear the beat.<br/><em>Shape it live.</em></h2><p>Browse the glass sound crate, play a track, and fine-tune every effect live.</p></header>
   <MusicStrip/>
   <div className="ax49-workspace">
    <div className="ax49-player-card">
@@ -537,7 +441,7 @@ export function SoundPlayground(){
     <div className="ax49-player-info"><span>NOW PLAYING <i/></span><strong>{track?.title??'Pick a song above'}</strong><small>{track?.by??`${DEMO_TRACKS.length} hand-picked clips`}</small></div>
     <div className="ax49-transport"><button type="button" className="ax49-main-play" onClick={toggle} aria-label={isPlaying?'Pause music':'Play music'}>{isPlaying?'Ⅱ':'▶'}</button><div className="ax49-progress"><input type="range" aria-label="Seek within the selected audio clip" min={0} max={Math.max(1,track?.duration??1)} value={Math.min(progress,track?.duration??1)} step={.1} onChange={e=>seek(+e.target.value)} disabled={!track}/><span>{formatTime(progress)} <b>/</b> {formatTime(track?.duration??0)}</span></div></div>
     <LiveRange name="Volume" value={volume} min={0} max={100} unit="%" onChange={setVolume}/>
-    <div className="ax49-player-hint">Click any song above—even the same one—to replay its clean, unfiltered original.</div>
+    <div className="ax49-player-hint">Tap any card in the glass crate above—even the same one—to replay its clean, unfiltered original.</div>
    </div>
    <LivePanel/>
   </div>

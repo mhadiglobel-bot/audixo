@@ -77,3 +77,32 @@ No `.env`, Google/YouTube cookies, user session data or credentials are bundled.
 - **Full `npm ci` + production `npm run build`: NOT VERIFIED in this container**, because the npm registry package tarballs were unavailable locally (`ENOTCACHED` in offline mode and prior DNS failures). No real full-site browser E2E/audio audition or live Vercel preview was performed. These are release gates, not assumed passes.
 
 See `AUDIXO-V60-QA.md` for the changed-file list and final acceptance checklist.
+
+## AUDIXO V61 — Glass Crate Sound Lab (production-source package)
+
+This source release preserves the V60 Open Studio, presets, DSP voice effects,
+existing navigation, and the YouTube MP3/MP4 browser-first page. It only updates
+the homepage Live Sound Lab and its audio/thumbnail assets.
+
+- Includes six uploaded phonk tracks alongside the original thirteen.
+- Uses one optimized MP3 reel for the new six tracks, with 180 ms inter-track
+  spacing; the original demonstration reel remains unchanged.
+- Uses one 3x2 WebP atlas for the six matching user-supplied cover artworks.
+  Artwork was only resized/combined for delivery; the underlying drawings were
+  not regenerated.
+- Replaces the continuously moving song strip with a glass-effect, horizontally
+  scrollable card crate; supports mouse/touch drag, keyboard arrow scrolling,
+  song selection and a single lightweight drop-in entrance animation.
+- Retains full live effects, including Smart Pause echo, Vocal Aura/Reverb,
+  Lo-fi and metallic-harshness controls, and the 34 Studio presets.
+- No Docker or Render service was introduced. The original browser-first
+  MP3/MP4 limitations still apply. This package does **not** guarantee
+  universal YouTube video downloading.
+
+`npm run test:studio`, `npm run test:converter`, and
+`npm run test:crate` are available after dependency installation.
+
+The new phonk preview audio is encoded as 160 kbps MP3 to keep the static
+asset practical for website usage; the six original audio files were supplied
+by the user and not included separately in the GitHub ZIP. Ensure publication
+rights for tracks and cover art before public release.

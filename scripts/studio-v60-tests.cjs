@@ -61,9 +61,11 @@ test('WebAudio render uses physical notch, lowpass and transient compressor sett
  assert.ok(built.some(n=>n.kind==='compressor'&&Math.abs(n.ratio.value-3.8)<.01&&n.attack.value<.005),'fast transient compression')
  assert.equal(built.filter(n=>n.kind==='delay').length,0,'no fake echo repeats when delay off')
 })
-test('phonk strip hover freezes auto scroll and pointer drag is guarded from accidental song clicks',()=>{
+test('V61 glass crate has no autonomous marquee and pointer drag guards accidental clicks',()=>{
  const live=source('src/components/SoundExperience.tsx')
- for(const token of ['onPointerEnter','onPointerLeave','onPointerMove','setPointerCapture','onClickCapture','blockClickUntil.current','hover.current','is-grabbing'])assert.ok(live.includes(token),token)
+ const crate=live.slice(live.indexOf('function MusicStrip(){'),live.indexOf('function LiveRange('))
+ for(const token of ['onPointerMove','setPointerCapture','onClickCapture','blockClickUntil.current','is-grabbing','ax61-track-bin','ax61-track-card'])assert.ok(crate.includes(token),token)
+ for(const unwanted of ['requestAnimationFrame','onPointerEnter','onPointerLeave','hover.current'])assert.ok(!crate.includes(unwanted),`unwanted auto-motion: ${unwanted}`)
  for(const token of ['metallicCut','metallicFrequency','transientSoftness','lofiAmount'])assert.ok(live.includes(token),token)
 })
 test('full studio exposes stem separation and individual mute state',()=>{

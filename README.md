@@ -120,3 +120,29 @@ cover mappings, audio and Open Studio code are unchanged.
 Run `npm ci`, `npm run test:tracks`, then `npm run build` in an environment
 with npm registry access. The full build could not be executed in the
 authoring environment because registry DNS resolution was unavailable.
+
+
+## AUDIXO V63 — Physics Glass Crate, CTA & Nexivo Visual Polish
+
+This is the **complete V62.1 source upgraded in place** (not a blank replacement).
+
+- Compact, fully titled phonk cards inside one floating glass crate. Entrance drop-and-settle animations, hover-lift effects, desktop drag reorder and mobile touch reorder.
+- Removed the repetitive **NEW DROP / USER CLIP** and artist subtitle chips from visible track cards; audio metadata and all 19 playback references remain intact.
+- Fixed the explicit Aghanim ↔ Tiktak ↔ HERO cover assignment requested in the screenshots. Six supplied WebP cover files and the original 13-track sprite stay in the package.
+- Larger, animated homepage metric numbers with polished rounded glass cards and real filled CTAs.
+- Nexivo page / About / home card surfaces now use subtle translucent glass with animated hover and refined corner radii.
+- Preserved original Live FX, 34 studio presets, editor, API routes and converter logic. No additional npm dependencies.
+
+### Deploy (same existing Vercel Vite project)
+
+1. Extract this ZIP and upload **the contents** to the existing GitHub repository root. Do not upload the ZIP as one file, or create an extra nested AUDIXO folder.
+2. Framework Vite, Node 20+, **Install:** `npm ci`, **Build:** `npm run build`, **Output:** `dist`.
+3. Preserve your authorized server environment variables (e.g. `AUDIXO_YTDL_BASE_URL`) and public `VITE_SITE_URL` setting. No credentials are included.
+4. After deployment, verify V63 release tag in HTML and refresh the service worker to clear old layout assets.
+5. Test card hover, drag-reorder and playing individual tracks; CTA links; `/nexivo` and mobile layout.
+
+### Verification and usage constraints
+
+The 19 bundled sample audio cuts are part of the prior project. You must have **distribution / public streaming rights** for the recordings and their artwork before publishing them. The existing browser-first YouTube converter is still subject to CORS and backend/source restrictions.
+
+The delivered ZIP is a complete source package. Release testing in this environment includes source/parsing checks, sprite/cover checks and CSS layout review. A true end-to-end Vercel deployment, real media conversion and device-specific audio playback must be confirmed on your target deployment.

@@ -14,12 +14,12 @@ const COVER_SPRITE='/demo/audixo-cover-sprite.webp?v=51'
 export type DemoTrack={id:string;title:string;by:string;src:string;from:number;duration:number;coverIndex?:number;coverSrc?:string;tag:string}
 const reelTrack=(id:string,title:string,by:string,from:number,duration:number,coverIndex:number,tag='USER CLIP'):DemoTrack=>({id,title,by,src:REEL,from,duration,coverIndex,tag})
 export const DEMO_TRACKS:DemoTrack[]=[
- {id:'montagem-aghanim',title:'Montagem Aghanim',by:'Phonk Drop',src:PHONK_REEL,from:0.000000,duration:48.587755,coverSrc:'/demo/phonk-covers/montagem-aghanim.webp',tag:'NEW DROP'},
+ {id:'montagem-aghanim',title:'Montagem Aghanim',by:'Phonk Drop',src:PHONK_REEL,from:0.000000,duration:48.587755,coverSrc:'/demo/phonk-covers/montagem-tiktak.webp',tag:'NEW DROP'},
  {id:'montagem-elder',title:'Montagem Elder',by:'Phonk Drop',src:PHONK_REEL,from:48.767755,duration:69.955918,coverSrc:'/demo/phonk-covers/montagem-elder.webp',tag:'NEW DROP'},
  {id:'comeback-2',title:'Comeback 2',by:'Dark Phonk',src:PHONK_REEL,from:118.903673,duration:66.063673,coverSrc:'/demo/phonk-covers/comeback-2.webp',tag:'NEW DROP'},
  {id:'montagem-aghanim-slowed',title:'Montagem Aghanim Slowed',by:'LXNGVX',src:PHONK_REEL,from:185.147346,duration:67.500408,coverSrc:'/demo/phonk-covers/montagem-aghanim-slowed.webp',tag:'SLOWED'},
- {id:'montagem-tiktak',title:'Montagem Tiktak',by:'Phonk Drop',src:PHONK_REEL,from:252.827754,duration:96.026122,coverSrc:'/demo/phonk-covers/montagem-tiktak.webp',tag:'NEW DROP'},
- {id:'hero',title:'HERO!',by:'Night Drive',src:PHONK_REEL,from:349.033876,duration:56.111020,coverSrc:'/demo/phonk-covers/hero.webp',tag:'NEW DROP'},
+ {id:'montagem-tiktak',title:'Montagem Tiktak',by:'Phonk Drop',src:PHONK_REEL,from:252.827754,duration:96.026122,coverSrc:'/demo/phonk-covers/hero.webp',tag:'NEW DROP'},
+ {id:'hero',title:'HERO!',by:'Night Drive',src:PHONK_REEL,from:349.033876,duration:56.111020,coverSrc:'/demo/phonk-covers/montagem-aghanim.webp',tag:'NEW DROP'},
  reelTrack('teu-perfume','Teu Perfume','Orch Mix',0,79.36106576,0),
  reelTrack('te-conoci','Te Conocí','bxkq x PXLWYSE - Remix',79.51106576,29.83290249,1),
  reelTrack('aura-farming','Aura Farming','Mustafa Saboori',109.49396825,34.73979592,2),
@@ -363,6 +363,14 @@ function MusicStrip(){
  const [ready,setReady]=useState(false)
  const [order,setOrder]=useState(()=>DEMO_TRACKS.map((_,i)=>i))
  const draggingIndex=useRef<number|null>(null)
+ const pointerDrag=useRef<{from:number;pointerId:number;x:number;y:number;moved:boolean}|null>(null)
+ const clearPointerDrag=(card:HTMLButtonElement)=>{
+  pointerDrag.current=null
+  card.classList.remove('is-touch-dragging')
+  card.style.removeProperty('--ax63-drag-x')
+  card.style.removeProperty('--ax63-drag-y')
+ }
+
  useEffect(()=>{
   const node=zoneRef.current
   if(!node)return
@@ -381,21 +389,55 @@ function MusicStrip(){
    return next
   })
  },[])
- return <div className="ax49-strip-section ax61-strip-section"><div className="ax49-strip-head"><span><i/> YOUR SOUND SELECTION</span><small>{DEMO_TRACKS.length} TRACKS · GLASS BIN · PICK, DRAG & REORDER</small></div>
-  <p className="ax61-strip-note">All songs now sit inside one big bin. Grab any slim card, move it forward or backward, then tap the same card to play it instantly.</p>
-  <div className="ax61-track-bin ax61-track-board" ref={zoneRef} role="group" data-demo-bin="reorderable" aria-label="Choose and rearrange tracks">
+ return <div className="ax49-strip-section ax61-strip-section ax63-sound-section"><div className="ax49-strip-head"><span><i/> PHONK SOUND CRATE</span><small>{DEMO_TRACKS.length} TRACKS · HOVER / DRAG / PLAY</small></div>
+  <p className="ax61-strip-note">Hover to lift a tile, drag to change its position, or tap to play instantly.</p>
+  <div className="ax61-track-bin ax61-track-board ax63-sound-crate" ref={zoneRef} role="group" data-demo-bin="reorderable" aria-label="Choose and rearrange phonk tracks">
    {order.map((trackRealIndex,visualIndex)=>{
     const track=DEMO_TRACKS[trackRealIndex]
+    const tilt=((visualIndex%5)-2)*.63
     return <button key={track.id} type="button" draggable data-demo-track-id={track.id}
-     className={`ax49-track-item ax61-track-card ${trackIndex===trackRealIndex?'active':''} ${ready?'is-ready':''}`}
+     className={`ax49-track-item ax61-track-card ax63-physics-card ${trackIndex===trackRealIndex?'active':''} ${ready?'is-ready':''}`}
      aria-pressed={trackIndex===trackRealIndex} aria-label={`Play ${track.title}`}
-     style={{'--stack-tilt':`${((visualIndex%4)-1.5)*1.2}deg`,'--drop-delay':`${Math.min(visualIndex*.03,.36)}s`} as CSSProperties}
+     title={`${track.title} · drag to reorder or Alt+Arrow keys to move`}
+     style={{'--stack-tilt':`${tilt}deg`,'--drop-delay':`${Math.min(visualIndex*.055,.74)}s`,'--ax63-order':visualIndex} as CSSProperties}
      onClick={event=>{if(!(event.currentTarget as HTMLButtonElement).dataset.dragged)selectTrack(trackRealIndex);delete (event.currentTarget as HTMLButtonElement).dataset.dragged;if(event.detail>0)event.currentTarget.blur()}}
+     onKeyDown={event=>{if(!event.altKey)return;if(event.key==='ArrowLeft'||event.key==='ArrowUp'){event.preventDefault();moveCard(visualIndex,Math.max(0,visualIndex-1))}if(event.key==='ArrowRight'||event.key==='ArrowDown'){event.preventDefault();moveCard(visualIndex,Math.min(order.length-1,visualIndex+1))}}}
      onDragStart={event=>{draggingIndex.current=visualIndex;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',String(trackRealIndex));event.currentTarget.classList.add('is-dragging')}}
-     onDragEnd={event=>{const card=event.currentTarget;draggingIndex.current=null;card.classList.remove('is-dragging');card.dataset.dragged='true';window.setTimeout(()=>{delete card.dataset.dragged},80)}}
+     onDragEnd={event=>{const card=event.currentTarget;draggingIndex.current=null;card.classList.remove('is-dragging');card.dataset.dragged='true';window.setTimeout(()=>{delete card.dataset.dragged},180)}}
      onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect='move'}}
-     onDrop={event=>{event.preventDefault();const from=draggingIndex.current;if(from===null)return;moveCard(from,visualIndex)}}>
-     <TrackArt index={trackRealIndex}/><span className="ax49-track-label"><strong>{track.title}</strong><small>{track.by}</small><b>{track.tag}</b></span>
+     onDrop={event=>{event.preventDefault();const from=draggingIndex.current;if(from===null)return;moveCard(from,visualIndex)}}
+     onPointerDown={event=>{
+      if(event.pointerType==='mouse')return
+      const card=event.currentTarget
+      pointerDrag.current={from:visualIndex,pointerId:event.pointerId,x:event.clientX,y:event.clientY,moved:false}
+      card.setPointerCapture(event.pointerId)
+     }}
+     onPointerMove={event=>{
+      const drag=pointerDrag.current
+      if(!drag||drag.pointerId!==event.pointerId||drag.from!==visualIndex)return
+      const dx=event.clientX-drag.x,dy=event.clientY-drag.y
+      if(Math.hypot(dx,dy)>9){drag.moved=true;const card=event.currentTarget;card.classList.add('is-touch-dragging');card.style.setProperty('--ax63-drag-x',`${dx}px`);card.style.setProperty('--ax63-drag-y',`${dy}px`) }
+     }}
+     onPointerUp={event=>{
+      const drag=pointerDrag.current,card=event.currentTarget
+      if(drag&&drag.pointerId===event.pointerId){
+       if(drag.moved){
+        const cards=[...(zoneRef.current?.querySelectorAll<HTMLButtonElement>('[data-demo-track-id]')??[])];let target=-1,best=Infinity
+        for(let i=0;i<cards.length;i++){
+         if(i===drag.from)continue
+         const box=cards[i].getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2
+         const d=Math.hypot(cx-event.clientX,cy-event.clientY)
+         if(d<best){best=d;target=i}
+        }
+        if(target>=0&&best<210)moveCard(drag.from,target)
+        card.dataset.dragged='true';window.setTimeout(()=>{delete card.dataset.dragged},250)
+       }
+       clearPointerDrag(card)
+      }
+      if(card.hasPointerCapture(event.pointerId))card.releasePointerCapture(event.pointerId)
+     }}
+     onPointerCancel={event=>{clearPointerDrag(event.currentTarget)}}>
+     <TrackArt index={trackRealIndex}/><span className="ax49-track-label"><strong>{track.title}</strong></span>
      <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===trackRealIndex&&isPlaying?'♫':'↕'}</i>
     </button>
    })}

@@ -870,3 +870,232 @@
 .ax66-reset-crate:hover{transform:translateY(-2px);background:#f8f4ff}
 .ax66-reset-crate:focus-visible{outline:3px solid #9b6ce8;outline-offset:3px}
 @media(max-width:650px){.ax66-crate-toolbar{align-items:flex-start;flex-wrap:wrap;gap:8px}.ax66-reset-crate{margin:0 6px 6px}}
+
+/* =========================================================
+ AUDIXO V67: considered product UI, controlled 4-colour rim.
+ No rotating conic wedges, no solid lavender editor panels.
+ ========================================================= */
+@keyframes ax67NeonEdge {
+  0%,100% {background-position:0 0,0% 50%}
+  50% {background-position:0 0,100% 50%}
+}
+:root{--ax67-neon:linear-gradient(115deg,#40e39e 0%,#24def2 25%,#9254ff 50%,#fc4ac5 75%,#40e39e 100%)}
+
+/* Navigation: quiet rectangular bar and one purposeful pill CTA. */
+.ax25-header-wrap{z-index:500!important}
+.ax25-header{
+ border-radius:22px!important;border:1px solid #e2e8f4!important;
+ background:rgba(255,255,255,.95)!important;
+ box-shadow:0 12px 30px rgba(34,58,102,.065)!important;
+}
+.ax25-nav>a,.ax25-tools>summary{
+ border-radius:11px!important;background:transparent!important;
+ border:1px solid transparent!important;min-height:38px;
+ color:#344466!important;transition:background .18s,color .18s!important
+}
+.ax25-nav>a:hover,.ax25-nav>a.active,.ax25-tools>summary:hover,.ax25-tools.active>summary{
+ background:#f3f4ff!important;color:#6040b6!important;border-color:#e7e0fb!important
+}
+.ax25-editor-cta,.ax25-header-actions .ax25-editor-cta{
+ border-radius:999px!important;background:#2a355a!important;color:#fff!important;
+ border:1px solid #2a355a!important;box-shadow:0 9px 21px rgba(39,49,89,.14)!important;
+ transition:transform .2s,box-shadow .2s!important
+}
+.ax25-header-actions .ax25-editor-cta:hover{background:#4e3b95!important;box-shadow:0 12px 23px rgba(58,48,126,.21)!important}
+
+/* Calm clean editor: light white glass, slim colored border, readable controls. */
+.ax25-studio-header,.ax25-edit-toolbar,.ax25-transport-bar,
+.ax25-timeline,.ax25-inspector,.ax25-applied,.ax60-stem-tools,
+.ax25-studio-context{
+ background:linear-gradient(155deg,#fff,rgba(250,251,255,.96)) padding-box,
+            var(--ax67-neon) border-box!important;
+ background-size:100% 100%,340% 340%!important;
+ border:1px solid transparent!important;
+ border-radius:22px!important;
+ box-shadow:0 9px 28px rgba(45,69,119,.065),inset 0 1px 0 #fff!important;
+ animation:ax67NeonEdge 11s linear infinite!important;
+ backdrop-filter:none!important;
+}
+.ax25-timeline-head,.ax25-inspector-head,.ax25-timeline-scroll,
+.ax25-inspector-body,.ax25-inspector-tabs,.ax25-applied-list,
+.ax25-inspector .ax25-control-section,.ax25-inspector-empty,.ax25-inspector-panel,
+.ax25-edit-list,.ax25-applied header{
+ background:transparent!important;
+}
+.ax25-inspector{overflow:hidden!important}
+.ax25-inspector-body{padding:14px!important}
+.ax25-inspector-tabs{gap:7px!important;padding:12px!important;border-bottom:1px solid #e9eef6!important}
+.ax25-inspector-tabs button,.ax25-studio-header nav button,.ax25-studio-header nav a,
+.ax25-play-group button,.ax25-view-tools button,.ax25-edit-mode button{
+ border-radius:12px!important;background:#fff!important;border:1px solid #e0e6f3!important;
+ color:#405171!important;box-shadow:0 3px 12px rgba(44,60,106,.035)!important;
+}
+.ax25-inspector-tabs button.active,.ax25-edit-mode button.active{
+ color:#5432aa!important;border-color:#b9acef!important;
+ background:#f3f0ff!important;box-shadow:0 0 0 2px rgba(145,109,234,.07)!important;
+}
+.ax25-studio-header nav .export,.ax25-play-group button.play{
+ color:#fff!important;background:linear-gradient(112deg,#1dcb9c,#2eabdf)!important;
+ border-color:transparent!important;border-radius:999px!important;
+ box-shadow:0 8px 17px rgba(38,170,162,.14)!important;animation:none!important;
+}
+.ax25-studio-header nav .export *{color:inherit!important}
+.ax25-timeline .ax-track,.ax25-timeline .ax-ruler{background:transparent!important}
+.ax25-preset-panel,.ax25-preset-grid,.ax66-preset-grid,.ax25-control-section{
+ color:#2a3d5e!important;
+}
+.ax25-preset-grid.expanded,.ax66-preset-grid.expanded{max-height:350px!important;overflow-y:auto!important;overscroll-behavior:contain}
+.ax66-preset-grid>button{background:#fff!important;border:1px solid #e3e7f7!important;box-shadow:0 5px 17px rgba(67,74,131,.045)!important;border-radius:17px!important}
+.ax66-preset-grid>button:hover{border-color:#bba6f2!important;box-shadow:0 10px 25px rgba(67,74,131,.1)!important}
+.ax25-inspector :is(input,select,textarea):focus-visible,.export-modal input:focus-visible{
+ outline:2px solid #8e71dd;outline-offset:2px
+}
+.ax67-download-name .export-name-input{min-width:0;width:min(100%,320px);background:#fff!important;opacity:1!important}
+
+/* Homepage metric cards: modest height; 1.25-second data changes via React. */
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card{
+ min-height:199px!important;padding:15px 17px!important;border-radius:23px!important;
+ background:linear-gradient(145deg,#fff,#fafbff) padding-box,var(--ax67-neon) border-box!important;
+ background-size:100% 100%,340% 340%!important;
+ animation:ax67NeonEdge 11s linear infinite!important;
+ box-shadow:0 10px 25px rgba(44,65,110,.055)!important;
+}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>header{margin-bottom:4px!important}
+.ax52-metrics-shell .ax46-metric-value{font-size:clamp(31px,3vw,44px)!important;margin:3px 0!important;padding:3px 0!important;min-height:1.06em!important}
+.ax52-metrics-shell .ax46-metric-value>span{animation:ax63MetricArrival .38s ease-out both!important}
+.ax52-metrics-shell .ax46-metric-subtitle{font-size:11px!important;min-height:15px!important}
+.ax52-metrics-shell .ax46-metric-content p{font-size:10px!important;line-height:1.4!important;margin:3px 0!important;min-height:0!important}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a{
+ min-height:36px!important;padding:8px 12px!important;margin:8px 0 0!important;
+ background:#293857!important;color:white!important;border-radius:12px!important;
+ box-shadow:none!important
+}
+
+/* Replace the broken wedge / spinning corner with a stationary white upload surface. */
+.v13-empty-upload.ax28-cinematic-upload,.ax27-empty-upload.ax28-cinematic-upload{
+ background:linear-gradient(165deg,#fff 0%,#fafcff 100%) padding-box,
+            var(--ax67-neon) border-box!important;
+ border:1.25px solid transparent!important;border-radius:26px!important;
+ box-shadow:0 14px 34px rgba(47,81,121,.075)!important;
+ overflow:hidden!important;isolation:isolate;
+ animation:ax67NeonEdge 12s linear infinite!important;
+ background-size:100% 100%,340% 340%!important;
+}
+.ax28-cinematic-upload::before,.ax28-cinematic-upload::after{
+ content:none!important;animation:none!important;display:none!important
+}
+.ax28-cinematic-upload .ax48-upload-brand{
+ display:flex!important;justify-content:center!important;align-items:center!important;
+ width:158px!important;min-height:118px!important;padding:12px!important;margin:0 auto 14px!important;
+ border:1px solid #e7eafb!important;border-radius:24px!important;
+ background:#fff!important;box-shadow:0 14px 34px rgba(48,67,121,.09)!important;
+}
+.ax28-cinematic-upload .ax28-upload-wave{filter:saturate(.85);opacity:.75}
+.v13-workbench .v13-neon-frame,.ax27-workbench{box-shadow:0 11px 35px rgba(50,72,118,.07)!important}
+
+/* Features: continuous color in rounded outline, never a rotating half-corner. */
+.ax44-feature-tools .ax46-focused-card{
+ background:linear-gradient(165deg,#fff,#f9fbff) padding-box,var(--ax67-neon) border-box!important;
+ background-size:100% 100%,340% 340%!important;
+ border:1.25px solid transparent!important;border-radius:25px!important;
+ box-shadow:0 11px 28px rgba(53,72,116,.07)!important;
+ animation:ax67NeonEdge 10s linear infinite!important;
+ overflow:hidden!important;transform:none!important;
+}
+.ax46-focused-card::after{content:none!important;display:none!important}
+.ax44-feature-tools .ax46-focused-card:hover{
+ transform:translateY(-3px)!important;box-shadow:0 17px 34px rgba(53,72,116,.11),0 0 14px rgba(36,222,242,.10)!important;
+}
+.ax46-focused-card .ax46-tool-icon{background:#f5f3ff!important;border-radius:16px!important;animation:none!important}
+
+/* About + Nexivo: matching neutrals, subtle consistent card rims. */
+.ax33-nexivo-page .ax33-nexivo-hero,
+.ax33-nexivo-page .ax33-nexivo-mission article,
+.ax33-nexivo-page .ax33-value-grid>article,
+.ax33-nexivo-page .ax33-nexivo-products article,
+.ax33-about :is(.ax33-about-flow>span,.ax33-about-story article,.ax26-value-grid>article),
+.ax32-nexivo-card{
+ background:linear-gradient(145deg,#fff,#f9fbff) padding-box,var(--ax67-neon) border-box!important;
+ background-size:100% 100%,340% 340%!important;
+ animation:ax67NeonEdge 12s linear infinite!important;
+ border:1px solid transparent!important;border-radius:27px!important;
+ box-shadow:0 14px 32px rgba(47,69,116,.055)!important;
+}
+.ax33-nexivo-page .ax32-nexivo-orbit{background:radial-gradient(circle,rgba(41,207,212,.035),transparent 72%)!important}
+
+/* Footer: simpler hierarchy and useful whitespace. */
+.ax40-footer{
+ margin-top:64px!important;padding:44px 0 22px!important;border-top:1px solid #e2e9f3!important;
+ background:linear-gradient(145deg,#fdfdff,#f8fbff 55%,#fbfaff)!important;
+}
+.ax40-footer-intro{margin-bottom:26px!important;align-items:center!important}
+.ax40-footer-intro h2{font-size:clamp(30px,3.3vw,45px)!important}
+.ax40-footer-cta{border-radius:999px!important;background:#293857!important;min-height:45px!important}
+.ax40-footer-links{grid-template-columns:minmax(190px,1.5fr) repeat(5,minmax(95px,1fr))!important;gap:24px!important;padding-top:30px!important}
+.ax40-footer-brand p{max-width:31ch}
+.ax40-footer-links section h3{color:#263a58;font-size:12px!important}
+.ax40-footer-links section a{color:#63758f;font-size:11px!important}
+.ax40-footer-bottom{margin-top:27px!important;padding-top:17px!important}
+
+/* AUTO-SLIDING PHONK DECK: one glass tray, no bottom scrollbar or toggles. */
+.ax49-strip-section.ax67-songs-section{
+ background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(246,249,255,.88))!important;
+ border:1px solid #e7e8f7!important;border-radius:26px!important;
+ box-shadow:0 14px 30px rgba(42,67,120,.07)!important;
+ padding:20px 18px 22px!important;
+ overflow:hidden!important;
+}
+.ax67-songs-section .ax49-strip-head{margin:0 0 7px!important}
+.ax67-song-help{font-size:11px;line-height:1.6;color:#667996;margin:2px 6px 13px}
+.ax67-songs-viewport{
+ display:flex!important;align-items:center!important;gap:0!important;
+ overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;
+ -ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;
+ touch-action:pan-y;user-select:none;-webkit-user-select:none;
+ border:1px solid rgba(173,181,221,.32)!important;border-radius:20px!important;
+ background:linear-gradient(135deg,rgba(255,250,255,.75),rgba(246,251,255,.89))!important;
+ box-shadow:inset 0 1px 7px rgba(92,101,171,.04)!important;
+ padding:15px 0!important;cursor:grab;overscroll-behavior-x:contain;scroll-behavior:auto!important;
+}
+.ax67-songs-viewport::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.ax67-songs-viewport.is-grabbing{cursor:grabbing!important;scroll-behavior:auto!important}
+.ax67-songs-viewport.is-grabbing .ax67-song-card{pointer-events:none}
+.ax67-songs-viewport:focus-visible{outline:3px solid #aa90ef;outline-offset:3px}
+.ax67-songs-lane{flex:0 0 auto!important;display:flex!important;align-items:center!important;gap:12px!important;padding:0 6px!important;width:max-content!important}
+.ax67-song-card{
+ flex:0 0 185px!important;height:76px!important;min-height:76px!important;
+ padding:9px!important;display:flex!important;align-items:center!important;gap:9px!important;
+ border:1px solid transparent!important;border-radius:16px!important;cursor:pointer;
+ background:linear-gradient(160deg,rgba(255,255,255,.96),rgba(249,249,255,.89)) padding-box,
+            var(--ax67-neon) border-box!important;
+ background-size:100% 100%,340% 340%!important;
+ animation:ax67NeonEdge 12s linear infinite!important;
+ box-shadow:0 6px 16px rgba(47,58,100,.08)!important;
+ transition:transform .18s,box-shadow .18s!important;color:#273e60!important;
+}
+.ax67-songs-viewport.is-ready .ax67-song-card{animation:ax67NeonEdge 12s linear infinite,ax67SongEnter .54s ease-out both;animation-delay:0s,var(--ax67-drop-delay,0s)}
+.ax67-song-card:hover,.ax67-song-card.active{transform:translateY(-3px)!important;box-shadow:0 10px 24px rgba(79,80,148,.14)!important}
+.ax67-song-card.active{border-color:#a89bef!important}
+.ax67-song-card .ax49-track-art{width:48px!important;height:48px!important;flex:0 0 48px!important;min-width:48px!important;border-radius:11px!important}
+.ax67-song-label{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;text-align:left}
+.ax67-song-label strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;line-height:1.22;color:#273c5c}
+.ax67-song-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8694a9;font-size:9px}
+.ax67-song-action{font-style:normal;flex-shrink:0;align-self:flex-start;font-size:13px;color:#8c65d5}
+@keyframes ax67SongEnter{from{opacity:0;translate:0 -12px}to{opacity:1;translate:0 0}}
+@media(max-width:980px){.ax40-footer-links{grid-template-columns:repeat(3,minmax(0,1fr))!important}.ax40-footer-brand{grid-column:1/-1}}
+@media(max-width:650px){
+ .ax25-header{border-radius:18px!important}
+ .ax40-footer-links{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:20px 12px!important}
+ .ax67-songs-section.ax49-strip-section{padding:14px 10px 16px!important}
+ .ax67-song-card{flex-basis:163px!important;height:69px!important;min-height:69px!important}
+ .ax67-song-card .ax49-track-art{width:42px!important;height:42px!important;min-width:42px!important;flex-basis:42px!important}
+ .ax52-metrics-shell .ax39-metric-card.ax46-metric-card{min-height:184px!important;padding:12px!important}
+ .ax52-metrics-shell .ax46-metric-value{font-size:clamp(27px,7vw,37px)!important}
+ .ax25-inspector-body{padding:10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax67-song-card,.ax67-songs-viewport.is-ready .ax67-song-card,
+ .ax44-feature-tools .ax46-focused-card,.ax52-metrics-shell .ax39-metric-card.ax46-metric-card,
+ .ax25-studio-header,.ax25-timeline,.ax25-inspector,.ax25-applied,
+ .ax33-nexivo-page article,.ax32-nexivo-card,.ax28-cinematic-upload{animation:none!important}
+}

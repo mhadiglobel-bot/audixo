@@ -14,10 +14,10 @@ const presetOptions:MetricOption[]=soundPresets.map((preset,i)=>({value:String(i
 const soundOptions:MetricOption[]=soundBank.map((sound,i)=>({value:String(i+1).padStart(2,'0'),unit:sound.name,description:`${sound.family} · layer into your mix`}))
 
 const metrics:Metric[]=[
- {label:'01 / AUDIO',category:'MP3 bitrate',href:'/tools/youtube-to-mp3',action:'Open converter',options:bitrateOptions,delay:7500,offset:0},
- {label:'02 / VIDEO',category:'MP4 resolution',href:'/tools/youtube-to-mp3',action:'Open converter',options:videoOptions,delay:7700,offset:900},
- {label:'03 / PRESETS',category:'Studio presets',href:'/editor',action:'Explore presets',options:presetOptions,delay:7900,offset:1500},
- {label:'04 / SOUNDS',category:'Sound library',href:'/tools/vocals',action:'Explore layers',options:soundOptions,delay:8100,offset:2250},
+ {label:'01 / AUDIO',category:'MP3 bitrate',href:'/tools/youtube-to-mp3',action:'Open converter',options:bitrateOptions,delay:1250,offset:0},
+ {label:'02 / VIDEO',category:'MP4 resolution',href:'/tools/youtube-to-mp3',action:'Open converter',options:videoOptions,delay:1250,offset:0},
+ {label:'03 / PRESETS',category:'Studio presets',href:'/editor',action:'Explore presets',options:presetOptions,delay:1250,offset:0},
+ {label:'04 / SOUNDS',category:'Sound library',href:'/tools/vocals',action:'Explore layers',options:soundOptions,delay:1250,offset:0},
 ]
 
 function shuffled(values:number[]):number[]{
@@ -39,7 +39,7 @@ function MetricCard({metric}:{metric:Metric}){
    if(next!==undefined)setIndex(next)
   }
   let repeat:number|undefined
-  const begin=window.setTimeout(()=>{step();repeat=window.setInterval(step,metric.delay)},metric.delay+metric.offset)
+  const begin=window.setTimeout(()=>{step();repeat=window.setInterval(step,metric.delay)},metric.delay)
   return()=>{window.clearTimeout(begin);if(repeat!==undefined)window.clearInterval(repeat)}
  },[metric])
  return <article className={`ax39-metric-card ax46-metric-card is-${metric.label.slice(5).toLowerCase()}`}>

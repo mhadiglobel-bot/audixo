@@ -359,185 +359,108 @@ function TrackArt({index}:{index:number}){
 
 function MusicStrip(){
  const {trackIndex,isPlaying,selectTrack}=useSound()
- const zoneRef=useRef<HTMLDivElement|null>(null)
- const dragging=useRef<{id:string;pointerId:number;startX:number;startY:number;originX:number;originY:number;lastX:number;lastY:number;moved:boolean}|null>(null)
- const [boardWidth,setBoardWidth]=useState(0)
+ const viewport=useRef<HTMLDivElement|null>(null)
+ const middleLane=useRef<HTMLDivElement|null>(null)
+ const laneWidth=useRef(0)
+ const hovered=useRef(false),dragging=useRef<{id:number;start:number;offset:number;moved:boolean}|null>(null)
+ const suppressClickUntil=useRef(0)
+ const [grabbing,setGrabbing]=useState(false),[visible,setVisible]=useState(false)
  const [ready,setReady]=useState(false)
- const [positions,setPositions]=useState<Record<string,{x:number;y:number}>>({})
- const [frontId,setFrontId]=useState<string|null>(null)
-
- // Measured canvas, not five rigid CSS rows: each song can be placed freely.
  useEffect(()=>{
-  const board=zoneRef.current
-  if(!board)return
-  const update=()=>setBoardWidth(Math.max(280,Math.round(board.clientWidth)))
-  update()
-  if(typeof ResizeObserver!=='undefined'){
-   const ro=new ResizeObserver(update);ro.observe(board);return()=>ro.disconnect()
-  }
-  window.addEventListener('resize',update)
-  return()=>window.removeEventListener('resize',update)
- },[])
- useEffect(()=>{
-  const element=zoneRef.current
-  if(!element)return
-  if(typeof IntersectionObserver==='undefined'){setReady(true);return}
-  const observer=new IntersectionObserver(entries=>{
-   if(entries.some(entry=>entry.isIntersecting)){setReady(true);observer.disconnect()}
-  },{threshold:.13})
-  observer.observe(element)
-  return()=>observer.disconnect()
- },[])
-
- const layout=useMemo(()=>{
-  const w=boardWidth||1100
-  const columns=w>=1140?5:w>=875?4:w>=625?3:2
-  const pad=w<=650?12:22
-  const gap=w<=650?11:16
-  const cardWidth=Math.max(118,Math.floor((w-pad*2-gap*(columns-1))/columns))
-  const cardHeight=w<=650?76:78
-  const rowStep=w<=650?88:91
-  const rows=Math.ceil(DEMO_TRACKS.length/columns)
-  // Clear upper space, like the user's falling-bin reference: cards settle in
-  // loose lower layers rather than stretching one rigid stripe across the bin.
-  const upperSpace=w<=650?48:112
-  const height=pad*2+rows*rowStep+upperSpace
-  return {w,columns,pad,gap,cardWidth,cardHeight,rowStep,height,
-   maxX:Math.max(0,w-pad-cardWidth),maxY:Math.max(0,height-pad-cardHeight)}
- },[boardWidth])
- const bucket=layout.columns+'col'
- useEffect(()=>{
-  if(!boardWidth)return
-  try{
-   const raw=window.localStorage.getItem('audixo-crate-v65-'+bucket)
-   const parsed=raw?JSON.parse(raw):{}
-   if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){
-    const safe:Record<string,{x:number;y:number}>={}
-    for(const [id,point] of Object.entries(parsed)){
-     if(!DEMO_TRACKS.some(t=>t.id===id))continue
-     const p=point as {x?:unknown;y?:unknown}
-     if(typeof p.x==='number'&&Number.isFinite(p.x)&&typeof p.y==='number'&&Number.isFinite(p.y)){
-      safe[id]={x:Math.max(0,Math.min(1,p.x)),y:Math.max(0,Math.min(1,p.y))}
-     }
-    }
-    setPositions(safe)
-   }else setPositions({})
-  }catch{setPositions({})}
- },[boardWidth>0?bucket:''])
-
- const clamp=(n:number,low:number,high:number)=>Math.max(low,Math.min(high,n))
- const getPosition=(index:number)=>{
-  const song=DEMO_TRACKS[index]
-  const stored=positions[song.id]
-  if(stored){return {x:Math.round(stored.x*layout.maxX),y:Math.round(stored.y*layout.maxY)}}
-  // Uneven hand-tossed stack, with safe margins so every name remains visible.
-  const offsetsX=[-10,19,-15,12,-7,12,-16,20,-16,19,-14,16,-12,19,-18,14,-14,19,-16]
-  const offsetsY=[14,-12,18,-8,7,-15,20,-9,12,-8,18,-13,15,-8,14,-12,19,-6,12]
-  const column=index%layout.columns,row=Math.floor(index/layout.columns)
-  const tossScale=layout.w<=650?.60:1
-  const x=layout.pad+column*(layout.cardWidth+layout.gap)+offsetsX[index]*tossScale
-  const bottom=layout.height-layout.pad-layout.cardHeight
-  const y=bottom-(Math.ceil(DEMO_TRACKS.length/layout.columns)-1-row)*layout.rowStep+offsetsY[index]*tossScale
-  return {x:clamp(x,6,layout.maxX),y:clamp(y,6,layout.maxY)}
- }
- const savePosition=(id:string,x:number,y:number)=>{
-  const px=clamp(x,0,layout.maxX),py=clamp(y,0,layout.maxY)
-  setPositions(prev=>{
-   const next={...prev,[id]:{x:layout.maxX?px/layout.maxX:0,y:layout.maxY?py/layout.maxY:0}}
-   try{window.localStorage.setItem('audixo-crate-v65-'+bucket,JSON.stringify(next))}catch{}
-   return next
-  })
- }
- const onDown=(event:import('react').PointerEvent<HTMLButtonElement>,index:number)=>{
-  if(event.button!==0)return
-  const card=event.currentTarget,song=DEMO_TRACKS[index],p=getPosition(index)
-  dragging.current={id:song.id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:p.x,originY:p.y,lastX:p.x,lastY:p.y,moved:false}
-  setFrontId(song.id)
-  // Actual pointer pickup is a user gesture: audition starts instantly,
-  // while moving the card still updates its independent freeform position.
-  selectTrack(index)
-  card.setPointerCapture(event.pointerId)
- }
- const onMove=(event:import('react').PointerEvent<HTMLButtonElement>,index:number)=>{
-  const d=dragging.current
-  if(!d||d.id!==DEMO_TRACKS[index].id||d.pointerId!==event.pointerId)return
-  const dx=event.clientX-d.startX,dy=event.clientY-d.startY
-  if(!d.moved&&Math.hypot(dx,dy)<=6)return
-  if(!d.moved){
-   d.moved=true
-   event.currentTarget.classList.add('is-dragging')
-   event.currentTarget.style.zIndex='1000'
-  }
-  const x=clamp(d.originX+dx,0,layout.maxX),y=clamp(d.originY+dy,0,layout.maxY)
-  d.lastX=x;d.lastY=y
-  // Imperative position writes keep dragging responsive without re-rendering 19 songs.
-  event.currentTarget.style.left=x+'px'
-  event.currentTarget.style.top=y+'px'
- }
- const onUp=(event:import('react').PointerEvent<HTMLButtonElement>,index:number)=>{
-  const d=dragging.current,button=event.currentTarget
-  if(d&&d.id===DEMO_TRACKS[index].id&&d.pointerId===event.pointerId){
-   if(d.moved){
-    savePosition(d.id,d.lastX,d.lastY)
-    button.dataset.dragged='1'
-    window.setTimeout(()=>{delete button.dataset.dragged},350)
+  const node=viewport.current,lane=middleLane.current
+  if(!node||!lane)return
+  const measure=()=>{
+   const next=lane.getBoundingClientRect().width
+   if(next>0){
+    const old=laneWidth.current
+    laneWidth.current=next
+    if(!old)node.scrollLeft=next
+    else if(Math.abs(old-next)>2)node.scrollLeft+=next-old
    }
-   dragging.current=null
-   button.classList.remove('is-dragging')
-   button.style.removeProperty('z-index')
   }
-  if(button.hasPointerCapture(event.pointerId))button.releasePointerCapture(event.pointerId)
+  measure()
+  const resize=typeof ResizeObserver==='undefined'?null:new ResizeObserver(measure)
+  resize?.observe(lane)
+  window.addEventListener('resize',measure)
+  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{
+   if(entries.some(e=>e.isIntersecting)){setVisible(true);setReady(true)}
+   else setVisible(false)
+  },{threshold:.08})
+  observer?.observe(node)
+  if(!observer){setVisible(true);setReady(true)}
+  return()=>{resize?.disconnect();observer?.disconnect();window.removeEventListener('resize',measure)}
+ },[])
+ useEffect(()=>{
+  const el=viewport.current
+  if(!el||!visible)return
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if(reduced)return
+  let frame=0,last=0
+  const tick=(time:number)=>{
+   if(last&&!hovered.current&&!dragging.current&&document.visibilityState==='visible'){
+    const w=laneWidth.current
+    if(w>0){
+     el.scrollLeft+=(Math.min(40,time-last)*34)/1000
+     if(el.scrollLeft>=w*2)el.scrollLeft-=w
+     if(el.scrollLeft<w)el.scrollLeft+=w
+    }
+   }
+   last=time;frame=requestAnimationFrame(tick)
+  }
+  frame=requestAnimationFrame(tick)
+  return()=>cancelAnimationFrame(frame)
+ },[visible])
+ const normalize=()=>{
+  const el=viewport.current,w=laneWidth.current
+  if(!el||!w)return
+  if(el.scrollLeft>=2*w)el.scrollLeft-=w
+  else if(el.scrollLeft<w)el.scrollLeft+=w
  }
- const onCancel=(event:import('react').PointerEvent<HTMLButtonElement>)=>{
-  dragging.current=null
-  event.currentTarget.classList.remove('is-dragging')
-  event.currentTarget.style.removeProperty('z-index')
-  event.currentTarget.style.removeProperty('left')
-  event.currentTarget.style.removeProperty('top')
- }
- return <div className="ax49-strip-section ax61-strip-section ax63-sound-section ax65-crate-section">
-  <div className="ax49-strip-head"><span><i/> PHONK SOUND CRATE</span><small>{DEMO_TRACKS.length} TRACKS · LIFT / DRAG / PLAY</small></div>
-  <div className="ax66-crate-toolbar"><p className="ax61-strip-note">Lift a song, move it freely inside the glass bin, or tap to play. Your arrangement is saved on this device.</p><button type="button" className="ax66-reset-crate" onClick={()=>{setPositions({});setFrontId(null);try{window.localStorage.removeItem('audixo-crate-v65-'+bucket)}catch{}}}>↺ Reset layout</button></div>
-  <div className="ax61-track-bin ax61-track-board ax63-sound-crate ax65-free-crate" ref={zoneRef}
-   style={{height:boardWidth?layout.height:390,visibility:boardWidth?'visible':'hidden'} as CSSProperties}
-   role="group" data-demo-bin="freeform" aria-label="Free-positioned phonk songs: drag anywhere to arrange, tap to play">
-   {DEMO_TRACKS.map((track,trackRealIndex)=>{
-    const point=getPosition(trackRealIndex)
-    const tilt=((trackRealIndex%5)-2)*2.0+((trackRealIndex%2===0)?-.75:.75)
-    return <button key={track.id} type="button" data-demo-track-id={track.id}
-     className={`ax49-track-item ax61-track-card ax63-physics-card ax65-free-card ${trackIndex===trackRealIndex?'active':''} ${ready?'is-ready':''}`}
-     aria-pressed={trackIndex===trackRealIndex} aria-label={`Play ${track.title}. Drag to move the song in the crate.`}
-     title={`${track.title} — grab to move anywhere, Alt + arrows to fine-tune position, click to play`}
-     style={{left:point.x,top:point.y,width:layout.cardWidth,'--card-w':`${layout.cardWidth}px`,zIndex:frontId===track.id?110:trackIndex===trackRealIndex?60:10+trackRealIndex,
-      '--stack-tilt':`${tilt}deg`,'--drop-delay':`${Math.min(trackRealIndex*.065,.95)}s`} as CSSProperties}
-     onClick={event=>{
-      const el=event.currentTarget
-      if(el.dataset.dragged){delete el.dataset.dragged;return}
-      // Mouse/touch already auditioned on pointer pickup; keyboard clicks
-      // still need a direct action here.
-      if(event.detail===0)selectTrack(trackRealIndex)
-      if(event.detail>0)el.blur()
-     }}
-     onKeyDown={event=>{
-      if(!event.altKey)return
-      const current=getPosition(trackRealIndex)
-      let x=current.x,y=current.y
-      if(event.key==='ArrowLeft')x-=16
-      else if(event.key==='ArrowRight')x+=16
-      else if(event.key==='ArrowUp')y-=16
-      else if(event.key==='ArrowDown')y+=16
-      else return
-      event.preventDefault();setFrontId(track.id);savePosition(track.id,x,y)
-     }}
-     onPointerDown={event=>onDown(event,trackRealIndex)}
-     onPointerMove={event=>onMove(event,trackRealIndex)}
-     onPointerUp={event=>onUp(event,trackRealIndex)}
-     onPointerCancel={onCancel}>
-     <TrackArt index={trackRealIndex}/>
-     <span className="ax49-track-label"><strong>{track.title}</strong></span>
-     <i className="ax49-track-pulse" aria-hidden="true">{trackIndex===trackRealIndex&&isPlaying?'♫':'⠿'}</i>
-    </button>
-   })}
+ useEffect(()=>{
+  const el=viewport.current
+  if(!el)return
+  // React delegates wheel as passive in some browsers; a native, non-passive
+  // listener allows horizontal browsing with Shift/wheel or held mouse button.
+  const wheel=(event:WheelEvent)=>{
+   if(!(event.shiftKey||event.buttons===1||Math.abs(event.deltaX)>Math.abs(event.deltaY)))return
+   event.preventDefault()
+   el.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY
+   const w=laneWidth.current
+   if(w&&el.scrollLeft>=2*w)el.scrollLeft-=w
+   else if(w&&el.scrollLeft<w)el.scrollLeft+=w
+  }
+  el.addEventListener('wheel',wheel,{passive:false})
+  return()=>el.removeEventListener('wheel',wheel)
+ },[])
+ const lane=(which:'left'|'primary'|'right')=><div ref={which==='primary'?middleLane:undefined} className="ax67-songs-lane" data-strip-lane={which} aria-hidden={which!=='primary'||undefined}>
+  {DEMO_TRACKS.map((track,i)=><button key={`${which}-${track.id}`} data-demo-track-id={track.id} data-demo-copy={which}
+   className={`ax67-song-card ${trackIndex===i?'active':''}`} type="button" aria-pressed={trackIndex===i}
+   aria-label={`Play ${track.title}`} tabIndex={which==='primary'?0:-1}
+   style={{'--ax67-drop-delay':`${Math.min(i*.036,.52)}s`} as CSSProperties}
+   onClick={()=>selectTrack(i)}>
+   <TrackArt index={i}/><span className="ax67-song-label"><strong>{track.title}</strong><small>{track.by}</small></span>
+   <i className="ax67-song-action" aria-hidden="true">{trackIndex===i&&isPlaying?'♫':'↗'}</i>
+  </button>)}
+ </div>
+ return <div className="ax49-strip-section ax67-songs-section">
+  <div className="ax49-strip-head"><span><i/> PHONK SOUND LAB</span><small>{DEMO_TRACKS.length} SONGS · HOVER TO PAUSE · GRAB TO BROWSE</small></div>
+  <p className="ax67-song-help">Click to play a track. Hover to pause the moving deck, drag left or right, or hold the mouse button and use the wheel to browse.</p>
+  <div ref={viewport} data-demo-bin="marquee" role="group" aria-label="Phonk song carousel"
+   className={`ax67-songs-viewport ${grabbing?'is-grabbing':''} ${ready?'is-ready':''}`}
+   onPointerEnter={()=>{hovered.current=true}}
+   onPointerLeave={()=>{hovered.current=false}}
+   onPointerDown={e=>{if(e.pointerType==='mouse'&&e.button!==0)return;dragging.current={id:e.pointerId,start:e.clientX,offset:e.currentTarget.scrollLeft,moved:false}}}
+   onPointerMove={e=>{const d=dragging.current;if(!d||d.id!==e.pointerId)return;const dx=e.clientX-d.start;if(Math.abs(dx)>5||d.moved){
+    d.moved=true;setGrabbing(true)
+    if(!e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.setPointerCapture(e.pointerId)
+    e.currentTarget.scrollLeft=d.offset-dx;normalize()
+   }}}
+   onPointerUp={e=>{const d=dragging.current;if(d?.moved)suppressClickUntil.current=performance.now()+300;dragging.current=null;setGrabbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
+   onPointerCancel={()=>{dragging.current=null;setGrabbing(false)}}
+   onClickCapture={e=>{if(performance.now()<suppressClickUntil.current){e.preventDefault();e.stopPropagation()}}}
+   onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();e.currentTarget.scrollLeft+=e.key==='ArrowRight'?210:-210;normalize()}}}
+   tabIndex={0}>
+    {lane('left')}{lane('primary')}{lane('right')}
   </div>
  </div>
 }

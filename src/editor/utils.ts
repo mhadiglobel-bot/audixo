@@ -54,3 +54,12 @@ export function findTrack(project: AudioProject, trackId: string | null | undefi
 export function safeFileName(name: string) {
   return String(name || 'mix').replace(/\.[^/.]+$/, '').replace(/[^a-z0-9-_]+/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'mix'
 }
+
+// Keep the user's requested display name (spaces and Unicode included) while
+// stripping characters Windows/macOS browsers cannot use in downloads.
+export function safeExportBase(value: string, fallback = 'Untitled Mix'): string {
+  const base = String(value || '').trim().replace(/\.(?:mp3|wav)$/i, '').replace(/\s*\(Audixo\)$/i, '')
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '').replace(/[.\s]+$/g, '').trim()
+  const safeFallback = String(fallback || 'Untitled Mix').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '').trim() || 'Untitled Mix'
+  return base || safeFallback
+}

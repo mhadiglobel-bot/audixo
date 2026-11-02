@@ -8,7 +8,7 @@ import LibraryDrawer from './LibraryDrawer'
 import StreamingStudio from './StreamingStudio'
 import type { AudioProject, EditTarget, TimelineSelection } from './types'
 import { createClip, createProject, createTrack, defaultClipFx, isolateSelection } from './project'
-import { cloneProject, findClip, projectDuration, safeFileName, uid, clipTimelineDuration } from './utils'
+import { cloneProject, findClip, projectDuration, safeExportBase, uid, clipTimelineDuration } from './utils'
 import { fitScale } from './editing'
 import { addCut, addEffect, addTrim, manualGroup, rebuildEdits, removeEdit, retainSources, targetsFor,duplicateAudio,clearEdits } from './editRack'
 import AppliedEdits from './AppliedEdits'
@@ -19,7 +19,7 @@ import { saveMixToLibrary } from './library'
 import { localMetadata } from '../services/media'
 import { separateLocally } from '../services/localStems'
 
-type Settings={format:'mp3'|'wav';kbps:number;normalize:boolean;stereoRepair:boolean;saveToLibrary:boolean;libraryName:string}
+type Settings={format:'mp3'|'wav';kbps:number;normalize:boolean;stereoRepair:boolean;saveToLibrary:boolean;downloadName:string}
 export type InitialAudio={name:string;blob:Blob;muted?:boolean}
 export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOpen=false}:{initialAudio?:InitialAudio[];focusToolId?:string|null;recordOnOpen?:boolean}){
  const [project,setProject]=useState<AudioProject>(()=>createProject()),projectRef=useRef(project),buffers=useRef(new Map<string,AudioBuffer>())
@@ -155,7 +155,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
  },[])
 
  const resetSound=()=>{if(!hit)return;stop();const origin=hit.clip.sourceId||hit.clip.id;commit(p=>{p.edits=(p.edits||[]).filter(op=>!(op.kind==='effect'&&op.targets.some(t=>t.trackId===hit.track.id&&t.sourceId===origin)));rebuildEdits(p)})}
- const exportAudio=async(s:Settings)=>{if(!duration)return;await stop();setBusy('Rendering your mix…');try{const {buffer}=await renderProject(projectRef.current,buffers.current,{normalize:s.normalize,stereoRepair:s.stereoRepair});setBusy(`Encoding ${s.format.toUpperCase()}…`);const blob=s.format==='mp3'?await encodeMp3(buffer,s.kbps):encodeWav(buffer);downloadBlob(blob,`${safeFileName(project.name)}.${s.format}`);if(s.saveToLibrary)await saveMixToLibrary({name:s.libraryName||project.name,blob,format:s.format,kbps:s.kbps,duration:buffer.duration});setExportOpen(false);emitAudixoSuccess();toast('Your audio download is ready.')}catch(e){toast(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}}
+ const exportAudio=async(s:Settings)=>{if(!duration)return;await stop();setBusy('Rendering your mix…');try{const {buffer}=await renderProject(projectRef.current,buffers.current,{normalize:s.normalize,stereoRepair:s.stereoRepair});setBusy(`Encoding ${s.format.toUpperCase()}…`);const blob=s.format==='mp3'?await encodeMp3(buffer,s.kbps):encodeWav(buffer);downloadBlob(blob,`${safeExportBase(s.downloadName,project.name)} (Audixo).${s.format}`);if(s.saveToLibrary)await saveMixToLibrary({name:safeExportBase(s.downloadName,project.name),blob,format:s.format,kbps:s.kbps,duration:buffer.duration});setExportOpen(false);emitAudixoSuccess();toast('Your audio download is ready.')}catch(e){toast(e instanceof Error?e.message:'Export failed.')}finally{setBusy('')}}
  useEffect(()=>()=>{separation.current?.abort();stop();clearTimeout(messageTimer.current)},[stop])
  useEffect(()=>{const fn=(e:KeyboardEvent)=>{if(['INPUT','TEXTAREA','SELECT','BUTTON'].includes((e.target as HTMLElement)?.tagName))return;if(e.code==='Space'){e.preventDefault();togglePlay()}if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();travel(e.shiftKey?'future':'past')}};window.addEventListener('keydown',fn);return()=>window.removeEventListener('keydown',fn)})
  void revision;void focusToolId

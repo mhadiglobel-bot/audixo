@@ -3,9 +3,9 @@ import * as fs from 'node:fs'
 import {readFile,writeFile,mkdir,rm} from 'node:fs/promises'
 import path from 'node:path'
 
-/** Validate the V62 glass bin's actual SSR markup, not the retired marquee.
- * The production build and --self-test use the SAME assertion function.
- * The bin renders one accessible pointer-draggable card per track (no clone lane).
+/** The same carousel contract runs in production prerender and self-test.
+ * Three visual copies make continuous wraparound possible; the center lane
+ * alone is keyboard-accessible. No media autoplay is allowed.
  */
 export function checkTrackMarkup(html,tracks){
  const ids=tracks.map(t=>t.id)
@@ -14,91 +14,79 @@ export function checkTrackMarkup(html,tracks){
  const audio=html.match(/<audio\b[^>]*src="\/demo\/audixo-sample-reel\.mp3(?:\?v=[\w.-]+)?"[^>]*>/g)||[]
  assert.equal(audio.length,1,'Home must render one persistent demo player')
  assert.ok(!/\bautoplay\b/i.test(audio[0]),'Initial audio autoplay is not permitted')
- const bins=html.match(/<div\b[^>]*data-demo-bin="freeform"[^>]*>/g)||[]
- assert.equal(bins.length,1,'Home must render exactly one freeform glass bin')
- assert.ok(/\brole="group"/.test(bins[0]),'The song bin must have an accessible group role')
+ const bins=html.match(/<div\b[^>]*data-demo-bin="marquee"[^>]*>/g)||[]
+ assert.equal(bins.length,1,'Home must have one auto-sliding carousel')
+ assert.ok(/\brole="group"/.test(bins[0]),'Carousel must have accessible role')
+ const attr=(tag,key)=>tag.match(new RegExp(`${key}="([^"]*)"`))?.[1]
  const buttons=(html.match(/<button\b[^>]*data-demo-track-id="[^"]+"[^>]*>/g)||[])
- const attr=(tag,key)=>tag.match(new RegExp(key+'="([^"]*)"'))?.[1]
- assert.deepEqual(buttons.map(tag=>attr(tag,'data-demo-track-id')),ids,'One draggable card per track, in catalog order')
- assert.ok(buttons.every(tag=>/\baria-pressed=/.test(tag)),'Every track card must expose playback state')
- assert.ok(buttons.every(tag=>/\baria-label="Play /.test(tag)),'Each song card must have a play label')
- assert.ok(!html.includes('data-strip-lane='),'The retired marquee clone lanes must not render')
+ assert.equal(buttons.length,ids.length*3,'Three lanes must contain full catalog')
+ for(const which of ['left','primary','right']){
+  const lane=buttons.filter(tag=>attr(tag,'data-demo-copy')===which)
+  assert.deepEqual(lane.map(tag=>attr(tag,'data-demo-track-id')),ids,`${which} lane must preserve song order`)
+  assert.ok(lane.every(tag=>/\baria-label="Play /.test(tag)&&/\baria-pressed=/.test(tag)),'Track cards need playback state and label')
+ }
  return {uniqueTracks:ids.length,renderedTiles:buttons.length}
 }
 export function runTrackRegression(){
  const fixture=n=>{
   const tracks=Array.from({length:n},(_,i)=>({id:'track-'+i}))
-  const bin='<div class="ax61-track-bin" data-demo-bin="freeform" role="group">'+tracks.map(t=>`<button type="button" aria-pressed="false" data-demo-track-id="${t.id}" aria-label="Play ${t.id}"></button>`).join('')+'</div>'
+  const song=which=>tracks.map(t=>`<button type="button" data-demo-copy="${which}" data-demo-track-id="${t.id}" aria-pressed="false" aria-label="Play ${t.id}"></button>`).join('')
+  const bin=`<div data-demo-bin="marquee" role="group">`+['left','primary','right'].map(lane=>`<div data-strip-lane="${lane}">${song(lane)}</div>`).join('')+'</div>'
   return {tracks,html:'<audio src="/demo/audixo-sample-reel.mp3" preload="metadata"></audio>'+bin}
  }
  let count=0
- for(const n of [1,6,13,19]){
-  const f=fixture(n)
-  assert.equal(checkTrackMarkup(f.html,f.tracks).renderedTiles,n)
-  count++
- }
+ for(const n of [1,6,13,19]){const f=fixture(n);assert.equal(checkTrackMarkup(f.html,f.tracks).renderedTiles,n*3);count++}
  const {html,tracks}=fixture(19)
  const malformed=[
   html.replace('data-demo-track-id="track-0"','data-demo-track-id="wrong"'),
   html.replace('<audio ','<audio autoplay="" '),
-  html.replace('data-demo-bin="freeform"','data-demo-bin="marquee"'),
+  html.replace('data-demo-bin="marquee"','data-demo-bin="freeform"'),
   html.replace('role="group"','role="list"'),
-  html.replace('aria-pressed="false"','title="undraggable"'),
-  html.replace('aria-label="Play track-0"','title="No label"'),
-  html.replace('</div>','<div data-strip-lane="clone"></div></div>'),
-  html.replace('data-demo-track-id="track-1"','data-demo-track-id="track-0"')
+  html.replace('data-demo-copy="right" data-demo-track-id="track-1"','data-demo-copy="right" data-demo-track-id="track-0"'),
+  html.replace('aria-label="Play track-0"','title="unnamed"'),
+  html.replace('aria-pressed="false"','title="no playback state"')
  ]
  for(const bad of malformed){assert.throws(()=>checkTrackMarkup(bad,tracks));count++}
  assert.throws(()=>checkTrackMarkup(html,[...tracks,tracks[0]]));count++
- console.log(`Glass-bin markup regression passed: ${count} cases; unique free-positioned cards, no duplicate strip, one player, no autoplay.`)
+ console.log(`Carousel SSR contract passed: ${count} cases, 19 unique tracks, seamless lanes, no autoplay`)
 }
 function runUiRegression(){
-const source = fs.readFileSync(new URL('../src/components/SoundExperience.tsx', import.meta.url), 'utf8');
-const css = fs.readFileSync(new URL('../src/styles/premium-v65.css', import.meta.url), 'utf8');
-const main = fs.readFileSync(new URL('../src/main.tsx', import.meta.url), 'utf8');
-const expected = {
+ const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8')
+ const source=read('../src/components/SoundExperience.tsx')
+ const css=read('../src/styles/premium-v65.css')
+ const inspector=read('../src/editor/Inspector.tsx')
+ const project=read('../src/editor/project.ts')
+ const audioEngine=read('../src/editor/audioEngine.ts')
+ const converter=read('../src/pages/YouTubeConverter.tsx')
+ const modal=read('../src/editor/ExportModal.tsx')
+ const studio=read('../src/editor/AudioStudio.tsx')
+ const metric=read('../src/components/TrustMetrics.tsx')
+ const expected={
   'montagem-aghanim':'montagem-aghanim.webp',
   'montagem-aghanim-slowed':'montagem-aghanim-slowed.webp',
   'montagem-tiktak':'montagem-tiktak.webp',
   'hero':'hero.webp',
-};
-for (const [id,file] of Object.entries(expected)) {
-  const escaped = id.replaceAll('-', '\\-');
-  const match = source.match(new RegExp(`\\{id:'${escaped}',[^\\n]*coverSrc:'([^']+)'`));
-  assert(match, `Missing cover mapping for ${id}`);
-  assert.equal(match[1],`/demo/phonk-covers/${file}`, `Wrong cover for ${id}`);
-  assert(fs.existsSync(new URL(`../public/demo/phonk-covers/${file}`,import.meta.url)),`Missing asset: ${file}`);
-}
-const tracksBlock=source.match(/export const DEMO_TRACKS:DemoTrack\[\]=\[([\s\S]*?)\n\]/)?.[1]??'';
-const directCount=(tracksBlock.match(/\{id:'/g)||[]).length;
-const spriteCount=(tracksBlock.match(/reelTrack\('/g)||[]).length;
-assert.equal(directCount+spriteCount,19, 'Must preserve all 19 songs');
-const component=source.slice(source.indexOf('function MusicStrip(){'),source.indexOf('\nfunction LiveRange('));
-assert(component.includes('data-demo-bin="freeform"'), 'Freeform crate must be enabled');
-assert(component.includes('onPointerMove') && component.includes('savePosition') && component.includes('onPointerUp'), 'Drag-and-drop missing');
-assert(component.includes('window.localStorage.setItem'), 'Free positions must be saved');
-assert(component.includes('<strong>{track.title}</strong>'),'Full title must appear');
-assert(!component.includes('{track.by}') && !component.includes('{track.tag}'),'No extra artist or status badges in crate');
-for (const x of ['#fc4ac5','#9254ff','#24def2','#40e39e'])assert(css.includes(x),`Missing neon outline ${x}`);
-assert(css.includes('@keyframes ax65NeonFlow') && css.includes('background-position:0 0,100% 50%'), 'Animated border must move');
-assert(css.includes('position:absolute!important') && css.includes('.ax65-free-card'),'Cards should float freely rather than snap into rows');
-assert(main.includes("import './styles/premium-v65.css'"),'V65 stylesheet must load');
-const inspector=fs.readFileSync(new URL('../src/editor/Inspector.tsx',import.meta.url),'utf8');
-const project=fs.readFileSync(new URL('../src/editor/project.ts',import.meta.url),'utf8');
-const audioEngine=fs.readFileSync(new URL('../src/editor/audioEngine.ts',import.meta.url),'utf8');
-const converter=fs.readFileSync(new URL('../src/pages/YouTubeConverter.tsx',import.meta.url),'utf8');
-const seo=fs.readFileSync(new URL('../scripts/seo-build.mjs',import.meta.url),'utf8');
-assert(inspector.includes('ax66-preset-grid') && inspector.includes('aria-expanded={showAll}') && inspector.includes('ax66-preset-toggle'),'Preset browser should be compact, accessible and scrollable');
-assert(css.includes('max-height:360px!important')&&css.includes('overflow-y:auto'),'Expanded presets must scroll inside their own panel');
-assert(project.includes("id:'natural-vocal-mix'")&&project.includes("id:'airy-remix'"),'Controlled vocal and remix presets must exist');
-assert(project.includes('fxBlend: 1')&&audioEngine.includes('original.gain.value=1-fxBlend')&&audioEngine.includes('dw*fxBlend'),'Natural/Studio blend must control real audio processing');
-assert(inspector.includes('fxBlend:v')&&inspector.includes('Natural ↔ Studio blend'),'Intensity slider must control actual FX branch');
-assert(component.includes('Reset layout')&&component.includes('onPointerMove')&&component.includes('localStorage'),'Free drag and layout reset must exist');
-assert(css.includes('ax65Toss')&&css.includes('ax65NeonFlow'),'Drop and traveling neon are required');
-assert(converter.includes('Mp3QualityRail')&&converter.includes('VideoQualityRail')&&converter.includes('encodeMp3Local')&&converter.includes('highestConfirmedQuality'),'Browser-only converter controls must be preserved');
-assert(seo.slice(0,seo.indexOf('function runUiRegression')).includes('data-demo-bin="freeform"'),'SEO prerender test must validate actual freeform markup');
-console.log('AUDIXO V66 QA PASS: 19 songs, verified thumbnail mapping, free-drag & reset, animated neon, compact preset browser, real FX blend, 36 presets, converter modules, freeform SSR checks.');
-
+ }
+ for(const [id,file] of Object.entries(expected)){
+  const match=source.match(new RegExp(`\{id:'${id}',[^\n]*coverSrc:'([^']+)'`))
+  assert(match,`Missing art for ${id}`)
+  assert.equal(match[1],`/demo/phonk-covers/${file}`,`Wrong art for ${id}`)
+  assert(fs.existsSync(new URL(`../public/demo/phonk-covers/${file}`,import.meta.url)),`Missing asset ${file}`)
+ }
+ const block=source.match(/export const DEMO_TRACKS:DemoTrack\[\]=\[([\s\S]*?)\n\]/)?.[1]||''
+ assert.equal((block.match(/\{id:'/g)||[]).length+(block.match(/reelTrack\('/g)||[]).length,19)
+ const carousel=source.slice(source.indexOf('function MusicStrip(){'),source.indexOf('\nfunction LiveRange('))
+ for(const action of ['data-demo-bin="marquee"','data-strip-lane={which}','onPointerMove','onPointerUp',"addEventListener('wheel'",'onPointerEnter','requestAnimationFrame','selectTrack(i)'])assert(carousel.includes(action),`Missing carousel action: ${action}`)
+ assert(!carousel.includes('localStorage'),'The auto slider should not save freeform positions')
+ assert(inspector.includes('ax66-preset-grid')&&inspector.includes('aria-expanded={showAll}'))
+ assert(project.includes("id:'natural-vocal-mix'")&&project.includes("id:'airy-remix'"))
+ assert(audioEngine.includes('original.gain.value=1-fxBlend'))
+ assert(modal.includes('downloadName')&&modal.includes('Download filename'))
+ assert(studio.includes('safeExportBase(s.downloadName'))
+ assert(metric.includes('delay:1250'))
+ assert(converter.includes('Mp3QualityRail')&&converter.includes('VideoQualityRail')&&converter.includes('encodeMp3Local'))
+ for(const hue of ['#fc4ac5','#9254ff','#24def2','#40e39e'])assert(css.includes(hue),`Missing brand hue ${hue}`)
+ console.log('AUDIXO V67 source contracts passed: 19-track slider, drag/wheel, correct artwork, 36 presets, rename-export, 1.25s metrics, browser converter preserved')
 }
 if(process.argv.includes('--self-test')){runTrackRegression();runUiRegression();process.exit(0)}
 

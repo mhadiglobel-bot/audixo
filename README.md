@@ -1,3 +1,21 @@
+# AUDIXO V67 — Source ZIP for GitHub / Vercel
+
+This is an **editable Vite/React project**, not an image or mockup. The archive contains 99 project files (excluding dependencies). Extract and upload the **contents** to the GitHub repository root; do not upload the ZIP as a single file. Deployment remains under your control.
+
+## V67 updates
+
+- **Phonk Live Sound Lab:** Continuous, slow, 19-song auto slider using three reusable lanes; mouse hover pauses, mouse/touch drag browses, Shift + wheel or held-mouse + wheel moves in either direction, and song click plays the actual media. Hidden scrollbar, compact original-style rectangular cards, no additional toggle bar. Six supplied covers remain correctly mapped. No extra media service.
+- **Full Studio file rename fix:** The Export dialog has an independent download filename input that works even when saving to the local Library is disabled. It produces `Your Chosen Name (Audixo).mp3` (or `.wav`). The same naming scheme is available in the streaming editor. Unicode and normal spaces are retained; invalid filesystem characters are removed.
+- **Homepage metrics:** The four rotating value cards advance every **1.25 seconds**, with shorter visual transitions and more compact card dimensions.
+- **UI restoration:** Quiet white/glass background, restrained 4-color neon rim (green, cyan, purple, pink) around relevant surfaces, no rotating conic wedge in upload areas, white logo backing, compact polished Studio headers, pill-shaped primary navigation action, softer Nexivo/About, rounded feature cards, and a simplified responsive footer. No new picture assets.
+- **Preserved:** 36 presets, Natural/Studio FX blend, editor effects (reverb, echo, Lo-fi, Smart Repeats), waveform editing, MP3/MP4 quality selection, and all 19 songs. No new Render/Docker worker. Source access restrictions on YouTube cannot be bypassed by a browser-only converter.
+
+## QA and deployment expectations
+
+Run `npm ci`, `npm run test:tracks`, and `npm run build` on Node 22.x. On Vercel, set the framework to Vite and output directory to `dist`. A Preview build should be checked before promoting. Source syntax checks, markup regressions, ZIP integrity, artwork existence, and sample filename tests were performed. The **complete npm/Vite production build remains unverified in this execution environment**, because npm registry package retrieval failed. Do not assume live media E2E success before testing it on your deployed preview.
+
+---
+
 # AUDIXO V66 — Cinematic Studio Polish + Freeform Phonk Crate
 
 A complete, single-repository Vite/React source package. **99 files**; no node_modules,

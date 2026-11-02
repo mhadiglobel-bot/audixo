@@ -104,3 +104,16 @@ The earlier V66 package declared `engines.node: ">=20"`. On October 29, 2026, Ve
 **Change:** `package.json` and `package-lock.json` now both pin `node: "22.x"` (Node.js 22 LTS), matching the stable Node major used for local JS syntax and SSR self-tests. This prevents the unreviewed Node 26 upgrade without changing the website, media, audio effects or UI. The pin overrides the Vercel project Node setting during the next new build.
 
 **Check:** Vercel build logs should now show Node 22.x. After uploading, redeploy a *new* Preview build and confirm `npm run build` completes. If a syntax error still appears, capture the full build logs above its stack trace, especially the first file/module path. This source-only repair cannot independently certify the full Vite production build here because npm dependency packages are not available in the local sandbox.
+
+
+## V69 — audio transport + UI coherence release
+
+- Fixed Quick Audio original/edited object-URL lifetime (refreshing a preview no longer invalidates the source player).
+- Replaced native inconsistent audio player controls with accessible A/B transports: play/pause, accurate seek/time, mute and playback-rate controls.
+- Refined shared quick-workbench UI, presets, time inputs, upload logo, progress and export controls without changing DSP algorithms.
+- Stabilized the 19-track phonk deck: flat cards, continuous slow autoplay, hover pause, grab/drag and wheel browsing, no visible scroll bar.
+- Normalized light-glass/neon outlines and spacing for homepage metrics, edit-story cards, Features, About, Nexivo, footer and the compact Tools dropdown.
+- The source package remains at 99 files, excludes node_modules and secrets, and does not modify the browser-only downloader's access/CORS limitations.
+
+### Validation boundary
+`npm run test:tracks` is an executable source test. Full Vite/TypeScript production build requires `npm ci` in an environment that can reach npm (not possible in this packaging environment). Validate through a Vercel Preview deployment before promoting. Audio preview and export require testing in a real browser.

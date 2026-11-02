@@ -1,7 +1,7 @@
 import {RotatingUploadLogo} from '../components/Logo'
 import {emitAudixoSuccess,emitAudixoInteraction} from '../components/SoundExperience'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import StreamingStudio from '../editor/StreamingStudio'
 import { localMetadata } from '../services/media'
 import { decodeAudio, renderProject } from '../editor/audioEngine'
@@ -47,6 +47,25 @@ function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer){
   ctx.strokeStyle='rgba(10,26,18,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,center+.5);ctx.lineTo(rect.width,center+.5);ctx.stroke()
 }
 
+/** Custom A/B transport with accurate play time, seeking, mute and rate controls. */
+function AudioCompareTransport({audioRef,src,onStart,kind}:{audioRef:RefObject<HTMLAudioElement>;src:string;onStart:()=>void;kind:'original'|'edited'}){
+ const [playing,setPlaying]=useState(false),[position,setPosition]=useState(0),[length,setLength]=useState(0)
+ const [muted,setMuted]=useState(false),[rate,setRate]=useState(1),[playError,setPlayError]=useState(false)
+ useEffect(()=>{setPlaying(false);setPosition(0);setLength(0);setMuted(false);setRate(1);setPlayError(false);if(audioRef.current){audioRef.current.muted=false;audioRef.current.playbackRate=1}},[src,audioRef])
+ const toggle=()=>{const audio=audioRef.current;if(!audio)return;if(!audio.paused){audio.pause();return}void audio.play().catch(()=>{setPlaying(false);setPlayError(true)})}
+ const seek=(next:number)=>{const audio=audioRef.current;if(!audio||!Number.isFinite(audio.duration))return;audio.currentTime=Math.min(audio.duration,Math.max(0,next));setPosition(audio.currentTime)}
+ const pct=length>0?Math.min(100,Math.max(0,position/length*100)):0
+ return <div className={`ax69-transport ax69-transport-${kind}`}>
+  <audio ref={audioRef} preload="metadata" src={src} onPlay={()=>{setPlaying(true);setPlayError(false);onStart()}} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onTimeUpdate={e=>setPosition(e.currentTarget.currentTime)} onLoadedMetadata={e=>setLength(Number.isFinite(e.currentTarget.duration)?e.currentTarget.duration:0)} onDurationChange={e=>setLength(Number.isFinite(e.currentTarget.duration)?e.currentTarget.duration:0)} onError={()=>setPlayError(true)} aria-label={`${kind==='original'?'Original':'Processed'} audio`} />
+  <div className="ax69-transport-main">
+   <button type="button" className="ax69-play" onClick={toggle} aria-label={`${playing?'Pause':'Play'} ${kind} audio`}>{playing?'❚❚':'▶'}</button>
+   <div className="ax69-transport-meter"><input type="range" min="0" max={Math.max(.01,length)} step=".01" value={Math.min(position,Math.max(.01,length))} onChange={e=>seek(Number(e.target.value))} disabled={!length} aria-label={`Seek ${kind} audio`} style={{'--ax69-progress':`${pct}%`} as CSSProperties}/><div className="ax69-transport-time"><span>{formatTime(position,true)}</span><span>{formatTime(length,true)}</span></div></div>
+   <button type="button" className={`ax69-mute ${muted?'is-muted':''}`} onClick={()=>{const next=!muted;setMuted(next);if(audioRef.current)audioRef.current.muted=next}} aria-label={`${muted?'Unmute':'Mute'} ${kind} audio`}>{muted?'◌':'♪'}</button>
+   <select className="ax69-rate" value={rate} onChange={e=>{const next=Number(e.target.value);setRate(next);if(audioRef.current)audioRef.current.playbackRate=next}} aria-label={`${kind} playback speed`}><option value=".75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select>
+  </div>{playError&&<small className="ax69-player-error">Audio could not be played in this browser.</small>}
+ </div>
+}
+
 export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagline}:Props){
   const inputRef=useRef<HTMLInputElement|null>(null);const canvasRef=useRef<HTMLCanvasElement|null>(null);const waveRef=useRef<HTMLDivElement|null>(null);const workbenchRef=useRef<HTMLElement|null>(null);const originalPlayerRef=useRef<HTMLAudioElement|null>(null);const editedPlayerRef=useRef<HTMLAudioElement|null>(null);const [dropActive,setDropActive]=useState(false)
   const bufferRef=useRef<AudioBuffer|null>(null);const [fileName,setFileName]=useState('');const [duration,setDuration]=useState(0);const [trimStart,setTrimStart]=useState(0);const [trimEnd,setTrimEnd]=useState(0)
@@ -58,7 +77,9 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
   const [longFile,setLongFile]=useState<File|null>(null);const [longDuration,setLongDuration]=useState(0)
   const guide=modeGuide[mode]
 
-  useEffect(()=>()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);if(sourceUrl)URL.revokeObjectURL(sourceUrl)},[previewUrl,sourceUrl])
+  // Revoke URLs independently: replacing the preview must NOT invalidate original audio.
+  useEffect(()=>()=>{if(previewUrl)URL.revokeObjectURL(previewUrl)},[previewUrl])
+  useEffect(()=>()=>{if(sourceUrl)URL.revokeObjectURL(sourceUrl)},[sourceUrl])
   useEffect(()=>{const canvas=canvasRef.current,buffer=bufferRef.current;if(!canvas||!buffer)return;const draw=()=>drawWave(canvas,buffer);draw();const ro=new ResizeObserver(draw);ro.observe(canvas);return()=>ro.disconnect()},[duration])
   useEffect(()=>{const on=()=>{const active=Boolean(document.fullscreenElement);setIsFullscreen(active);if(active)setIsPseudoFullscreen(false)};document.addEventListener('fullscreenchange',on);return()=>document.removeEventListener('fullscreenchange',on)},[])
   useEffect(()=>{if(!isPseudoFullscreen)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous}},[isPseudoFullscreen])
@@ -71,7 +92,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
   const resetFx=()=>{setGainDb(0);setSpeed(1);setFadeIn(0);setFadeOut(0);setDelayMs(mode==='slowed'?140:defaults.delayMs);setDelayWet(mode==='slowed'?.04:defaults.delayWet);setFeedback(mode==='slowed'?.12:defaults.feedback);setReverb(defaults.reverb);setPitch(0);setPreservePitch(mode==='slowed');setMotionMode('8d');setMotionDepth(defaults.motionDepth);setMotionHz(defaults.motionHz);setMessage('Settings reset to a clean edit.')}
   const toggleFullscreen=async()=>{if(isPseudoFullscreen){setIsPseudoFullscreen(false);return}try{if(document.fullscreenElement){await document.exitFullscreen();return}const el=workbenchRef.current;if(el?.requestFullscreen){try{await el.requestFullscreen();return}catch(error){console.warn('Native fullscreen unavailable, using in-page maximize.',error)}}setIsPseudoFullscreen(true)}catch{setIsPseudoFullscreen(true)}}
 
-  const loadFile=async(file?:File)=>{if(!file)return;setBusy('Reading audio…');setMessage('');try{const seconds=await localMetadata(file).catch(()=>0);if(seconds>600||file.size>70*1024*1024){if(!seconds)throw new Error('Your browser could not read the full duration. Try an MP3 or WAV source.');if(mode==='trim'){setLongFile(file);setLongDuration(seconds);return}throw new Error('Use a recording under 10 minutes for browser effects, or trim it in the Full Editor first.')}const buffer=await decodeAudio(await file.arrayBuffer());bufferRef.current=buffer;setFileName(file.name);setDuration(buffer.duration);setTrimStart(0);setTrimEnd(buffer.duration);resetFx();if(sourceUrl)URL.revokeObjectURL(sourceUrl);setSourceUrl(URL.createObjectURL(file));if(previewUrl){URL.revokeObjectURL(previewUrl);setPreviewUrl('')}setPreviewDirty(false);setMessage('Audio ready. Start with the green and cyan trim handles, then preview before downloading.')}catch(error){console.error(error);setMessage(error instanceof Error?error.message:'This file could not be decoded in the current browser.')}finally{setBusy('')}}
+  const loadFile=async(file?:File)=>{if(!file)return;setBusy('Reading audio…');setMessage('');try{const seconds=await localMetadata(file).catch(()=>0);if(seconds>600||file.size>70*1024*1024){if(!seconds)throw new Error('Your browser could not read the full duration. Try an MP3 or WAV source.');if(mode==='trim'){setLongFile(file);setLongDuration(seconds);return}throw new Error('Use a recording under 10 minutes for browser effects, or trim it in the Full Editor first.')}const buffer=await decodeAudio(await file.arrayBuffer());bufferRef.current=buffer;setFileName(file.name);setDuration(buffer.duration);setTrimStart(0);setTrimEnd(buffer.duration);resetFx();setSourceUrl(URL.createObjectURL(file));setPreviewUrl('');setPreviewDirty(false);setMessage('Audio ready. Start with the green and cyan trim handles, then preview before downloading.')}catch(error){console.error(error);setMessage(error instanceof Error?error.message:'This file could not be decoded in the current browser.')}finally{setBusy('')}}
 
   const setHandleFromX=(kind:'start'|'end',clientX:number)=>{const host=waveRef.current;if(!host||!duration)return;const r=host.getBoundingClientRect();const t=Math.max(0,Math.min(duration,((clientX-r.left)/r.width)*duration));if(kind==='start')setTrimStart(Math.min(t,trimEnd-.02));else setTrimEnd(Math.max(t,trimStart+.02))}
   const startHandle=(kind:'start'|'end',e:ReactPointerEvent)=>{e.preventDefault();e.stopPropagation();const move=(ev:PointerEvent)=>setHandleFromX(kind,ev.clientX);const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up)};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true})}
@@ -85,7 +106,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
     clip.fx=fx;track.clips.push(clip);project.tracks.push(track);return{project,buffers:new Map([['quick-buffer',raw]])}}
 
   const render=async()=>{const {project,buffers}=makeProject();return renderProject(project,buffers,{normalize:true,stereoRepair:true,sampleRate:44100})}
-  const preview=async()=>{if(!bufferRef.current)return;setBusy('Building preview…');try{const {buffer}=await render();const blob=encodeWav(buffer);if(previewUrl)URL.revokeObjectURL(previewUrl);setPreviewUrl(URL.createObjectURL(blob));setPreviewDirty(false);setMessage('Preview ready. Listen once, then download if it sounds right.')}catch(error){console.error(error);setMessage('Preview failed in this browser.')}finally{setBusy('')}}
+  const preview=async()=>{if(!bufferRef.current)return;setBusy('Building preview…');try{const {buffer}=await render();const blob=encodeWav(buffer);setPreviewUrl(URL.createObjectURL(blob));setPreviewDirty(false);setMessage('Preview ready. Listen once, then download if it sounds right.')}catch(error){console.error(error);setMessage('Preview failed in this browser.')}finally{setBusy('')}}
   const exportAudio=async()=>{if(!bufferRef.current)return;setBusy('Preparing download…');try{const {buffer}=await render();const blob=format==='mp3'?await encodeMp3(buffer,kbps):encodeWav(buffer);const base=safeFileName(fileName.replace(/\.[^/.]+$/,'')||'audiox-audio');downloadBlob(blob,`${base}-${mode}.${format}`);if(saveLibrary)await saveMixToLibrary({name:`${base} · ${title}`,blob,format,kbps,duration:buffer.duration});setPreviewDirty(false);emitAudixoSuccess();setMessage(`${format.toUpperCase()} downloaded${saveLibrary?' and saved to your local Library':''}.`)}catch(error){console.error(error);setMessage('Export failed in this browser. Try MP3/WAV source audio or another current browser.')}finally{setBusy('')}}
 
   const presets:QuickPreset[]=mode==='trim'?
@@ -190,13 +211,13 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
           <header className="ax68-compare-heading"><div><small>LISTEN & COMPARE</small><strong>Hear the difference.</strong></div><span>{previewUrl&&!previewDirty?'Edited preview ready':'Original audio available'}</span></header>
           <div className="ax68-compare-grid">
             <article className="ax68-compare-audio ax68-compare-original"><div className="ax68-player-title"><span className="ax68-player-icon">♫</span><div><small>01 / SOURCE</small><strong>Original audio</strong></div><b>UNCHANGED</b></div>
-              <audio ref={originalPlayerRef} controls preload="metadata" src={sourceUrl} onPlay={()=>editedPlayerRef.current?.pause()} aria-label="Play original audio"/>
+              <AudioCompareTransport audioRef={originalPlayerRef} src={sourceUrl} kind="original" onStart={()=>editedPlayerRef.current?.pause()}/>
               <p>Your uploaded sound, before any edits.</p>
             </article>
             <div className="ax68-versus" aria-hidden="true"><span>VS</span></div>
             <article className="ax68-compare-audio ax68-compare-edited"><div className="ax68-player-title"><span className="ax68-player-icon">✦</span><div><small>02 / PROCESSED</small><strong>Edited preview</strong></div><b>{previewUrl&&!previewDirty?'READY':previewUrl&&previewDirty?'CHANGED':'PENDING'}</b></div>
-              {previewUrl?<audio ref={editedPlayerRef} controls preload="metadata" src={previewUrl} onPlay={()=>originalPlayerRef.current?.pause()} aria-label="Play edited preview"/>:
-                <button type="button" className="ax68-build-preview" disabled={Boolean(busy)} onClick={preview}>Build your edited preview <span aria-hidden="true">↗</span></button>}
+              {previewUrl&&!previewDirty?<AudioCompareTransport audioRef={editedPlayerRef} src={previewUrl} kind="edited" onStart={()=>originalPlayerRef.current?.pause()}/>:
+                <button type="button" className="ax68-build-preview" disabled={Boolean(busy)} onClick={preview}>{previewDirty?'Refresh edited preview':'Build your edited preview'} <span aria-hidden="true">↗</span></button>}
               <p>{previewUrl&&previewDirty?'Settings changed. Refresh preview to hear the latest edit.':previewUrl?'Processed with your current settings.':'The edited player appears after you press Preview Edit.'}</p>
             </article>
           </div>

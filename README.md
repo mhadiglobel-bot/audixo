@@ -1,3 +1,25 @@
+# AUDIXO V68 — UI Refinement & Source/Preview Compare
+
+This ZIP contains the complete editable Vite/React app (not a mockup). It builds on the V67 code and retains the 19-track phonk slider, 36 Studio presets, original editing engines, existing export filename fix, and browser-first converter architecture. It does **not** deploy anything automatically.
+
+## Changes
+
+- **Tools navigation:** compact three-column dropdown (two on small screens), names-only entries, neon-ring circular tool icons, keyboard and mouse access, and staggered entrance animation. Original routes and names remain unchanged.
+- **Quick audio workspaces (Trim, Pitch, Echo, Slowed + Reverb, 8D/16D):** unified white-glass surfaces, compact presets/buttons, corrected decorative upload panel, branded white logo plate, and real drag-and-drop file import.
+- **Original vs processed:** one consistently sized, responsive A/B listening comparison section, separated by an animated VS symbol. Each audio player pauses the other when played. Processed playback is generated only after clicking Preview; if settings change, the UI warns that preview must be refreshed.
+- **Nexivo & About:** deliberate spacing below the menu, readable text hierarchy, cleaner cards, and four-color animated borders without a rotating decorative wedge.
+- **Home and Features:** restrained glass cards and animated neon green/cyan/purple/pink outlines. No original buttons, CTAs, or destinations were removed.
+- **Footer:** calmer background, more consistent spacing and links.
+- **Build identity:** package version and service worker cache namespace updated to V68; Node.js stays pinned to 22.x.
+
+## Verification and limits
+
+The source contracts (`npm run test:tracks`), TypeScript/TSX syntax parsing, stylesheet parsing and ZIP integrity can be validated without downloading packages. A complete `npm ci && npm run build` and live interactive browser E2E still need to pass in a network-enabled environment; the packaging environment could not complete npm installation. Do not interpret source checks as proof of an error-free production deployment. Browser-only YouTube downloads remain subject to access/CORS restrictions.
+
+For preview: extract ZIP contents to the repository root, run `npm ci`, `npm run test:tracks`, `npm run build`, and verify each Quick Tool before promoting.
+
+---
+
 # AUDIXO V67 — Source ZIP for GitHub / Vercel
 
 This is an **editable Vite/React project**, not an image or mockup. The archive contains 99 project files (excluding dependencies). Extract and upload the **contents** to the GitHub repository root; do not upload the ZIP as a single file. Deployment remains under your control.

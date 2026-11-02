@@ -48,7 +48,7 @@ function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer){
 }
 
 export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagline}:Props){
-  const inputRef=useRef<HTMLInputElement|null>(null);const canvasRef=useRef<HTMLCanvasElement|null>(null);const waveRef=useRef<HTMLDivElement|null>(null);const workbenchRef=useRef<HTMLElement|null>(null)
+  const inputRef=useRef<HTMLInputElement|null>(null);const canvasRef=useRef<HTMLCanvasElement|null>(null);const waveRef=useRef<HTMLDivElement|null>(null);const workbenchRef=useRef<HTMLElement|null>(null);const originalPlayerRef=useRef<HTMLAudioElement|null>(null);const editedPlayerRef=useRef<HTMLAudioElement|null>(null);const [dropActive,setDropActive]=useState(false)
   const bufferRef=useRef<AudioBuffer|null>(null);const [fileName,setFileName]=useState('');const [duration,setDuration]=useState(0);const [trimStart,setTrimStart]=useState(0);const [trimEnd,setTrimEnd]=useState(0)
   const [gainDb,setGainDb]=useState(defaults.gainDb);const [speed,setSpeed]=useState(defaults.speed);const [fadeIn,setFadeIn]=useState(defaults.fadeIn);const [fadeOut,setFadeOut]=useState(defaults.fadeOut)
   const [delayMs,setDelayMs]=useState(mode==='slowed'?140:defaults.delayMs);const [delayWet,setDelayWet]=useState(mode==='slowed'?.04:defaults.delayWet);const [feedback,setFeedback]=useState(mode==='slowed'?.12:defaults.feedback);const [reverb,setReverb]=useState(defaults.reverb);const [pitch,setPitch]=useState(defaults.pitch);const [preservePitch,setPreservePitch]=useState(mode==='slowed')
@@ -149,12 +149,15 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
       <div className="v13-workbench-bar ax27-source-bar"><div><span className="v13-status-dot"/><strong>{fileName||'No audio loaded yet'}</strong><small>{duration?`${formatTime(duration,true)} source audio`:'Upload an MP3 or WAV to open the timeline.'}</small></div><div><button className="button button-glass" onClick={()=>inputRef.current?.click()}>{fileName?'Replace audio':'Upload audio'}</button>{bufferRef.current&&<button className="button button-glass" onClick={()=>setControlsCollapsed(v=>!v)}>{controlsCollapsed?'Show settings':'Hide settings'}</button>}<button className="button button-glass" onClick={toggleFullscreen}>{isFullscreen||isPseudoFullscreen?'Exit maximized':'Maximize'}</button></div></div>
       <input ref={inputRef} type="file" hidden accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" onChange={e=>{loadFile(e.target.files?.[0]);e.target.value=''}}/>
 
-      {!bufferRef.current?<button className="v13-empty-upload ax27-empty-upload ax28-cinematic-upload" onClick={()=>inputRef.current?.click()}>
-        <RotatingUploadLogo label={`AUDIXO · ${mode.toUpperCase()} STUDIO`}/>
-        <div className="ax28-upload-wave" aria-hidden="true">{Array.from({length:38},(_,i)=><i key={i} style={{'--i':i,'--h':`${24+((i*29)%66)}%`} as CSSProperties}/>)}</div>
-        <strong>Bring in your audio.</strong><span>Drop a file here or click to choose. The focused {title} workspace opens immediately after import.</span>
+      {!bufferRef.current?<button type="button" className={`v13-empty-upload ax27-empty-upload ax28-cinematic-upload ax68-upload-zone ${dropActive?'is-dragover':''}`} onClick={()=>inputRef.current?.click()}
+        onDragEnter={e=>{e.preventDefault();setDropActive(true)}} onDragOver={e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';setDropActive(true)}}
+        onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setDropActive(false)}}
+        onDrop={e=>{e.preventDefault();setDropActive(false);void loadFile(e.dataTransfer.files?.[0])}}>
+        <div className="ax68-upload-logo-plate"><RotatingUploadLogo label={`AUDIXO · ${mode.toUpperCase()} STUDIO`}/></div>
+        <strong>Bring in your audio.</strong><span>Drag your audio file here, or choose a file to start editing.</span>
+        <span className="ax68-upload-choose">Choose audio file <i aria-hidden="true">↗</i></span>
         <div className="ax28-upload-formats"><b>MP3</b><b>WAV</b><b>M4A</b><b>FLAC</b><b>OGG</b></div>
-        <em>Upload to shape to preview to download</em>
+        <em>Private to your browser · Preview before exporting</em>
       </button>:<>
         <div className="v13-progress-strip ax27-progress-strip"><span className="done">✓ Audio ready</span><span className={!controlsCollapsed?'active':''}>Adjust {title}</span><span className={previewUrl&&!previewDirty?'done':''}>Preview</span><span>Download</span></div>
         <div className={`ax27-quick-grid ${controlsCollapsed?'single':''}`}>
@@ -168,7 +171,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             </div>
             <div className="v13-time-fields ax27-time-fields"><label><span>START</span><input type="number" min="0" max={trimEnd-.02} step=".001" value={trimStart.toFixed(3)} onChange={e=>setTrimStart(Math.max(0,Math.min(Number(e.target.value)||0,trimEnd-.02)))}/></label><label><span>END</span><input type="number" min={trimStart+.02} max={duration} step=".001" value={trimEnd.toFixed(3)} onChange={e=>setTrimEnd(Math.min(duration,Math.max(Number(e.target.value)||duration,trimStart+.02)))}/></label><div><span>SELECTED</span><strong>{formatTime(selectedDuration,true)}</strong></div><button onClick={()=>{setTrimStart(0);setTrimEnd(duration)}}>Use full audio</button></div>
             {mode==='trim'&&<div className="v13-fade-status ax27-fade-status"><button className={fadeIn>.01?'active':''} onClick={()=>setFadeIn(fadeIn>.01?0:Math.min(.8,selectedDuration/4))}><i/> <span><strong>Fade in {fadeIn>.01?'ON':'OFF'}</strong><small>{fadeIn>.01?`${fadeIn.toFixed(2)} sec applied`:'Add a smooth entrance'}</small></span></button><button className={fadeOut>.01?'active red':''} onClick={()=>setFadeOut(fadeOut>.01?0:Math.min(.8,selectedDuration/4))}><i/> <span><strong>Fade out {fadeOut>.01?'ON':'OFF'}</strong><small>{fadeOut>.01?`${fadeOut.toFixed(2)} sec applied`:'Add a smooth ending'}</small></span></button></div>}
-            {sourceUrl&&<div className="v13-audio-player ax27-source-player"><span>ORIGINAL SOURCE</span><audio controls src={sourceUrl}/></div>}
+            <div className="ax68-timeline-footnote">The original waveform stays visible while you adjust the selected range.</div>
           </section>
 
           {!controlsCollapsed&&<aside className="v13-controls-card ax27-control-dock">
@@ -183,7 +186,21 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
           </aside>}
         </div>
         <section className="ax27-export-dock"><div><label>FORMAT<select value={format} onChange={e=>setFormat(e.target.value as 'mp3'|'wav')}><option value="mp3">MP3</option><option value="wav">WAV</option></select></label>{format==='mp3'&&<label>QUALITY<select value={kbps} onChange={e=>setKbps(Number(e.target.value))}>{[96,128,192,256,320].map(v=><option value={v} key={v}>{v} kbps</option>)}</select></label>}<label className="v13-check"><input type="checkbox" checked={saveLibrary} onChange={e=>setSaveLibrary(e.target.checked)}/><span>Save to Library</span></label></div><div><button className="button button-glass" disabled={Boolean(busy)} onClick={preview}>{previewDirty&&previewUrl?'Refresh Preview':'Preview Edit'}</button><button className="button button-primary" disabled={Boolean(busy)} onClick={exportAudio}>{busy||`Download ${format.toUpperCase()}`}</button></div></section>
-        {previewUrl&&<div className={`v13-preview-card ax27-preview-card ${previewDirty?'is-stale':''}`}><div><span>EDITED PREVIEW</span>{previewDirty&&<b>Settings changed · refresh preview</b>}</div><audio controls src={previewUrl}/></div>}
+        <section className={`ax68-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">
+          <header className="ax68-compare-heading"><div><small>LISTEN & COMPARE</small><strong>Hear the difference.</strong></div><span>{previewUrl&&!previewDirty?'Edited preview ready':'Original audio available'}</span></header>
+          <div className="ax68-compare-grid">
+            <article className="ax68-compare-audio ax68-compare-original"><div className="ax68-player-title"><span className="ax68-player-icon">♫</span><div><small>01 / SOURCE</small><strong>Original audio</strong></div><b>UNCHANGED</b></div>
+              <audio ref={originalPlayerRef} controls preload="metadata" src={sourceUrl} onPlay={()=>editedPlayerRef.current?.pause()} aria-label="Play original audio"/>
+              <p>Your uploaded sound, before any edits.</p>
+            </article>
+            <div className="ax68-versus" aria-hidden="true"><span>VS</span></div>
+            <article className="ax68-compare-audio ax68-compare-edited"><div className="ax68-player-title"><span className="ax68-player-icon">✦</span><div><small>02 / PROCESSED</small><strong>Edited preview</strong></div><b>{previewUrl&&!previewDirty?'READY':previewUrl&&previewDirty?'CHANGED':'PENDING'}</b></div>
+              {previewUrl?<audio ref={editedPlayerRef} controls preload="metadata" src={previewUrl} onPlay={()=>originalPlayerRef.current?.pause()} aria-label="Play edited preview"/>:
+                <button type="button" className="ax68-build-preview" disabled={Boolean(busy)} onClick={preview}>Build your edited preview <span aria-hidden="true">↗</span></button>}
+              <p>{previewUrl&&previewDirty?'Settings changed. Refresh preview to hear the latest edit.':previewUrl?'Processed with your current settings.':'The edited player appears after you press Preview Edit.'}</p>
+            </article>
+          </div>
+        </section>
         {message&&<div className="v13-tool-message ax27-tool-message">{message}</div>}
       </>}
     </section>

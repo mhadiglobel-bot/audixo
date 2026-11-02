@@ -55,3 +55,12 @@ build: `npm run build`, output: `dist`. No Render/Docker deployment is needed.
 The audio editor's existing timeline, cuts, fades, Smart Pauses, motion controls,
 voice recorder, export routes, and 19-track catalog are preserved. No credentials,
 login cookies, node_modules, cache, or generated build output is bundled.
+
+
+## V66.1 — Node.js 26 build compatibility guard
+
+The earlier V66 package declared `engines.node: ">=20"`. On October 29, 2026, Vercel made Node.js 26 its default and automatically upgraded builds whose semver range allowed 26. A deployment screenshot then showed Node.js v26.13.0 terminating with an ESM `SyntaxError: Invalid or unexpected token`.
+
+**Change:** `package.json` and `package-lock.json` now both pin `node: "22.x"` (Node.js 22 LTS), matching the stable Node major used for local JS syntax and SSR self-tests. This prevents the unreviewed Node 26 upgrade without changing the website, media, audio effects or UI. The pin overrides the Vercel project Node setting during the next new build.
+
+**Check:** Vercel build logs should now show Node 22.x. After uploading, redeploy a *new* Preview build and confirm `npm run build` completes. If a syntax error still appears, capture the full build logs above its stack trace, especially the first file/module path. This source-only repair cannot independently certify the full Vite production build here because npm dependency packages are not available in the local sandbox.

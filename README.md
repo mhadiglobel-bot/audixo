@@ -1,3 +1,33 @@
+# AUDIXO V70 — Branded Controls and Sound Lab Refinement
+
+This is the **complete GitHub/Vercel source project**, based on V69. It is not a patch, render, or deployed site.
+
+## Changes
+
+- Shared accessible **branded dropdown** replaces native blue/white OS selection menus across Quick Editors, Mashup export, full-length editor, full Studio, and Library sorting.
+- Sound Lab album cards become compact pill shapes with soft glass depth/shadows, circular covers, no visible borders, and the existing automatic scroll / hover-pause / horizontal wheel / mouse drag behavior.
+- Floating phonk disc has counter-rotating neon ring and expands on hover/focus to offer title, play/pause, volume and **pause/close**. Choosing another track reopens the dock.
+- All blank upload screens use the official Audixo symbol and counter-rotating circular neon halo, removing the square framing from the Quick Editor upload area.
+- Echo, Pitch, Trim, Slowed & Reverb, Motion and Mashup control surfaces use the same rounded sliders, neutral light glass and subtle neon accents.
+- Mashup timeline has larger aligned track rows, quieter DAW-style grid, trimmed clips and a custom preview transport (play/pause, seek and times).
+- Homepage metrics CTA buttons have refined light glass/pill styling. Nexivo and About now display a clear section heading before the value-card grids.
+- Updated PWA cache namespace and meta release identifier.
+
+## Deploy later (not done here)
+
+Upload the **contents** of this ZIP into your GitHub repository root (not the ZIP itself), and run the Vercel Preview build. Use Node.js 22.x, `npm ci`, `npm run test:tracks`, `npm run build` and `dist` as output. Confirm build, track playback, export names, and browser audio encoding before production.
+
+## QA and limitations
+
+- Source syntax parsing and local-import resolution validated (see build QA from this conversation).
+- `npm run test:tracks` passed.
+- CSS parsed without errors.
+- Full `npm run build` and actual browser audio/visual audition could not run in the current sandbox because npm dependency retrieval/browser navigation was unavailable. This ZIP is **not guaranteed error-free on Vercel** until a full Preview build succeeds.
+- No new external worker, Render or Docker dependency was added. Browser-direct YouTube downloads remain limited by source permissions and CORS restrictions.
+- No cookies, session secrets or credentials bundled.
+
+---
+
 # AUDIXO V68 — UI Refinement & Source/Preview Compare
 
 This ZIP contains the complete editable Vite/React app (not a mockup). It builds on the V67 code and retains the 19-track phonk slider, 36 Studio presets, original editing engines, existing export filename fix, and browser-first converter architecture. It does **not** deploy anything automatically.

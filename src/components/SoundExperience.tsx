@@ -203,6 +203,7 @@ export function SoundExperienceProvider({children}:{children:ReactNode}){
   if(i<0||i>=DEMO_TRACKS.length||!mediaRef.current)return
   phraseState.current={wasLoud:false,lastLoud:0,speechStart:0,triggered:false,lastRead:0}
   setTrack(i);setParams({...NEUTRAL});setPresetId('');setCompare(100);setActiveTab('Clip');setError('')
+  window.dispatchEvent(new Event('audixo:track-selected'))
   const media=mediaRef.current,track=DEMO_TRACKS[i],currentSource=media.dataset.demoSrc||REEL
   pendingStart.current=track.from
   try{
@@ -515,9 +516,21 @@ export function SoundPlayground(){
 export function SoundModeControl(){
  const {pathname}=useLocation()
  const {trackIndex,isPlaying,toggle,progress,volume,setVolume,cueEnabled,setCueEnabled}=useSound()
+ const [dismissed,setDismissed]=useState(false)
+ useEffect(()=>{setDismissed(false)},[trackIndex])
+ useEffect(()=>{const reopen=()=>setDismissed(false);window.addEventListener('audixo:track-selected',reopen);return()=>window.removeEventListener('audixo:track-selected',reopen)},[])
  const isEditor=isEditorPath(pathname),track=trackIndex!==null?DEMO_TRACKS[trackIndex]:null
+ const closePlayer=()=>{if(isPlaying)toggle();setDismissed(true)}
  return <>
-  {!isEditor&&track&&<div className="ax49-floating-player" role="group" aria-label="Persistent Audixo music player"><button className="ax49-floating-cover" type="button" aria-label="Play or pause music" onClick={toggle}><TrackArt index={trackIndex!}/></button><span><strong>{track.title}</strong><small>{isPlaying?'Playing across AUDIXO':'Paused'} · {formatTime(progress)}</small></span><button type="button" className="ax49-floating-toggle" onClick={toggle} aria-label={isPlaying?'Pause music':'Play music'}>{isPlaying?'Ⅱ':'▶'}</button><label className="ax49-floating-volume">Volume <input type="range" min="0" max="100" value={volume} onChange={e=>setVolume(+e.target.value)} aria-label="Music volume"/></label></div>}
+  {!isEditor&&track&&!dismissed&&<div className={`ax49-floating-player ax70-floating-dock ${isPlaying?'is-playing':'is-paused'}`} role="group" aria-label="Persistent AUDIXO music player">
+    <button className="ax49-floating-cover ax70-floating-disc" type="button" aria-label={`${isPlaying?'Pause':'Play'} ${track.title}`} onClick={toggle}><TrackArt index={trackIndex!}/></button>
+    <div className="ax70-floating-details">
+     <div className="ax70-floating-track"><strong title={track.title}>{track.title}</strong><small>{isPlaying?'Now playing':'Paused'} · {formatTime(progress)}</small></div>
+     <button className="ax70-floating-transport" type="button" onClick={toggle} aria-label={isPlaying?'Pause music':'Play music'}>{isPlaying?'Ⅱ':'▶'}</button>
+     <label className="ax70-floating-volume"><span>VOL</span><input type="range" min="0" max="100" value={volume} onChange={e=>setVolume(+e.target.value)} aria-label="Music volume"/></label>
+     <button type="button" className="ax70-floating-close" aria-label="Pause and close floating player" title="Pause and close" onClick={closePlayer}>×</button>
+    </div>
+   </div>}
   {!isEditor&&<button type="button" className={`ax49-cues-toggle ${cueEnabled?'active':''}`} aria-pressed={cueEnabled} onClick={()=>setCueEnabled(!cueEnabled)} title="Optional AUDIXO success chimes">{cueEnabled?'♫':'♪'} <span>UI cues {cueEnabled?'On':'Off'}</span></button>}
  </>
 }

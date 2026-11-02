@@ -1,4 +1,5 @@
 import {RotatingUploadLogo} from '../components/Logo'
+import {AudixoSelect} from '../components/QualityRail'
 import {emitAudixoSuccess,emitAudixoInteraction} from '../components/SoundExperience'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from 'react'
@@ -61,7 +62,7 @@ function AudioCompareTransport({audioRef,src,onStart,kind}:{audioRef:RefObject<H
    <button type="button" className="ax69-play" onClick={toggle} aria-label={`${playing?'Pause':'Play'} ${kind} audio`}>{playing?'❚❚':'▶'}</button>
    <div className="ax69-transport-meter"><input type="range" min="0" max={Math.max(.01,length)} step=".01" value={Math.min(position,Math.max(.01,length))} onChange={e=>seek(Number(e.target.value))} disabled={!length} aria-label={`Seek ${kind} audio`} style={{'--ax69-progress':`${pct}%`} as CSSProperties}/><div className="ax69-transport-time"><span>{formatTime(position,true)}</span><span>{formatTime(length,true)}</span></div></div>
    <button type="button" className={`ax69-mute ${muted?'is-muted':''}`} onClick={()=>{const next=!muted;setMuted(next);if(audioRef.current)audioRef.current.muted=next}} aria-label={`${muted?'Unmute':'Mute'} ${kind} audio`}>{muted?'◌':'♪'}</button>
-   <select className="ax69-rate" value={rate} onChange={e=>{const next=Number(e.target.value);setRate(next);if(audioRef.current)audioRef.current.playbackRate=next}} aria-label={`${kind} playback speed`}><option value=".75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select>
+   <AudixoSelect className="ax70-speed-select" ariaLabel={`${kind} playback speed`} value={String(rate)} options={[{value:'0.75',label:'0.75×'},{value:'1',label:'1×'},{value:'1.25',label:'1.25×'},{value:'1.5',label:'1.5×'}]} onChange={v=>{const next=Number(v);setRate(next);if(audioRef.current)audioRef.current.playbackRate=next}}/>
   </div>{playError&&<small className="ax69-player-error">Audio could not be played in this browser.</small>}
  </div>
 }
@@ -206,7 +207,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             <div className="v13-applied-panel ax27-applied-panel"><span>ACTIVE ON EXPORT</span><div>{applied.map(item=><b key={item}>✓ {item}</b>)}</div></div>
           </aside>}
         </div>
-        <section className="ax27-export-dock"><div><label>FORMAT<select value={format} onChange={e=>setFormat(e.target.value as 'mp3'|'wav')}><option value="mp3">MP3</option><option value="wav">WAV</option></select></label>{format==='mp3'&&<label>QUALITY<select value={kbps} onChange={e=>setKbps(Number(e.target.value))}>{[96,128,192,256,320].map(v=><option value={v} key={v}>{v} kbps</option>)}</select></label>}<label className="v13-check"><input type="checkbox" checked={saveLibrary} onChange={e=>setSaveLibrary(e.target.checked)}/><span>Save to Library</span></label></div><div><button className="button button-glass" disabled={Boolean(busy)} onClick={preview}>{previewDirty&&previewUrl?'Refresh Preview':'Preview Edit'}</button><button className="button button-primary" disabled={Boolean(busy)} onClick={exportAudio}>{busy||`Download ${format.toUpperCase()}`}</button></div></section>
+        <section className="ax27-export-dock"><div><label>FORMAT<AudixoSelect ariaLabel="Audio export format" value={format} options={[{value:'mp3',label:'MP3'},{value:'wav',label:'WAV'}]} onChange={v=>setFormat(v as 'mp3'|'wav')}/></label>{format==='mp3'&&<label>QUALITY<AudixoSelect ariaLabel="Audio bitrate" value={String(kbps)} options={[96,128,192,256,320].map(v=>({value:String(v),label:`${v} kbps`}))} onChange={v=>setKbps(Number(v))}/></label>}<label className="v13-check"><input type="checkbox" checked={saveLibrary} onChange={e=>setSaveLibrary(e.target.checked)}/><span>Save to Library</span></label></div><div><button className="button button-glass" disabled={Boolean(busy)} onClick={preview}>{previewDirty&&previewUrl?'Refresh Preview':'Preview Edit'}</button><button className="button button-primary" disabled={Boolean(busy)} onClick={exportAudio}>{busy||`Download ${format.toUpperCase()}`}</button></div></section>
         <section className={`ax68-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">
           <header className="ax68-compare-heading"><div><small>LISTEN & COMPARE</small><strong>Hear the difference.</strong></div><span>{previewUrl&&!previewDirty?'Edited preview ready':'Original audio available'}</span></header>
           <div className="ax68-compare-grid">

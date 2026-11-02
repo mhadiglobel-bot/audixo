@@ -1712,3 +1712,158 @@
  animation:ax69-rim-run 17s linear infinite!important;
  transform:none!important;translate:0 0!important;rotate:0deg!important;
 }
+
+/* AUDIXO V70 — cohesive studio surfaces, brand selects, calm moving neon accents.
+   Scoped at the end to override earlier experimental versions without editing DSP. */
+:root{--ax70-green:#19da92;--ax70-cyan:#1acbdf;--ax70-pink:#ed50cb;--ax70-purple:#8559ee;--ax70-ink:#203354;--ax70-edge:linear-gradient(110deg,var(--ax70-green),var(--ax70-cyan),var(--ax70-purple),var(--ax70-pink),var(--ax70-green));--ax70-lightshadow:0 15px 38px rgba(41,59,107,.085)}
+@keyframes ax70BorderDrift{0%,100%{background-position:0 0,0% 50%}50%{background-position:0 0,100% 50%}}
+@keyframes ax70OrbitForward{to{transform:rotate(360deg)}}
+@keyframes ax70OrbitReverse{to{transform:rotate(-360deg)}}
+@keyframes ax70MenuItem{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+
+/* Branded accessible selects across Quick Tools, full Studio, Library and Mashup. */
+.ax70-select{display:inline-flex;position:relative;vertical-align:middle;min-width:100px;max-width:100%;width:100%;isolation:isolate}
+.ax70-select-trigger{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;min-width:0;min-height:42px;padding:9px 12px!important;border:1px solid #dce6f5!important;border-radius:13px!important;background:linear-gradient(160deg,#fff,#f5f8ff)!important;box-shadow:inset 0 1px rgba(255,255,255,.96),0 3px 10px rgba(58,75,143,.04)!important;font:800 12px/1.2 var(--round)!important;color:#293b5b!important;cursor:pointer;text-align:left;transition:border-color .17s ease,box-shadow .17s ease!important;appearance:none}
+.ax70-select-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax70-select-trigger svg{display:block;width:16px;height:16px;flex-shrink:0;color:#8c70d3;transition:transform .18s ease}
+.ax70-select.is-open .ax70-select-trigger svg{transform:rotate(180deg)}
+.ax70-select.is-open .ax70-select-trigger,.ax70-select-trigger:hover,.ax70-select-trigger:focus-visible{border-color:#ae9bea!important;box-shadow:0 0 0 3px rgba(140,107,227,.10),0 5px 15px rgba(67,71,141,.07)!important;outline:none}
+.ax70-select-popup{z-index:9999;box-sizing:border-box;overflow-y:auto;padding:7px;border:1px solid #dedff4;border-radius:16px;background:rgba(255,255,255,.985);backdrop-filter:blur(23px);box-shadow:0 19px 48px rgba(35,45,103,.18),inset 0 1px rgba(255,255,255,.9);animation:ax70MenuItem .18s cubic-bezier(.22,.83,.3,1) both;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbbbf8 transparent}
+.ax70-select-popup button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:39px;padding:9px 11px;border:0;border-radius:10px;background:transparent;color:#2d3b5f;font:750 12px/1.3 var(--round);text-align:left;cursor:pointer;transition:background .15s ease,color .15s ease}
+.ax70-select-popup button:hover,.ax70-select-popup button:focus-visible{outline:0;background:#f1ecff;color:#6c48c4}
+.ax70-select-popup button.selected{background:linear-gradient(95deg,#e9fff6,#effbff,#f6efff);color:#6447bc;font-weight:900}
+.ax70-select-popup button i{font-style:normal;font-weight:900;color:#18b98b}
+.v13-quick-page .ax27-export-dock label>.ax70-select,.ax29-mashup-export label>.ax70-select,.ax-stream-controls label>.ax70-select,.ax25-library-toolbar label>.ax70-select{min-width:113px;margin-top:5px}
+.v13-quick-page .ax69-transport .ax70-speed-select{width:93px!important;flex:0 0 93px;min-width:93px}
+.v13-quick-page .ax69-transport .ax70-speed-select .ax70-select-trigger{min-height:34px!important;padding:7px 8px!important;font-size:11px!important;border-radius:10px!important}
+.ax25-library-toolbar .ax70-select{min-width:175px}
+.ax38-timeline-switcher .ax70-select{width:100%;max-width:210px}
+.export-modal .ax70-select{min-width:118px;width:155px}
+.ax29-mashup-export .ax70-select{min-width:116px}
+
+/* One consistent editor control grammar: inset track, curved stroke, centred thumb. */
+.v13-quick-page .v13-slider,.ax29-mashup-inspector .ax29-slider{border:1px solid #e4eaf5!important;background:linear-gradient(150deg,#fff,#f8faff)!important;border-radius:17px!important;box-shadow:inset 0 1px rgba(255,255,255,.88)!important;padding:13px 15px!important}
+.v13-quick-page .v13-slider.is-active{border-color:#c8e8e6!important;background:linear-gradient(150deg,#f9fffc,#f7f7ff)!important}
+.v13-quick-page input[type="range"],.ax29-mashup-page input[type="range"],.ax-studio input[type="range"]{accent-color:#815bdf!important;cursor:pointer}
+.v13-quick-page .v13-slider input[type="range"],.ax29-mashup-inspector .ax29-slider input[type="range"]{appearance:none!important;-webkit-appearance:none!important;width:100%;height:20px;min-height:20px;background:transparent!important;margin:8px 0 0!important}
+.v13-quick-page .v13-slider input[type="range"]::-webkit-slider-runnable-track,.ax29-mashup-inspector .ax29-slider input[type="range"]::-webkit-slider-runnable-track{height:7px!important;border:0!important;border-radius:99px!important;background:linear-gradient(90deg,#23d6a4,#27c8e8,#9462e7) no-repeat!important;background-size:var(--quick-range,50%) 100%!important;background-color:#e7ecf5!important}
+.v13-quick-page .v13-slider input[type="range"]::-webkit-slider-thumb,.ax29-mashup-inspector .ax29-slider input[type="range"]::-webkit-slider-thumb{appearance:none!important;-webkit-appearance:none!important;width:18px!important;height:18px!important;margin-top:-5.5px!important;border:3px solid #8d65e0!important;border-radius:50%!important;background:#fff!important;box-shadow:0 3px 10px rgba(98,73,169,.18)!important}
+.v13-quick-page .v13-slider input[type="range"]::-moz-range-track,.ax29-mashup-inspector .ax29-slider input[type="range"]::-moz-range-track{height:7px;border-radius:99px;background:#e7ecf5}
+.v13-quick-page .v13-slider input[type="range"]::-moz-range-progress,.ax29-mashup-inspector .ax29-slider input[type="range"]::-moz-range-progress{height:7px;background:#8063d9;border-radius:99px}
+.v13-quick-page :is(.ax27-preset-row button,.ax27-workbench button,.ax69-transport button):focus-visible,.ax29-mashup-page button:focus-visible{outline:3px solid rgba(140,101,224,.46)!important;outline-offset:2px}
+.v13-quick-page .ax27-preset-row button{border-radius:15px!important;border:1px solid #dfe6f3!important;background:#fff!important;box-shadow:0 3px 8px rgba(50,68,129,.025)!important;transition:transform .16s,box-shadow .16s!important}
+.v13-quick-page .ax27-preset-row button:hover{transform:translateY(-2px);border-color:#c9bbee!important;box-shadow:0 9px 17px rgba(65,80,143,.08)!important}
+.v13-quick-page .ax27-export-dock .button,.ax29-mashup-export button,.v13-quick-page .ax27-source-bar button{border-radius:999px!important;min-height:40px!important;padding:9px 17px!important}
+.v13-quick-page .ax27-export-dock .button-primary{background:linear-gradient(110deg,#25bc93,#24b4cc,#8063d9)!important;color:#fff!important;border:0!important}
+
+/* The shared blank upload uses real brand art with two counter-rotating neon halos. */
+.v13-quick-page .ax68-upload-logo-plate,.ax28-cinematic-upload .ax68-upload-logo-plate{border:0!important;border-radius:50%!important;box-shadow:none!important;background:transparent!important;padding:0!important;overflow:visible!important}
+.ax48-upload-brand{background:transparent!important;box-shadow:none!important;border:0!important}
+.ax48-upload-orbit{isolation:isolate;overflow:visible!important;border-radius:50%!important;background:transparent!important;box-shadow:none!important}
+.ax48-upload-orbit::before,.ax48-upload-orbit::after{content:"";position:absolute;display:block;pointer-events:none;border-radius:50%;inset:-10px;background:conic-gradient(#1be2a6,#1ed5f7,#8e69ed,#f153c9,#1be2a6);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:ax70OrbitReverse 5.4s linear infinite!important}
+.ax48-upload-orbit::after{inset:-18px;opacity:.27;filter:blur(.5px);animation-duration:9.2s!important;animation-direction:normal!important}
+.ax48-upload-orbit>i{opacity:0!important}
+.v13-quick-page .ax68-upload-logo-plate .ax48-upload-orbit img,.ax48-upload-orbit img{display:block;width:73%!important;height:73%!important;max-width:none!important;object-fit:contain!important;border-radius:50%!important;animation:ax70OrbitForward 16s linear infinite!important;filter:drop-shadow(0 9px 15px rgba(68,49,140,.16))!important}
+
+/* Compact Tools menu with genuine sequential reveal and circular custom icons. */
+.ax25-header-wrap .ax25-tools-menu{width:min(520px,calc(100vw - 22px))!important;padding:16px!important;border:1px solid #e6e9f4!important;border-radius:23px!important;background:rgba(255,255,255,.975)!important;backdrop-filter:blur(24px)!important;box-shadow:0 24px 57px rgba(46,63,116,.14)!important}
+.ax25-tools[open] .ax68-tools-grid>a{animation:ax70MenuItem .32s cubic-bezier(.2,.82,.24,1) both!important;animation-delay:var(--ax68-delay,0ms)!important}
+.ax25-tools-menu .ax68-tools-grid{gap:7px!important}
+.ax25-tools-menu .ax68-tools-grid>a{min-height:51px!important;padding:7px 9px!important;gap:9px!important;border:1px solid #edf0f7!important;border-radius:13px!important;background:#fff!important}
+.ax25-tools-menu .ax68-tools-grid>a:hover{background:#f7faff!important;box-shadow:0 8px 19px rgba(68,83,148,.08)!important}
+.ax25-tools-menu .ax68-tools-grid .ax68-tool-icon{display:grid!important;place-items:center!important;width:33px!important;height:33px!important;min-width:33px!important;flex:0 0 33px!important;border:1px solid transparent!important;border-radius:50%!important;background:linear-gradient(#fff,#fff) padding-box,var(--ax70-edge) border-box!important;background-size:100% 100%,330% 330%!important;animation:ax70BorderDrift 5s linear infinite!important;box-shadow:0 5px 10px rgba(104,87,164,.08)!important}
+.ax25-tools-menu .ax68-tools-grid .ax68-tool-icon svg{display:block!important;width:17px!important;height:17px!important;margin:auto!important;transform:none!important}
+
+/* Song pills: no hard stroke; floating translucent depth and circular album covers. */
+.ax67-songs-section.ax49-strip-section{background:linear-gradient(130deg,rgba(255,255,255,.98),rgba(247,250,255,.89))!important;border-radius:27px!important;border:1px solid #e2eaf6!important;box-shadow:var(--ax70-lightshadow)!important}
+.ax67-songs-viewport{padding:18px 10px!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:999px!important;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)!important;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)!important;touch-action:pan-y!important;cursor:grab!important;scrollbar-width:none}
+.ax67-songs-viewport::-webkit-scrollbar{display:none!important}
+.ax67-songs-lane{gap:13px!important}
+.ax67-song-card,.ax67-songs-viewport.is-ready .ax67-song-card{
+ width:205px!important;min-width:205px!important;flex:0 0 205px!important;height:68px!important;min-height:68px!important;padding:8px 12px 8px 8px!important;gap:10px!important;
+ border:0!important;border-radius:999px!important;outline:0!important;rotate:0deg!important;translate:0 0!important;transform:none!important;opacity:1!important;
+ background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(246,246,255,.76))!important;
+ box-shadow:0 7px 20px rgba(57,69,136,.13),inset 0 1px rgba(255,255,255,.98)!important;
+ backdrop-filter:blur(18px)!important;
+ animation:none!important;transition:box-shadow .18s ease,background .18s ease,translate .18s ease!important
+}
+.ax67-song-card:hover,.ax67-song-card.active{translate:0 -2px!important;transform:none!important;border:0!important;box-shadow:0 11px 25px rgba(89,69,158,.18),0 3px 13px rgba(39,211,204,.09)!important;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(243,241,255,.93))!important}
+.ax67-song-card .ax49-track-art{width:50px!important;height:50px!important;min-width:50px!important;flex:0 0 50px!important;border-radius:50%!important;overflow:hidden!important;box-shadow:0 3px 9px rgba(46,39,107,.12)!important}
+.ax67-song-card .ax49-track-art img{border-radius:50%!important}
+.ax67-song-card .ax67-song-action{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#f3efff;color:#8258d8;font-size:12px!important;align-self:center}
+.ax67-song-label strong{font-size:11px!important;color:#243658!important;line-height:1.22!important}
+.ax67-song-label small{font-size:9px!important}
+
+/* A compact rotating disc that expands on hover/focus, then can be paused + dismissed. */
+.ax49-floating-player.ax70-floating-dock{position:fixed!important;left:auto!important;right:18px!important;bottom:20px!important;z-index:760!important;display:flex!important;align-items:center!important;width:60px!important;max-width:min(365px,calc(100vw - 26px))!important;height:60px!important;padding:5px!important;gap:0!important;border:1px solid rgba(193,183,235,.5)!important;border-radius:999px!important;background:rgba(255,255,255,.94)!important;box-shadow:0 12px 35px rgba(47,59,120,.18)!important;backdrop-filter:blur(20px)!important;overflow:hidden!important;transition:width .32s cubic-bezier(.18,.8,.22,1),box-shadow .2s!important}
+.ax49-floating-player.ax70-floating-dock:hover,.ax49-floating-player.ax70-floating-dock:focus-within{width:355px!important;box-shadow:0 18px 42px rgba(46,61,125,.23)!important}
+.ax70-floating-disc{flex:0 0 48px;width:48px;height:48px;display:grid;place-items:center;position:relative;border-radius:50%;isolation:isolate;overflow:visible!important}
+.ax70-floating-disc:before{content:"";position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(#12e0a0,#19d6ef,#8355ec,#f150c3,#12e0a0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:ax70OrbitReverse 3.8s linear infinite;pointer-events:none}
+.ax70-floating-disc .ax49-track-art{width:42px!important;height:42px!important;min-width:42px!important;border-radius:50%!important;overflow:hidden!important}
+.ax70-floating-disc .ax49-track-art img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+.ax70-floating-dock.is-playing:not(:hover):not(:focus-within) .ax70-floating-disc .ax49-track-art{animation:ax70OrbitForward 12s linear infinite!important}
+.ax70-floating-details{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:0 1px 0 12px;opacity:0;visibility:hidden;transition:opacity .17s ease,visibility .17s}
+.ax70-floating-dock:hover .ax70-floating-details,.ax70-floating-dock:focus-within .ax70-floating-details{opacity:1;visibility:visible;transition-delay:.10s}
+.ax70-floating-track{display:grid;gap:3px;min-width:0;flex:1}
+.ax70-floating-track strong{font:900 11px/1.2 var(--round);color:#233959;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax70-floating-track small{font:700 9px var(--round);color:#8594ac}
+.ax70-floating-transport,.ax70-floating-close{display:grid!important;place-items:center!important;flex:0 0 31px;width:31px;height:31px;border:0!important;border-radius:50%!important;background:#f0edff!important;color:#7755d3!important;font-size:15px!important;padding:0!important;cursor:pointer}
+.ax70-floating-transport:hover{background:#7853db!important;color:#fff!important}
+.ax70-floating-close{background:#fff3f7!important;color:#bd5986!important;font-size:19px!important}
+.ax70-floating-volume{display:grid;gap:3px;font-size:8px;color:#8c7ac0;flex:0 0 44px}
+.ax70-floating-volume input{width:44px;accent-color:#9162e4}
+
+/* Metric CTA: lighter consistent actions, never dominant navy rectangles. */
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a{border:1px solid #d9e0f2!important;border-radius:999px!important;background:linear-gradient(140deg,#fff,#f7f7ff)!important;box-shadow:0 5px 13px rgba(65,83,141,.055)!important;color:#283b61!important;font-size:11px!important;font-weight:900!important;min-height:41px!important;padding:10px 14px!important}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card>a:hover{background:linear-gradient(120deg,#eafff7,#edfaff,#f7edff)!important;box-shadow:0 8px 18px rgba(73,85,147,.10)!important;transform:translateY(-2px)}
+.ax52-metrics-shell .ax39-metric-card.ax46-metric-card{border:1px solid #e0e8f5!important;background:linear-gradient(155deg,rgba(255,255,255,.97),rgba(247,250,255,.93))!important;box-shadow:0 14px 27px rgba(47,75,117,.065)!important}
+
+/* Mashup: contiguous DAW grid, legible lanes and compact inspector. */
+.ax29-mashup-shell{border-radius:26px!important;background:linear-gradient(150deg,#fff,#f9fbff)!important;box-shadow:0 21px 50px rgba(43,60,116,.08)!important}
+.ax29-mashup-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(265px,292px)!important;gap:12px!important;align-items:start!important}
+.ax29-arrangement{min-width:0;border:1px solid #dce6f3;border-radius:19px!important;overflow:hidden;background:#fff!important}
+.ax29-arrangement-scroll{min-height:290px!important;max-height:470px!important;background:#fafdff!important;scrollbar-width:thin;scrollbar-color:#c2cbe5 transparent}
+.ax29-arrangement-inner{min-width:100%!important;background:repeating-linear-gradient(90deg,transparent 0 69px,rgba(93,115,169,.045) 70px),linear-gradient(#fcfdff,#f8fbff)!important}
+.ax29-ruler{background:#f4f7fc!important;border-bottom:1px solid #dce5f1!important;min-height:31px!important}
+.ax29-track{grid-template-columns:142px minmax(0,1fr)!important;min-height:96px!important;border-bottom:1px solid #e2e9f2!important;background:transparent!important}
+.ax29-track>aside{min-height:96px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;padding:8px 11px!important;background:#f7f9fe!important;border-right:1px solid #dce5f2!important}
+.ax29-track>aside strong{display:block;font-size:10px!important;color:#253952!important;max-width:125px!important}
+.ax29-track>aside input{display:block!important;width:100%!important;max-width:120px!important}
+.ax29-track-lane{min-height:96px!important;height:96px!important;background:repeating-linear-gradient(90deg,transparent 0 69px,rgba(86,114,165,.065) 70px),linear-gradient(180deg,#fff,#f8faff)!important}
+.ax29-track:nth-child(even) .ax29-track-lane{background:repeating-linear-gradient(90deg,transparent 0 69px,rgba(86,114,165,.06) 70px),linear-gradient(180deg,#f8faff,#f4f8fc)!important}
+.ax29-clip{top:10px!important;height:76px!important;min-height:76px!important;border-radius:11px!important;border:1px solid rgba(120,113,213,.25)!important;background:linear-gradient(180deg,#eefefa,#f1f6ff)!important;box-shadow:0 2px 8px rgba(52,93,140,.07)!important}
+.ax29-clip-wave{top:24px!important;bottom:8px!important}
+.ax29-clip>b{font-size:9px!important;line-height:1.25!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 28px)}
+.ax29-clip.selected{border-color:#8a65e3!important;box-shadow:inset 0 0 0 1px rgba(139,93,228,.35),0 0 0 2px rgba(139,93,228,.10),0 4px 14px rgba(65,85,156,.13)!important}
+.ax29-mashup-inspector{min-height:300px!important;max-height:590px!important;display:flex!important;flex-direction:column!important;box-shadow:0 9px 25px rgba(52,72,119,.055)!important}
+.ax29-inspector-scroll{scrollbar-width:thin;scrollbar-color:#c9b6f3 transparent;overscroll-behavior:contain}
+.ax29-mashup-toolbar{position:relative!important;top:auto!important;padding:8px!important;border-radius:15px!important;background:#f6f9ff!important}
+.ax29-arrangement-note{padding:11px 14px!important;font-size:10px!important;line-height:1.6!important;color:#7d8ba3!important;margin:0!important}
+.ax29-mashup-preview audio{width:100%;accent-color:#8065de}
+
+/* Library and studio controls share the same baseline. */
+.ax25-library-toolbar{align-items:end!important}
+.ax25-library-toolbar label{min-width:0}
+.ax25-library-toolbar input[type=search]{border-radius:14px!important;min-height:43px!important}
+.ax25-library-grid article,.ax25-library-stats article{border-radius:23px!important;box-shadow:0 12px 26px rgba(49,67,130,.05)!important}
+.ax25-library-toolbar .ax70-select{margin-top:5px}
+
+@media(max-width:980px){.ax29-mashup-workspace{grid-template-columns:1fr!important}.ax29-mashup-inspector{max-height:none!important}.ax29-track{grid-template-columns:120px minmax(0,1fr)!important}}
+@media(max-width:700px){.ax49-floating-player.ax70-floating-dock{right:12px!important;left:auto!important;bottom:calc(85px + env(safe-area-inset-bottom))!important}.ax49-floating-player.ax70-floating-dock:hover,.ax49-floating-player.ax70-floating-dock:focus-within{width:min(355px,calc(100vw - 24px))!important}.ax67-song-card,.ax67-songs-viewport.is-ready .ax67-song-card{width:181px!important;min-width:181px!important;flex-basis:181px!important;height:63px!important;min-height:63px!important;padding:6px 9px 6px 7px!important}.ax67-song-card .ax49-track-art{width:47px!important;height:47px!important;min-width:47px!important;flex-basis:47px!important}.ax29-track{grid-template-columns:95px minmax(0,1fr)!important;min-height:82px!important}.ax29-track>aside{min-height:82px!important;padding:6px!important}.ax29-track-lane{min-height:82px!important;height:82px!important}.ax29-clip{height:64px!important;min-height:64px!important;top:8px!important}}
+@media(max-width:440px){.ax70-floating-volume{display:none}.ax70-floating-track{flex:1;min-width:0}.ax70-floating-disc{flex-basis:47px}.ax29-track{grid-template-columns:80px minmax(0,1fr)!important}.ax29-track>aside strong{max-width:74px!important}.ax29-track>aside input{max-width:68px!important}.ax67-songs-viewport{border-radius:25px!important}}
+@media(prefers-reduced-motion:reduce){.ax48-upload-orbit::before,.ax48-upload-orbit::after,.ax48-upload-orbit img,.ax70-floating-disc:before,.ax70-floating-dock .ax49-track-art{animation:none!important}.ax70-select-popup,.ax25-tools[open] .ax68-tools-grid>a{animation:none!important}}
+/* Small editorial intro before About and Nexivo feature grids. */
+.ax70-section-intro{margin:58px 0 18px;max-width:660px}
+.ax70-section-intro small{display:block;color:#8d67cf;letter-spacing:.16em;font:900 10px var(--round)}
+.ax70-section-intro h2{font:900 clamp(26px,3.3vw,42px)/1.12 var(--round);color:#19314b;letter-spacing:-.032em;margin:10px 0 10px}
+.ax70-section-intro p{color:#718098;font-size:14px;line-height:1.6;margin:0}
+@media(max-width:680px){.ax70-section-intro{margin:35px 0 15px}}
+/* Mashup output is a studio transport rather than native browser audio chrome. */
+.ax70-mashup-transport{display:flex;gap:13px;align-items:center;width:100%;min-height:68px;padding:10px 12px;border:1px solid #e2e8f4;border-radius:16px;background:linear-gradient(140deg,#f8faff,#f1f6ff)}
+.ax70-mashup-play{flex:0 0 41px;min-width:41px;height:41px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:linear-gradient(130deg,#1bdc9d,#25bce0,#8f69e8);color:white;box-shadow:0 5px 12px rgba(53,91,151,.18);font-size:14px;cursor:pointer}
+.ax70-mashup-seek{flex:1;min-width:0;display:grid;gap:6px}
+.ax70-mashup-seek>div{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:#7383a0;font-variant-numeric:tabular-nums}
+.ax70-mashup-seek strong{font-size:10px;color:#6152aa;letter-spacing:.12em}
+.ax70-mashup-seek input{width:100%;margin:0;height:15px;accent-color:#8562da;cursor:pointer}
+.ax70-mashup-ready{flex:0 0 28px;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#e4fff2;color:#0bb889;font-weight:900}
+@media(max-width:500px){.ax70-mashup-ready{display:none}.ax70-mashup-transport{padding:9px}}

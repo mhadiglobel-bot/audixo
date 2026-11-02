@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icons'
+import {AudixoSelect} from '../components/QualityRail'
 import { libraryLimit } from './library'
 
 type Settings={format:'mp3'|'wav';kbps:number;normalize:boolean;stereoRepair:boolean;saveToLibrary:boolean;downloadName:string}
@@ -10,7 +11,7 @@ export default function ExportModal({open,onClose,onExport,busy,projectName}:Pro
   useEffect(()=>{if(open)setDownloadName(projectName)},[open,projectName]);if(!open)return null
   return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="export-modal glass-panel" role="dialog" aria-modal="true"><button className="modal-close" onClick={onClose}>×</button><div className="modal-icon"><Icon name="download" size={21}/></div><span className="modal-kicker">FINAL MIX</span><h2>Export your audio</h2><p>Render the timeline with effects, motion, peak protection and optional browser-library storage.</p>
     <div className="format-switch"><button className={format==='mp3'?'active':''} onClick={()=>setFormat('mp3')}><strong>MP3</strong><small>Portable delivery</small></button><button className={format==='wav'?'active':''} onClick={()=>setFormat('wav')}><strong>WAV</strong><small>Lossless PCM</small></button></div>
-    {format==='mp3'&&<label className="export-row"><span><strong>MP3 bitrate</strong><small>Use 320 kbps for the highest option available here.</small></span><select value={kbps} onChange={e=>setKbps(Number(e.target.value))}>{[64,128,192,256,320].map(v=><option key={v} value={v}>{v} kbps</option>)}</select></label>}
+    {format==='mp3'&&<label className="export-row"><span><strong>MP3 bitrate</strong><small>Use 320 kbps for the highest option available here.</small></span><AudixoSelect ariaLabel="Final MP3 bitrate" value={String(kbps)} options={[64,128,192,256,320].map(v=>({value:String(v),label:`${v} kbps`}))} onChange={v=>setKbps(Number(v))}/></label>}
     <label className="export-check"><input type="checkbox" checked={normalize} onChange={e=>setNormalize(e.target.checked)}/><span><strong>Normalize final peak</strong><small>Bring the render to safe headroom without intentionally maximizing loudness.</small></span></label>
     <label className="export-check"><input type="checkbox" checked={stereoRepair} onChange={e=>setStereoRepair(e.target.checked)}/><span><strong>Repair effectively one-sided audio</strong><small>If one channel is nearly silent, copy the audible side to both channels. Disable for intentional hard panning.</small></span></label>
     <label className="export-check"><input type="checkbox" checked={saveToLibrary} onChange={e=>setSaveToLibrary(e.target.checked)}/><span><strong>Save to browser library</strong><small>Keep a local copy. Maximum {libraryLimit} saved exports.</small></span></label>

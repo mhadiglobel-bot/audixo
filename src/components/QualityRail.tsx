@@ -1,7 +1,7 @@
 /** AUDIXO V59: user-facing MP3 targets and source-verified MP4 formats.
  * No assumed MP4 resolutions, no silent upscaling or file transcoding.
  */
-import type {CSSProperties} from 'react'
+import type {CSSProperties, KeyboardEvent as ReactKeyboardEvent} from 'react'
 export const bitrateSteps=[64,128,192,256,320] as const
 export type Mp3Bitrate=(typeof bitrateSteps)[number]
 export type AvailableVideoQuality={value:string;label:string}
@@ -43,4 +43,59 @@ export function VideoQualityRail({quality,onChange,available,analyzed,disabled=f
   </div>}
   {analyzed&&!options.length&&<div className="ax59-no-formats" role="status">No verified browser-direct MP4 streams. Import a local MP4 below for a direct, quality-preserving save.</div>}
  </section>
+}
+
+/** AUDIXO V70 branded, accessible select menu. No operating-system blue menu. */
+import {useEffect,useId,useRef,useState} from 'react'
+import {createPortal} from 'react-dom'
+export type AudixoChoice={value:string;label:string}
+export function AudixoSelect({value,options,onChange,ariaLabel,className='',disabled=false}:{value:string;options:AudixoChoice[];onChange:(value:string)=>void;ariaLabel:string;className?:string;disabled?:boolean}){
+ const [open,setOpen]=useState(false),[place,setPlace]=useState({top:0,left:0,width:120,maxHeight:260})
+ const anchor=useRef<HTMLButtonElement|null>(null),popup=useRef<HTMLDivElement|null>(null)
+ const listId=useId(),selected=options.find(o=>o.value===value)
+ const show=()=>{
+  if(disabled)return
+  const b=anchor.current?.getBoundingClientRect();if(!b)return
+  const maxHeight=Math.min(280,Math.max(112,window.innerHeight-32))
+  const estimated=Math.min(maxHeight,options.length*43+14)
+  const above=(window.innerHeight-b.bottom<estimated+10)&&(b.top>estimated+10)
+  const width=Math.max(146,Math.ceil(b.width))
+  setPlace({top:Math.max(8,Math.min(window.innerHeight-estimated-8,above?b.top-estimated-7:b.bottom+7)),left:Math.max(8,Math.min(window.innerWidth-width-8,b.left)),width,maxHeight})
+  setOpen(true)
+  window.requestAnimationFrame(()=>popup.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus())
+ }
+ useEffect(()=>{
+  if(!open)return
+  const onPointer=(e:PointerEvent)=>{const target=e.target as Node;if(!anchor.current?.contains(target)&&!popup.current?.contains(target))setOpen(false)}
+  const onScroll=(e:Event)=>{if(popup.current?.contains(e.target as Node))return;setOpen(false)}
+  const onResize=()=>setOpen(false)
+  document.addEventListener('pointerdown',onPointer,true);window.addEventListener('scroll',onScroll,true);window.addEventListener('resize',onResize)
+  return()=>{document.removeEventListener('pointerdown',onPointer,true);window.removeEventListener('scroll',onScroll,true);window.removeEventListener('resize',onResize)}
+ },[open])
+ const choose=(next:string)=>{onChange(next);setOpen(false);anchor.current?.focus()}
+ const keyboard=(e:ReactKeyboardEvent)=>{
+  if(e.key==='Escape'){setOpen(false);anchor.current?.focus();e.preventDefault();return}
+  if((e.key==='ArrowDown'||e.key==='ArrowUp')&&options.length){
+   e.preventDefault();if(!open){show();return}
+   const current=options.findIndex(o=>o.value===value)
+   choose(options[(current+(e.key==='ArrowDown'?1:options.length-1))%options.length]?.value??value)
+  }
+  if(e.key==='Enter'&&open){e.preventDefault();setOpen(false)}
+ }
+ return <span className={`ax70-select ${open?'is-open':''} ${className}`}>
+  <button ref={anchor} type="button" className="ax70-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-controls={open?listId:undefined} aria-expanded={open} disabled={disabled} onClick={()=>open?setOpen(false):show()} onKeyDown={keyboard}>
+   <span>{selected?.label??value}</span><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+  </button>
+  {open&&typeof document!=='undefined'&&createPortal(<div ref={popup} id={listId} className="ax70-select-popup" role="listbox" aria-label={ariaLabel} style={{position:'fixed',top:place.top,left:place.left,minWidth:place.width,maxHeight:place.maxHeight}} onKeyDown={e=>{
+   if(e.key==='Escape'){e.preventDefault();setOpen(false);anchor.current?.focus();return}
+   if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Home'||e.key==='End'){
+    e.preventDefault();const opts=Array.from(popup.current?.querySelectorAll<HTMLButtonElement>('[role="option"]')??[])
+    if(!opts.length)return;const current=opts.indexOf(document.activeElement as HTMLButtonElement)
+    const next=e.key==='Home'?0:e.key==='End'?opts.length-1:(current+(e.key==='ArrowDown'?1:opts.length-1))%opts.length
+    opts[next]?.focus()
+   }
+  }}>
+   {options.map(o=><button type="button" key={o.value} role="option" aria-selected={o.value===value} className={o.value===value?'selected':''} onClick={()=>choose(o.value)}><span>{o.label}</span><i aria-hidden="true">{o.value===value?'✓':''}</i></button>)}
+  </div>,document.body)}
+ </span>
 }

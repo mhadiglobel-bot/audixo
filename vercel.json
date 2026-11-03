@@ -50,8 +50,21 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/bhai-cookie-dalde",
+      "destination": "/api/bhai-cookie-dalde"
+    },
+    {
+      "source": "/((?!api/|bhai-cookie-dalde$).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/media.ts": {
+      "maxDuration": 300,
+      "includeFiles": "bin/**"
+    },
+    "api/bhai-cookie-dalde.ts": {
+      "maxDuration": 30
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import {Link} from 'react-router-dom'
-import type {CSSProperties} from 'react'
+import {useEffect,useRef,useState,type CSSProperties} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 
@@ -43,7 +43,11 @@ function FeatureVisual({kind}:{kind:string}){
  </div>
 }
 
-export default function Features(){return <SiteShell><Seo title="AUDIXO Features — Trim, Stems, Echo, Mixing & Export" description="Explore real Audixo tools for trimming audio, adding echo effects, separating supported stems, and exporting edits from the browser." path="/features"/>
+export default function Features(){
+ const toolsRef=useRef<HTMLDivElement|null>(null)
+ const [toolsRevealed,setToolsRevealed]=useState(false)
+ useEffect(()=>{const node=toolsRef.current;if(!node)return;if(!('IntersectionObserver' in window)){setToolsRevealed(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setToolsRevealed(true);observer.disconnect()}},{threshold:.12});observer.observe(node);return()=>observer.disconnect()},[])
+ return <SiteShell><Seo title="AUDIXO Features — Trim, Stems, Echo, Mixing & Export" description="Explore real Audixo tools for trimming audio, adding echo effects, separating supported stems, and exporting edits from the browser." path="/features"/>
  <main className="ax25-features ax27-features ax44-features">
   <section className="page-shell ax25-page-hero ax44-features-hero"><div className="ax25-kicker"><i/> FEATURES / PURPOSEFUL TOOLS</div><h1>Power where it matters.<br/><em>Clarity everywhere else.</em></h1><p>Four clear workflows in one browser studio. No cluttered control panels.</p></section>
   <section className="page-shell ax44-feature-showcase">
@@ -52,7 +56,7 @@ export default function Features(){return <SiteShell><Seo title="AUDIXO Features
     <FeatureVisual kind={f.tag}/>
    </article>)}
   </section>
-  <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Only what you need.</h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
-   <div className="ax46-focused-grid">{focusedTools.map((tool,i)=><Link to={tool.url} className="ax46-focused-card" key={tool.url}><span className="ax46-tool-index">{String(i+1).padStart(2,'0')} / {tool.tag}</span><div className="ax46-tool-icon" aria-hidden="true">{tool.symbol}</div><h3>{tool.name}</h3><p>{tool.description}</p><span className="ax46-tool-arrow">Explore tool ↗</span></Link>)}</div>
+  <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Every tool. <em>One creative flow.</em></h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
+   <div ref={toolsRef} className={`ax46-focused-grid ax71-focus-grid ${toolsRevealed?'ax71-in-view':''}`}>{focusedTools.map((tool,i)=><Link to={tool.url} className="ax46-focused-card ax71-feature-card" key={tool.url} style={{'--ax71-card-index':i} as CSSProperties}><span className="ax46-tool-index">{String(i+1).padStart(2,'0')} / {tool.tag}</span><div className="ax46-tool-icon" aria-hidden="true">{tool.symbol}</div><h3>{tool.name}</h3><p>{tool.description}</p><span className="ax46-tool-arrow">Explore tool ↗</span></Link>)}</div>
   </section>
  </main></SiteShell>}

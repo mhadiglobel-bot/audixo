@@ -1,3 +1,11 @@
+## AUDIXO V71 — UI Refine & Quick FX Controls
+
+This update is based on the V70 source code and retains the original site structure, assets, and 19 sample tracks. Changes include circular upload-logo halos (without a square plate), refreshed quick-editor copy, functioning Pitch/Echo bypass switches and fade toggles, a sequential Tools dropdown, compact neon glass CTA cards, landing animations on Features, circular Library metrics, and a separate Nexivo title before its main hero. No external conversion service was introduced.
+
+**QA boundary:** The source modules and stylesheets were syntax-checked, the existing SSR track contract tests ran, and the package contains fewer than 100 files. The full `npm run build` could not be executed in the offline build environment because application dependencies could not be downloaded; verify with a Vercel preview build before production.
+
+---
+
 # AUDIXO V70 — Branded Controls and Sound Lab Refinement
 
 This is the **complete GitHub/Vercel source project**, based on V69. It is not a patch, render, or deployed site.

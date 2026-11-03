@@ -27,7 +27,7 @@ export default function Header(){
      <summary onClick={e=>{e.preventDefault();details.current!.open?closeTools():openTools()}}>Tools <Caret/></summary>
      <div className="ax25-tools-menu">
       <div className="ax25-tools-title ax68-tools-title"><div><small>AUDIXO / TOOLS</small><strong>Choose your workspace</strong></div><Link to="/editor" onClick={closeTools}>Full Studio <span aria-hidden="true">↗</span></Link></div>
-      <div className="ax25-tools-grid ax68-tools-grid">{productTools.map((tool,index)=><Link key={tool.id} to={tool.route} onClick={closeTools} style={{'--ax68-delay':`${index*36}ms`} as import('react').CSSProperties}><span className="ax25-tool-icon ax68-tool-icon" aria-hidden="true"><ToolGlyph id={tool.id}/></span><strong>{tool.name}</strong><b aria-hidden="true">↗</b></Link>)}</div>
+      <div className="ax25-tools-grid ax68-tools-grid ax71-tools-grid">{productTools.map((tool,index)=><Link key={tool.id} to={tool.route} onClick={closeTools} style={{'--ax68-delay':`${index*85+60}ms`} as import('react').CSSProperties}><span className="ax25-tool-icon ax68-tool-icon" aria-hidden="true"><ToolGlyph id={tool.id}/></span><strong>{tool.name}</strong><b aria-hidden="true">↗</b></Link>)}</div>
       <div className="ax25-tools-foot"><Link to="/library" onClick={closeTools}>Library</Link><Link to="/faq" onClick={closeTools}>FAQ</Link><Link to="/help" onClick={closeTools}>Help</Link></div>
      </div>
     </details>

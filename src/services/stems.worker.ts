@@ -25,6 +25,11 @@ async function modelBytes(){
  return all.buffer
 }
 
+function errorStage(stage:'engine'|'model'|'init'|'separate',error:unknown){
+ const detail=error instanceof Error?error.message:String(error)
+ const issue=new Error(detail);(issue as Error&{stage:string}).stage=stage
+ return issue
+}
 async function loadOrt(provider:'webgpu'|'wasm'){
  const ort:any=provider==='webgpu'?await import('onnxruntime-web/webgpu'):await import('onnxruntime-web/wasm')
  const threaded=Boolean((self as any).crossOriginIsolated),cores=Number((self.navigator as any).hardwareConcurrency||2)
@@ -46,7 +51,7 @@ self.onmessage=async(e:MessageEvent<Job>)=>{
   const hasWebGPU=Boolean((self.navigator as any).gpu)
   const provider:'webgpu'|'wasm'=e.data.provider==='wasm'?'wasm':hasWebGPU?'webgpu':'wasm'
   post({phase:'engine',message:provider==='webgpu'?'Preparing GPU stem engine…':'Preparing local compatibility engine…',progress:0,provider})
-  const [{ort,threaded},bytes]=await Promise.all([loadOrt(provider),modelBytes()])
+  const [{ort,threaded},bytes]=await Promise.all([loadOrt(provider).catch(error=>{throw errorStage('engine',error)}),modelBytes().catch(error=>{throw errorStage('model',error)})])
   post({phase:'init',message:provider==='webgpu'?'Starting GPU model…':threaded?'Starting multi-core WASM model…':'Starting WASM model…',progress:0,provider})
   processor=new DemucsProcessor({
    ort,
@@ -56,14 +61,14 @@ self.onmessage=async(e:MessageEvent<Job>)=>{
     post({phase:'separate',message:`Separating section ${Math.max(1,currentSegment||1)} of ${Math.max(1,total)} · ${provider==='webgpu'?'GPU':threaded?'multi-core':'CPU'}`,progress:Math.min(.99,done),provider})
    }
   })
-  await processor.loadModel(bytes)
+  await processor.loadModel(bytes).catch((error:unknown)=>{throw errorStage('init',error)})
   post({phase:'separate',message:`Model ready · separating ${provider==='webgpu'?'with GPU acceleration':threaded?'with multi-core processing':'in compatibility mode'}…`,progress:.01,provider})
-  const result:any=await processor.separate(e.data.left,e.data.right),transfers:ArrayBuffer[]=[]
+  const result:any=await processor.separate(e.data.left,e.data.right).catch((error:unknown)=>{throw errorStage('separate',error)}),transfers:ArrayBuffer[]=[]
   for(const part of Object.values(result) as any[])transfers.push(part.left.buffer,part.right.buffer)
   ;(self as any).postMessage({phase:'done',result,accelerator:provider},transfers)
  }catch(error){
   const detail=error instanceof Error?`${error.name}: ${error.message}`:''
   console.error('Audixo stem engine:',detail)
-  post({phase:'error',message:detail||'The local stem engine could not start on this device.'})
+  post({phase:'error',stage:(error as {stage?:string})?.stage||'unknown',message:detail||'The local stem engine could not start on this device.'})
  }finally{await processor?.session?.release?.()}
 }

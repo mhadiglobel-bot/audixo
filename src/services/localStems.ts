@@ -17,7 +17,7 @@ function workerAttempt(left:Float32Array,right:Float32Array,provider:'auto'|'was
   const cap=provider==='auto'?Math.min(20*60_000,Math.max(10*60_000,seconds*2600)):Math.min(24*60_000,Math.max(12*60_000,seconds*3600))
   overallTimer=setTimeout(()=>fail(new Error('SEPARATION_TIMEOUT')),cap)
   signal?.addEventListener('abort',cancel,{once:true});worker.onerror=e=>fail(new Error(e.message||'The local stem engine could not start.'))
-  worker.onmessage=({data})=>{if(data.phase==='done'){if(settled)return;settled=true;clean();resolve({result:data.result,accelerator:data.accelerator});return}if(data.phase==='error'){fail(new Error(data.message));return}if(data.phase==='separate')clearTimeout(startupTimer);else if(data.phase==='model')armStartup(330_000,'MODEL_DOWNLOAD_TIMEOUT');else if(data.phase==='engine')armStartup(75_000);else if(data.phase==='init')armStartup(90_000);onProgress(data)}
+  worker.onmessage=({data})=>{if(data.phase==='done'){if(settled)return;settled=true;clean();resolve({result:data.result,accelerator:data.accelerator});return}if(data.phase==='error'){const issue=new Error(data.message);(issue as Error&{stage?:string}).stage=data.stage;fail(issue);return}if(data.phase==='separate')clearTimeout(startupTimer);else if(data.phase==='model')armStartup(330_000,'MODEL_DOWNLOAD_TIMEOUT');else if(data.phase==='engine')armStartup(75_000);else if(data.phase==='init')armStartup(90_000);onProgress(data)}
   const l=left.slice(),r=right.slice();worker.postMessage({left:l,right:r,provider},[l.buffer,r.buffer])
  })
 }
@@ -52,17 +52,22 @@ export async function separateLocally(file:Blob,onProgress:(p:StemProgress)=>voi
  try{decoded=await ctx.decodeAudioData(await file.arrayBuffer())}finally{await ctx.close()}
  if(decoded.duration>300)throw new Error('For stem separation, choose up to 5 minutes. Trim a shorter section first.')
  if(decoded.sampleRate!==44100){const offline=new OfflineAudioContext(2,Math.ceil(decoded.duration*44100),44100),node=offline.createBufferSource();node.buffer=decoded;node.connect(offline.destination);node.start();decoded=await offline.startRendering()}
- const left=new Float32Array(decoded.getChannelData(0)),right=new Float32Array(decoded.getChannelData(Math.min(1,decoded.numberOfChannels-1)));if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
+ const left=decoded.getChannelData(0),right=decoded.getChannelData(Math.min(1,decoded.numberOfChannels-1));if(signal?.aborted)throw new DOMException('Cancelled','AbortError')
  if(mode==='fast')return quickFallback(left,right,onProgress)
- const hasWebGPU=Boolean((navigator as any).gpu),cores=Number((navigator as any).hardwareConcurrency||2),memory=Number((navigator as any).deviceMemory||0),mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent),lowPower=cores<=4||(memory>0&&memory<=4)
- // Prefer real Demucs separation whenever WebGPU is available, including on
- // capable mobile browsers. Only use the fast spectral preview when a device
- // has no GPU path and a long full-song WASM job would be impractical.
- // Studio mode deliberately keeps the real Demucs path active. The UI offers
- // Fast Preview separately for devices where full AI is too heavy.
+ const hasWebGPU=Boolean((navigator as any).gpu)
+ // Use GPU if available; CPU fallback only for initialization failures.
+ // A processing failure must never trigger a second full-length CPU job.
  let job:WorkerResult
  try{
-  if(hasWebGPU){try{job=await workerAttempt(left,right,'auto',onProgress,signal)}catch(error){if(signal?.aborted||(error instanceof DOMException&&error.name==='AbortError'))throw error;onProgress({phase:'fallback',message:'GPU path paused · trying local compatibility mode…',progress:0,provider:'wasm'});job=await workerAttempt(left,right,'wasm',onProgress,signal)}}else job=await workerAttempt(left,right,'wasm',onProgress,signal)
+  if(hasWebGPU){try{job=await workerAttempt(left,right,'auto',onProgress,signal)}catch(error){
+   if(signal?.aborted||(error instanceof DOMException&&error.name==='AbortError'))throw error
+   // Only an execution-provider or session initialization failure may safely
+   // fall back. Do NOT restart a partially processed song on CPU.
+   const stage=(error as Error&{stage?:string}).stage
+   if(stage!=='engine'&&stage!=='init')throw error
+   onProgress({phase:'fallback',message:'GPU could not initialize · switching to CPU mode…',progress:0,provider:'wasm'})
+   job=await workerAttempt(left,right,'wasm',onProgress,signal)
+  }}else job=await workerAttempt(left,right,'wasm',onProgress,signal)
  }catch(error){if(signal?.aborted||(error instanceof DOMException&&error.name==='AbortError'))throw error;throw error}
  const r=job.result,v=r.vocals,d=suppressVocalBleed(r.drums.left,r.drums.right,v.left,v.right,.48),b=suppressVocalBleed(r.bass.left,r.bass.right,v.left,v.right,.42),o=suppressVocalBleed(r.other.left,r.other.right,v.left,v.right,.58),n=v.left.length,mL=new Float32Array(n),mR=new Float32Array(n)
  for(let i=0;i<n;i++){mL[i]=(d.left[i]||0)+(b.left[i]||0)+(o.left[i]||0);mR[i]=(d.right[i]||0)+(b.right[i]||0)+(o.right[i]||0)}

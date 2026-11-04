@@ -79,11 +79,8 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
  const applyPreset=(preset:any)=>{if(!selectedId)return;stop();const targets=activeTargets();commit(p=>addEffect(p,targets,preset.patch,preset.name,`preset:${preset.id||preset.name}`))}
  const isolate=()=>toast('Your selected range is already the effect target. Choose a sound to apply it.')
  const patchTrack=(id:string,patch:any)=>{stop();commit(p=>{retainSources(p);Object.assign(p.sources!.find(t=>t.id===id)||{},patch);rebuildEdits(p)})}
- /** Bring the already supported local stem engine into Full Studio itself.
-  * Accurate AI mode uses the existing model. Fast mode is an explicitly labeled
-  * frequency approximation, not a true isolated drum/instrument separation.
-  */
- const splitSelected=async(mode:'studio'|'fast')=>{
+ /** Full Studio uses the same real AI stem pipeline as the Vocal Extractor. */
+ const splitSelected=async()=>{
   if(!hit||busy||separation.current)return
   const raw=buffers.current.get(hit.clip.bufferId),original=hit.clip
   if(!raw){toast('Select a decoded audio clip to separate.');return}
@@ -95,14 +92,14 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
   if(length<256){toast('This audio clip is too short to separate.');return}
   await stop()
   const controller=new AbortController();separation.current=controller
-  setBusy(mode==='studio'?'Preparing local AI separation…':'Preparing fast local stem preview…')
+  setBusy('Preparing local AI separation…')
   try{
    // Copy only the selected source range rather than uploading any audio.
    const cropped=new AudioBuffer({length,numberOfChannels:Math.min(2,raw.numberOfChannels),sampleRate:raw.sampleRate})
    for(let c=0;c<cropped.numberOfChannels;c++)cropped.copyToChannel(raw.getChannelData(c).subarray(start,start+length),c)
    const parts=await separateLocally(encodeWav(cropped),progress=>{
     if(!controller.signal.aborted)setBusy(`${progress.message} ${Math.round(Math.min(1,Math.max(0,progress.progress))*100)}%`)
-   },controller.signal,mode)
+   },controller.signal,'studio')
    if(controller.signal.aborted)throw new DOMException('Cancelled','AbortError')
    const created=[] as ReturnType<typeof createTrack>[]
    for(const part of parts){
@@ -125,7 +122,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
    const vocal=created.find(t=>t.name==='Lyrics / Vocals')||created[0]
    if(vocal)select(vocal.id,`${vocal.clips[0].id}:0.000000`)
    fit();setTime(0)
-   toast(mode==='fast'?'Fast preview stems added. These are frequency-based approximations; mute Drums or Other to compare.':'AI stems added. Source muted to prevent doubling; mix Drums, Bass and Other independently.')
+   toast('AI stems added. Source muted to prevent doubling; mix Drums, Bass and Other independently.')
   }catch(error){
    if(controller.signal.aborted)toast('Stem separation cancelled without changing the project.')
    else toast(error instanceof Error?error.message:'Could not separate this source.')
@@ -166,8 +163,7 @@ export default function AudioStudio({initialAudio=[],focusToolId=null,recordOnOp
   <section className="ax60-stem-tools" aria-label="Voice and instrument editing tools">
    <div className="ax60-stem-tool-intro"><strong>Stem & percussion control</strong><small>Split a selected clip locally; use real separated stems to mute drums or bright instruments. Tone shaping alone cannot fully remove individual sounds.</small></div>
    <div className="ax60-stem-buttons">
-    <button type="button" disabled={!hit||!!busy} onClick={()=>void splitSelected('studio')}>✦ AI stem split</button>
-    <button type="button" disabled={!hit||!!busy} onClick={()=>void splitSelected('fast')}>↝ Fast preview</button>
+    <button type="button" disabled={!hit||!!busy} onClick={()=>void splitSelected()}>✦ Separate audio into 5 stems</button>
     {busy&&separation.current&&<button type="button" className="ax60-cancel" onClick={()=>separation.current?.abort()}>Cancel</button>}
    </div>
    {!!stemsInProject.length&&<div className="ax60-stem-mute-list" role="group" aria-label="Mute individual separated stems">

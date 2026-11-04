@@ -14,10 +14,9 @@ async function verifyBytes(bytes:ArrayBuffer){
 async function modelBytes(){
  let cache:Cache|undefined
  try{cache=await caches.open('audixo-demucs-v33');const saved=await cache.match(model);if(saved){post({phase:'model',message:'Loading cached stem model…',progress:1});return verifyBytes(await saved.arrayBuffer())}}catch{}
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),300_000)
- let response:Response
- try{response=await fetch(model,{signal:controller.signal})}finally{clearTimeout(timer)}
- if(!response.ok)throw new Error('The stem model could not download. Check the connection and retry.')
+ let response:Response|undefined,lastError:unknown
+ for(let attempt=0;attempt<2&&!response;attempt++){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),300_000);try{const candidate=await fetch(model,{signal:controller.signal,cache:attempt?'reload':'default'});if(candidate.ok)response=candidate;else lastError=new Error(`MODEL_HTTP_${candidate.status}`)}catch(error){lastError=error}finally{clearTimeout(timer)}if(!response&&attempt===0){post({phase:'model',message:'Model connection paused · retrying once…',progress:0});await new Promise(resolve=>setTimeout(resolve,1200))}}
+ if(!response)throw new Error(lastError instanceof Error?`The stem model could not download: ${lastError.message}`:'The stem model could not download. Check the connection and retry.')
  const reader=response.body?.getReader();if(!reader)return verifyBytes(await response.arrayBuffer())
  const size=Number(response.headers.get('Content-Length'))||180_000_000,chunks:Uint8Array[]=[];let loaded=0
  while(true){const {done,value}=await reader.read();if(done)break;chunks.push(value);loaded+=value.byteLength;post({phase:'model',message:`Downloading local stem model · ${(loaded/1048576).toFixed(0)} MB`,progress:Math.min(.98,loaded/size)})}

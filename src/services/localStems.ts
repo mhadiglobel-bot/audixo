@@ -26,6 +26,12 @@ function normalizePair(left:Float32Array,right:Float32Array){let peak=0;for(let 
 function buildStem(name:string,left:Float32Array,right:Float32Array,mode:'ai'|'quick'){
  normalizePair(left,right);const buffer=new AudioBuffer({numberOfChannels:2,length:left.length,sampleRate:44100});buffer.copyToChannel(left,0);buffer.copyToChannel(right,1);let sum=0;for(let i=0;i<left.length;i+=16)sum+=left[i]*left[i]+right[i]*right[i];return {name,blob:encodeWav(buffer),energy:sum,mode}
 }
+
+function suppressVocalBleed(stemL:Float32Array,stemR:Float32Array,vocalL:Float32Array,vocalR:Float32Array,strength=.52){
+ const outL=new Float32Array(stemL),outR=new Float32Array(stemR),window=4096
+ const channel=(out:Float32Array,vocal:Float32Array)=>{for(let start=0;start<out.length;start+=window){const end=Math.min(out.length,start+window);let dot=0,vv=1e-9,ss=1e-9;for(let i=start;i<end;i+=2){const v=vocal[i]||0,x=out[i]||0;dot+=x*v;vv+=v*v;ss+=x*x}const corr=dot/Math.sqrt(vv*ss);if(corr<.12)continue;const projection=Math.max(0,Math.min(.58,dot/vv))*strength*Math.min(1,(corr-.08)/.35);for(let i=start;i<end;i++)out[i]-=(vocal[i]||0)*projection}}
+ channel(outL,vocalL);channel(outR,vocalR);return {left:outL,right:outR}
+}
 function lowpass(src:Float32Array,cutoff:number,sampleRate=44100){const out=new Float32Array(src.length),dt=1/sampleRate,rc=1/(2*Math.PI*cutoff),a=dt/(rc+dt);let y=0;for(let i=0;i<src.length;i++){y+=a*(src[i]-y);out[i]=y}return out}
 function highpass(src:Float32Array,cutoff:number,sampleRate=44100){const lp=lowpass(src,cutoff,sampleRate),out=new Float32Array(src.length);for(let i=0;i<src.length;i++)out[i]=src[i]-lp[i];return out}
 function quickFallback(left:Float32Array,right:Float32Array,onProgress:(p:StemProgress)=>void):LocalStem[]{
@@ -58,7 +64,7 @@ export async function separateLocally(file:Blob,onProgress:(p:StemProgress)=>voi
  try{
   if(hasWebGPU){try{job=await workerAttempt(left,right,'auto',onProgress,signal)}catch(error){if(signal?.aborted||(error instanceof DOMException&&error.name==='AbortError'))throw error;onProgress({phase:'fallback',message:'GPU path paused · trying local compatibility mode…',progress:0,provider:'wasm'});job=await workerAttempt(left,right,'wasm',onProgress,signal)}}else job=await workerAttempt(left,right,'wasm',onProgress,signal)
  }catch(error){if(signal?.aborted||(error instanceof DOMException&&error.name==='AbortError'))throw error;throw error}
- const r=job.result,v=r.vocals,d=r.drums,b=r.bass,o=r.other,n=v.left.length,mL=new Float32Array(n),mR=new Float32Array(n)
+ const r=job.result,v=r.vocals,d=suppressVocalBleed(r.drums.left,r.drums.right,v.left,v.right,.48),b=suppressVocalBleed(r.bass.left,r.bass.right,v.left,v.right,.42),o=suppressVocalBleed(r.other.left,r.other.right,v.left,v.right,.58),n=v.left.length,mL=new Float32Array(n),mR=new Float32Array(n)
  for(let i=0;i<n;i++){mL[i]=(d.left[i]||0)+(b.left[i]||0)+(o.left[i]||0);mR[i]=(d.right[i]||0)+(b.right[i]||0)+(o.right[i]||0)}
  const parts=[buildStem('Lyrics / Vocals',v.left,v.right,'ai'),buildStem('Music',mL,mR,'ai'),buildStem('Drums',d.left,d.right,'ai'),buildStem('Bass',b.left,b.right,'ai'),buildStem('Other instruments',o.left,o.right,'ai')]
  const total=parts.reduce((sum,p)=>sum+p.energy,0)||1;return parts.map(p=>({...p,energy:Math.round(p.energy/total*100)}))

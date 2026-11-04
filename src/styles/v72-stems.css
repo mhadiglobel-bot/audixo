@@ -1,0 +1,74 @@
+/* ---------------- Vocal Extractor: compact result deck + optional advanced studio ---------------- */
+.ax32-vocals .ax25-stem-launch{border:1px solid #dce6f2!important;border-radius:30px!important;background:radial-gradient(circle at 85% 20%,rgba(28,200,236,.07),transparent 34%),#fff!important;box-shadow:var(--ax72-shadow)!important}
+.ax32-vocals .ax25-stem-visual>i{border-color:#e1e8f3!important;box-shadow:0 10px 24px rgba(53,70,125,.07)!important}
+.ax72-stem-results{margin:42px 0 28px!important;padding:24px;border:1px solid #dce6f2;border-radius:30px;background:var(--ax72-glass);box-shadow:var(--ax72-shadow)}
+.ax72-stem-results>header{max-width:780px}
+.ax72-stem-results h2{font-size:clamp(30px,4vw,48px)!important;letter-spacing:-.045em!important}
+.ax72-stem-results>header p{font-size:12px!important;line-height:1.65!important}
+.ax72-stem-actions{display:flex!important;align-items:center;justify-content:space-between;gap:12px!important;margin:18px 0 16px!important}
+.ax72-stem-actions .ax39-stem-modes{display:flex!important;gap:7px!important;flex-wrap:wrap}
+.ax72-stem-actions button{border-radius:999px!important;min-height:38px!important;padding:8px 13px!important;border:1px solid #dfe6f2!important;background:#fff!important;font-weight:850!important}
+.ax72-stem-actions button.active{background:linear-gradient(110deg,#edfff8,#edfaff,#f4efff)!important;border-color:#c5b8eb!important;color:#6647be!important;box-shadow:0 6px 15px rgba(70,72,145,.08)!important}
+.ax72-stem-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important}
+.ax72-stem-card{display:flex!important;flex-direction:column!important;gap:12px!important;min-width:0;padding:15px!important;border:1px solid transparent!important;border-radius:21px!important;background:linear-gradient(#fff,#fff) padding-box,var(--ax72-rim) border-box!important;background-size:100% 100%,330% 330%!important;animation:ax72-rim-drift 18s linear infinite!important;box-shadow:0 10px 25px rgba(49,66,119,.065)!important}
+.ax72-stem-card>header{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important}
+.ax72-stem-card>header>span{display:grid!important;place-items:center!important;width:28px!important;height:28px!important;border-radius:9px!important;background:#f2efff!important;color:#6e4fc3!important;font-size:8px!important}
+.ax72-stem-card header div{min-width:0}
+.ax72-stem-card header small{display:block!important;font-size:7px!important;letter-spacing:.10em!important;color:#7e91a7!important}
+.ax72-stem-card header strong{display:block!important;font:900 11px/1.25 var(--round)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#2a3e5d!important}
+.ax72-stem-card header em{font-style:normal!important;font-size:8px!important;color:#5f75a1!important}
+.ax72-stem-energy{height:6px!important;border-radius:99px!important;background:#e8edf5!important;overflow:hidden!important}
+.ax72-stem-energy>i{display:block!important;height:100%!important;border-radius:inherit!important;background:linear-gradient(90deg,#1edda6,#20c9e6,#8c62ef)!important;transform-origin:left;animation:ax72-stem-live 2.8s ease-in-out infinite}
+.ax72-stem-player{display:grid!important;grid-template-columns:34px 36px minmax(0,1fr) auto!important;gap:6px!important;align-items:center!important}
+.ax72-stem-player>button:first-child{width:34px!important;height:34px!important;padding:0!important;border:0!important;border-radius:50%!important;background:linear-gradient(135deg,#1dd9a3,#22bfe2,#8661e7)!important;color:#fff!important;box-shadow:0 5px 12px rgba(64,80,150,.16)!important}
+.ax72-stem-player>span{font-size:8px!important;color:#8493a8!important;font-variant-numeric:tabular-nums}
+.ax72-stem-player input{width:100%!important;accent-color:#8260df!important}
+.ax72-stem-player .save{border:1px solid #e0e6f2!important;border-radius:999px!important;padding:7px 8px!important;background:#fff!important;color:#6851b7!important;font-size:8px!important;font-weight:900!important}
+.ax72-stem-workspace{margin-top:18px!important;border:1px solid #dce6f2!important;border-radius:28px!important;background:#fff!important;box-shadow:0 14px 34px rgba(48,65,118,.06)!important;overflow:hidden!important}
+.ax72-stem-workspace-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:20px!important;padding:24px!important;background:linear-gradient(135deg,#fbfdff,#f7f8ff)!important;border-bottom:1px solid #e4e9f3!important}
+.ax72-stem-workspace-head h2{font-size:clamp(22px,3vw,34px)!important;margin:5px 0!important}
+.ax72-stem-workspace-head p{max-width:720px!important;font-size:11px!important;line-height:1.6!important}
+.ax72-stem-workspace-head>div:last-child{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.ax72-stem-workspace-head button{border:1px solid #dfe6f2!important;border-radius:999px!important;background:#fff!important;padding:10px 14px!important;font-size:9px!important;font-weight:900!important}
+.ax72-stem-workspace-head .ax72-advanced-toggle{background:#293a5e!important;color:#fff!important;border-color:#293a5e!important}
+.ax72-stem-workspace-grid{padding:14px!important;grid-template-columns:minmax(0,1fr) 300px!important;gap:14px!important}
+.ax72-stem-workspace-grid .ax32-bank-panel{border-radius:22px!important;border:1px solid #e0e6f2!important;background:#fbfcff!important;box-shadow:none!important}
+
+/* ---------------- Full Studio: cleaner pre-upload and loaded states ---------------- */
+.ax72-studio{--studio-line:#dce5f1;--studio-panel:#fff;--studio-soft:#f7f9fd}
+.ax72-studio .ax25-studio-header,.ax72-studio .ax25-edit-toolbar,.ax72-studio .ax60-stem-tools,.ax72-studio .ax25-studio-context,.ax72-studio .ax25-applied{border-color:var(--studio-line)!important;background:linear-gradient(145deg,#fff,#f9fbff)!important;box-shadow:0 11px 27px rgba(47,64,116,.055)!important}
+.ax72-studio .ax25-studio-header{border-radius:21px!important}
+.ax72-studio .ax25-play-group button.play{background:linear-gradient(135deg,#1cdca4,#1cc4e5,#8561e5)!important;border:0!important;color:#fff!important;box-shadow:0 9px 21px rgba(72,85,159,.17)!important}
+.ax72-studio .ax25-edit-mode button.active{border-color:#bdb0ea!important;background:linear-gradient(120deg,#effff8,#f3efff)!important;box-shadow:0 0 0 3px rgba(139,99,244,.07)!important}
+.ax72-studio .ax25-context-dot{background:#1dd7a4!important;box-shadow:0 0 0 5px rgba(28,200,236,.10)!important}
+.ax72-studio .ax25-inspector{border:1px solid var(--studio-line)!important;border-radius:24px!important;background:#fff!important;box-shadow:0 14px 32px rgba(49,65,119,.065)!important}
+.ax72-studio .ax25-inspector-tabs{background:#f6f8fc!important}
+.ax72-studio .ax25-inspector-tabs button{border-radius:13px!important}
+.ax72-studio .ax25-inspector-tabs button.active{background:#fff!important;border-color:#bdb1e8!important;box-shadow:0 6px 14px rgba(70,69,142,.08)!important}
+.ax72-studio .ax25-timeline-empty{min-height:390px!important;background:radial-gradient(circle at 50% 42%,rgba(28,200,236,.055),transparent 34%),linear-gradient(180deg,#fff,#f8fbff)!important}
+.ax72-studio .ax25-timeline-empty h2{font-size:clamp(25px,3vw,38px)!important;letter-spacing:-.035em!important}
+.ax72-studio .ax48-upload-orbit img{animation:ax71-ring-spin 13s linear infinite!important}
+.ax72-studio .ax48-upload-orbit>i:first-child{animation-duration:5.5s!important;border-top-color:var(--ax72-pink)!important;border-left-color:var(--ax72-cyan)!important}
+.ax72-studio .ax48-upload-orbit>i:nth-child(2){animation-duration:8.5s!important;border-right-color:var(--ax72-green)!important;border-bottom-color:var(--ax72-violet)!important}
+
+@media(max-width:1180px){
+ .ax72-stem-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .ax72-stem-workspace-grid{grid-template-columns:1fr!important}
+}
+@media(max-width:920px){
+ .ax46-workflow{grid-template-columns:1fr!important}.ax72-workflow-orbit{grid-template-columns:repeat(4,minmax(105px,1fr));overflow-x:auto;padding:8px 5px 15px;scrollbar-width:none}.ax72-workflow-orbit::-webkit-scrollbar{display:none}.ax72-workflow-line{left:40px;right:40px;top:52px;bottom:auto;width:auto;height:3px;transform:none;background:repeating-linear-gradient(to right,#e6eaf5 0 12px,transparent 12px 21px)}.ax72-workflow-line::after{background:linear-gradient(to right,transparent,rgba(28,200,236,.35),rgba(139,99,244,.5),rgba(240,75,201,.25),transparent);background-size:220px 100%;animation:ax72-line-flow 3.6s linear infinite}.ax72-workflow-line>i{height:100%;width:var(--workflow-progress);transition:width .6s}.ax72-workflow-node{min-width:105px}
+ .ax72-about-principles{grid-template-columns:1fr}
+ .ax72-library-grid{grid-template-columns:1fr!important}
+ .ax72-stem-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .ax29-mashup-workspace{grid-template-columns:1fr!important}
+}
+@media(max-width:620px){
+ .ax72-library-shelf{padding:14px;border-radius:23px}.ax72-library-shelf-head{align-items:flex-start;flex-direction:column}.ax72-library-shelf .ax25-library-toolbar{grid-template-columns:1fr!important}.ax72-library-shelf .ax25-library-toolbar>div{width:100%}
+ .ax33-about .ax33-about-story{grid-template-columns:1fr!important}.ax72-about-principles>article{grid-template-columns:1fr;padding:20px}.ax72-principle-number{width:44px;height:44px}
+ .ax72-workflow-orbit{grid-template-columns:repeat(3,minmax(100px,1fr))}.ax72-node-ring{width:78px;height:78px}.ax72-node-ring strong{font-size:10px}.ax72-workflow-node>small{display:none}
+ .ax72-stem-grid{grid-template-columns:1fr!important}.ax72-stem-results{padding:16px;border-radius:23px}.ax72-stem-actions{align-items:flex-start;flex-direction:column!important}.ax72-stem-workspace-head{align-items:flex-start!important;flex-direction:column!important}.ax72-stem-workspace-head>div:last-child{justify-content:flex-start}
+ .v13-quick-page .ax68-compare-grid{grid-template-columns:1fr!important}.v13-quick-page .ax68-versus{min-height:44px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax72-library-grid .ax25-saved-card,.ax72-about-principles>article,.ax72-workflow-line::after,.ax72-workflow-node.active .ax72-node-ring,.ax72-feature-card .ax46-tool-icon>i,.ax72-stem-card,.ax72-stem-energy>i,.v13-quick-page .ax27-workbench{animation:none!important}
+}

@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/app.css'
 import './styles/premium-v65.css'
+import './styles/v72-core.css'
+import './styles/v72-editors.css'
+import './styles/v72-stems.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

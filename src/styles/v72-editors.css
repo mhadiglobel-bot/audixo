@@ -1,0 +1,76 @@
+/* ---------------- Features: larger visual hierarchy, animated but calm ---------------- */
+.ax72-focus-grid{gap:20px!important;perspective:1100px}
+.ax72-feature-card{position:relative!important;overflow:hidden!important;min-height:264px!important;border-radius:38px 24px 38px 24px!important;padding:25px!important;isolation:isolate}
+.ax72-feature-aura{position:absolute;inset:auto -35px -55px auto;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(139,99,244,.16),rgba(28,200,236,.06) 45%,transparent 72%);z-index:-1;transition:transform .5s ease,opacity .5s}
+.ax72-feature-card:hover .ax72-feature-aura{transform:translate(-18px,-18px) scale(1.14);opacity:.85}
+.ax72-feature-card .ax46-tool-icon{position:relative!important;overflow:visible!important;background:linear-gradient(145deg,#fff,#f5f7ff)!important}
+.ax72-feature-card .ax46-tool-icon>i{position:absolute;inset:-7px;border-radius:50%;border:1px dashed rgba(139,99,244,.25);animation:ax71-ring-spin 10s linear infinite}
+.ax72-feature-card h3{font-size:22px!important;margin-top:8px!important}
+.ax72-feature-card p{font-size:12px!important;line-height:1.65!important;max-width:31ch!important}
+.ax72-feature-meter{display:block;width:88px;height:4px;border-radius:99px;background:#e7eaf4;margin:10px auto 14px;overflow:hidden}
+.ax72-feature-meter>i{display:block;width:62%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--ax72-green),var(--ax72-cyan),var(--ax72-violet));transform-origin:left;transition:width .35s ease}
+.ax72-feature-card:hover .ax72-feature-meter>i{width:100%}
+.ax72-feature-card .ax46-tool-arrow{display:inline-flex;gap:6px;align-items:center;padding:8px 12px;border-radius:999px;background:#f6f4ff;color:#684cbc!important}
+.ax72-feature-card .ax46-tool-arrow b{font-size:11px}
+.ax71-in-view .ax72-feature-card:nth-child(2n){animation-name:ax71-spectrum,ax71-card-land!important;animation-duration:14s,.78s!important}
+
+/* ---------------- One timeline grammar across Quick FX, Mashup and Full Studio ---------------- */
+.ax72-timeline-surface,.v13-quick-page .ax27-timeline-card{border:1px solid #dbe6f2!important;border-radius:23px!important;background:linear-gradient(180deg,#fff,#f8fbff)!important;box-shadow:0 14px 31px rgba(47,65,119,.065)!important;overflow:hidden!important}
+.ax72-timeline-surface .ax25-timeline-head,.v13-quick-page .ax27-timeline-head{background:linear-gradient(130deg,#fff,#f5f8ff)!important;border-bottom:1px solid #e1e8f3!important}
+.ax72-timeline-surface .ax25-timeline-scroll,.ax29-arrangement-scroll,.v13-quick-page .ax27-wave{background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(87,105,154,.045) 80px),linear-gradient(180deg,#fbfdff,#f7faff)!important}
+.ax72-timeline-surface .ax-ruler,.ax29-ruler,.v13-quick-page .ax27-ruler{background:#f5f7fc!important;border-color:#e0e7f2!important;color:#7d8ea7!important}
+.ax72-timeline-surface .ax-track{min-height:112px!important;background:transparent!important;border-color:#e3e9f3!important}
+.ax72-timeline-surface .ax-track>aside{background:linear-gradient(180deg,#fafbff,#f6f8fc)!important;border-color:#e0e7f2!important}
+.ax72-timeline-surface .ax-track-lane{min-height:112px!important;background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(95,105,163,.055) 80px),linear-gradient(180deg,#fff,#fafbff)!important}
+.ax72-timeline-surface .ax-source-ghost{top:23px!important;height:66px!important;border-color:rgba(28,200,236,.23)!important;background:rgba(28,200,236,.035)!important}
+.ax72-timeline-surface .ax-clip{top:23px!important;height:66px!important;border-color:#55d5c0!important;background:linear-gradient(180deg,rgba(248,255,253,.98),rgba(244,248,255,.94))!important;box-shadow:0 8px 16px rgba(62,80,141,.07)!important}
+.ax72-timeline-surface .ax-clip.selected{border-color:#8a63ef!important;box-shadow:0 0 0 3px rgba(139,99,244,.10),0 10px 22px rgba(70,68,143,.10)!important}
+.ax72-timeline-surface .ax-trim-handle{background:linear-gradient(180deg,#1ddaa8,#1cc7df,#8a62ef)!important}
+.v13-quick-page .ax27-wave{border:1px solid #dce6f2!important;border-radius:17px!important;box-shadow:inset 0 1px #fff!important}
+.v13-quick-page .v13-wave-selection{border-color:#8a63ef!important;background:rgba(114,87,223,.035)!important}
+.v13-quick-page .v13-wave-selection>button{background:linear-gradient(#1bdba5,#1dc9e4,#8c62ef)!important}
+.v13-quick-page .ax27-time-fields>*,.v13-quick-page .ax27-fade-status button{border-color:#dce5f2!important;background:#fff!important}
+
+/* Mashup is now a DAW-like continuous surface, not disconnected settings boxes. */
+.ax72-editor-surface{border:1px solid #dce6f2!important;background:linear-gradient(150deg,#fff,#f7faff)!important;box-shadow:0 22px 52px rgba(41,59,111,.09)!important}
+.ax29-mashup-workspace{grid-template-columns:minmax(0,1fr) minmax(300px,330px)!important;gap:15px!important}
+.ax29-arrangement{border-radius:22px!important}
+.ax29-arrangement-inner{background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(97,107,158,.052) 80px),linear-gradient(#fbfdff,#f7faff)!important}
+.ax29-track{grid-template-columns:130px minmax(0,1fr)!important;min-height:92px!important}
+.ax29-track>aside{min-height:92px!important;background:#f7f9fd!important;border-right:1px solid #dfe6f1!important}
+.ax29-track-lane{height:92px!important;min-height:92px!important;background:repeating-linear-gradient(90deg,transparent 0 79px,rgba(97,107,158,.05) 80px),linear-gradient(#fff,#fafbff)!important}
+.ax29-clip{top:10px!important;height:72px!important;border-radius:13px!important;border-color:#6fd8c7!important;background:linear-gradient(180deg,#effffa,#f2f6ff)!important;box-shadow:0 5px 15px rgba(55,76,138,.08)!important}
+.ax29-clip.selected{border-color:#8b61ef!important;box-shadow:0 0 0 3px rgba(139,99,244,.10),0 8px 18px rgba(62,67,140,.12)!important}
+.ax29-mashup-inspector{border:1px solid #dce5f2!important;border-radius:22px!important;background:#fff!important;box-shadow:0 13px 31px rgba(49,65,117,.07)!important}
+.ax29-mashup-inspector>header{padding:19px 18px 13px!important;background:linear-gradient(145deg,#fbfdff,#f7f8ff)!important;border-bottom:1px solid #e4e9f3!important}
+.ax32-fx-scope{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;padding:5px!important;border-radius:15px!important;background:#f2f5fb!important}
+.ax32-fx-scope button{min-height:36px!important;border:0!important;border-radius:11px!important;background:transparent!important;box-shadow:none!important}
+.ax32-fx-scope button.active{background:#fff!important;color:#6948c6!important;box-shadow:0 5px 12px rgba(59,72,133,.09)!important}
+.ax29-preset-grid{display:flex!important;gap:7px!important;overflow-x:auto!important;padding:12px 15px 7px!important;scrollbar-width:none}
+.ax29-preset-grid::-webkit-scrollbar{display:none}
+.ax29-preset-grid button{flex:0 0 auto!important;min-height:35px!important;padding:8px 11px!important;border-radius:999px!important;background:#f8f9fd!important;border:1px solid #e1e7f2!important;font-size:9px!important;white-space:nowrap}
+.ax29-preset-grid button.active{background:linear-gradient(105deg,#eefff8,#eef9ff,#f4efff)!important;border-color:#bfb3e8!important;color:#6547be!important}
+.ax29-inspector-scroll{padding:8px 14px 12px!important}
+.ax29-slider.ax72-editor-slider{padding:12px 13px!important;border:1px solid #e2e8f2!important;border-radius:15px!important;background:linear-gradient(145deg,#fff,#f9fbff)!important;margin:7px 0!important}
+.ax72-editor-slider>span{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:10px}
+.ax72-editor-slider>span b{font-size:10px!important;color:#415774!important}
+.ax72-editor-slider>span em{font-style:normal!important;font-size:10px!important;color:#704fc7!important}
+.ax72-slider-rail{position:relative;height:24px;display:flex;align-items:center;margin-top:5px}
+.ax72-slider-rail>i{position:absolute;left:0;height:5px;border-radius:99px;background:linear-gradient(90deg,#1ed9a9,#1bc9e8,#8c62ef);pointer-events:none;z-index:1}
+.ax72-slider-rail input{position:relative;z-index:2;background:transparent!important;width:100%!important;appearance:none!important;-webkit-appearance:none!important}
+.ax72-slider-rail input::-webkit-slider-runnable-track{height:5px!important;background:#e5eaf3!important;border-radius:99px!important}
+.ax72-slider-rail input::-webkit-slider-thumb{-webkit-appearance:none!important;width:16px!important;height:16px!important;margin-top:-5.5px!important;border-radius:50%!important;background:#fff!important;border:3px solid #855fdf!important;box-shadow:0 2px 7px rgba(76,62,154,.17)!important}
+.ax30-reverse-clip{border-radius:999px!important;background:#f6f7fb!important}
+.ax30-reverse-clip.active{background:linear-gradient(100deg,#edfff8,#f3efff)!important;color:#6547bd!important}
+
+/* Quick Editors: tighter dock, stronger A/B compare and same timeline language. */
+.v13-quick-page .ax27-workbench{border-radius:27px!important;background:linear-gradient(#f9fbff,#f9fbff) padding-box,var(--ax72-rim) border-box!important;background-size:100% 100%,330% 330%!important;animation:ax72-rim-drift 17s linear infinite!important}
+.v13-quick-page .ax27-control-dock{border-radius:22px!important;background:#fff!important;box-shadow:0 12px 28px rgba(48,65,117,.06)!important}
+.v13-quick-page .ax27-preset-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.v13-quick-page .ax27-preset-row button{border-radius:14px!important;min-height:63px!important}
+.v13-quick-page .ax68-compare-stage{border:1px solid #dce6f2!important;border-radius:22px!important;background:linear-gradient(150deg,#fff,#f8faff)!important;box-shadow:0 12px 27px rgba(47,64,115,.055)!important}
+.v13-quick-page .ax68-compare-grid{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr)!important;gap:11px!important}
+.v13-quick-page .ax68-compare-audio{min-height:190px!important;border:1px solid #e0e7f2!important;border-radius:18px!important;background:#fff!important;box-shadow:0 7px 19px rgba(49,65,118,.045)!important}
+.v13-quick-page .ax68-compare-edited{background:linear-gradient(145deg,#fff,#faf7ff)!important}
+.v13-quick-page .ax68-versus span{width:46px!important;height:46px!important;border:1px solid #d5c9f2!important;background:linear-gradient(145deg,#fff,#f3eeff)!important;color:#724fc9!important;box-shadow:0 7px 17px rgba(81,68,151,.12)!important}
+.v13-quick-page .ax69-transport-main{border-color:#e0e7f2!important;background:#f7f9fd!important}

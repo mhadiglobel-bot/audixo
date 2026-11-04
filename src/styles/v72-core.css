@@ -1,0 +1,87 @@
+/* =====================================================================
+   AUDIXO V72 — shared studio system
+   One visual grammar across Library, About, Workflow, Features, Quick FX,
+   Mashup, Vocal Extractor and Full Studio. Functional DSP stays untouched
+   except for the explicit stem de-bleed changes in localStems.ts.
+   ===================================================================== */
+:root{
+ --ax72-green:#18dfa1;--ax72-cyan:#1cc8ec;--ax72-violet:#8b63f4;--ax72-pink:#f04bc9;
+ --ax72-ink:#203653;--ax72-muted:#73849d;--ax72-line:#dfe7f3;
+ --ax72-rim:linear-gradient(110deg,var(--ax72-green),var(--ax72-cyan),var(--ax72-violet),var(--ax72-pink),var(--ax72-green));
+ --ax72-glass:linear-gradient(150deg,rgba(255,255,255,.98),rgba(247,250,255,.93));
+ --ax72-shadow:0 18px 44px rgba(41,60,111,.085),inset 0 1px rgba(255,255,255,.92);
+}
+@keyframes ax72-rim-drift{0%{background-position:0 0,0% 50%}100%{background-position:0 0,200% 50%}}
+@keyframes ax72-line-flow{0%{background-position:0 0}100%{background-position:0 220px}}
+@keyframes ax72-node-pulse{0%,100%{box-shadow:0 0 0 4px rgba(28,200,236,.08),0 12px 25px rgba(72,67,153,.10)}50%{box-shadow:0 0 0 8px rgba(139,99,244,.10),0 16px 34px rgba(72,67,153,.16)}}
+@keyframes ax72-card-breathe{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(.35deg)}}
+@keyframes ax72-stem-live{0%,100%{opacity:.55;transform:scaleX(.86)}50%{opacity:1;transform:scaleX(1)}}
+
+/* ---------------- Library: one shelf, stronger saved-card hierarchy ---------------- */
+.ax72-library-shelf{margin:32px 0 74px;padding:24px;border:1px solid var(--ax72-line);border-radius:30px;background:var(--ax72-glass);box-shadow:var(--ax72-shadow)}
+.ax72-library-shelf-head{display:flex;justify-content:space-between;align-items:end;gap:22px;padding:4px 4px 20px;border-bottom:1px solid #e8edf6}
+.ax72-library-shelf-head small{font:900 9px var(--round);letter-spacing:.15em;color:#7658c7}
+.ax72-library-shelf-head h2{font:900 clamp(27px,3.3vw,43px)/1.08 var(--round);letter-spacing:-.04em;color:var(--ax72-ink);margin:8px 0 6px}
+.ax72-library-shelf-head p{margin:0;color:var(--ax72-muted);font-size:12px}
+.ax72-library-shelf-head>span{display:grid;place-items:center;min-width:74px;height:38px;padding:0 15px;border-radius:999px;background:#f2efff;color:#6e50c5;font-size:10px;font-weight:900}
+.ax72-library-shelf .ax25-library-toolbar{margin:20px 0 18px!important;grid-template-columns:minmax(0,1fr) 190px 72px!important}
+.ax72-library-shelf .ax25-library-toolbar input{min-height:44px!important;background:#fff!important;border-color:#dfe6f3!important;box-shadow:inset 0 1px #fff}
+.ax72-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;padding:0!important}
+.ax72-library-grid .ax25-saved-card{position:relative;overflow:hidden;border:1px solid transparent!important;border-radius:25px!important;padding:18px!important;background:linear-gradient(#fff,#fff) padding-box,var(--ax72-rim) border-box!important;background-size:100% 100%,300% 300%!important;animation:ax72-rim-drift 14s linear infinite;box-shadow:0 13px 30px rgba(50,66,119,.07)!important}
+.ax72-library-grid .ax25-saved-card::before{content:"";position:absolute;width:130px;height:130px;border-radius:50%;right:-55px;top:-70px;background:radial-gradient(circle,rgba(28,200,236,.10),transparent 70%);pointer-events:none}
+.ax72-library-grid .ax25-saved-card.playing{box-shadow:0 18px 38px rgba(75,73,157,.15)!important}
+.ax72-library-grid .ax25-saved-card>header{grid-template-columns:58px minmax(0,1fr) auto!important}
+.ax72-library-grid .ax25-saved-disc{background:radial-gradient(circle,#fff 0 15%,#8e67ef 16% 21%,#eff5ff 22% 100%)!important;box-shadow:0 7px 17px rgba(89,72,166,.12)}
+.ax72-library-grid .ax25-saved-card h3{font-size:16px!important;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax72-library-grid .ax25-saved-meta{margin:12px 0!important}
+.ax72-library-grid .ax25-saved-meta span{background:#f5f7fb!important;color:#667993!important;border:1px solid #e8edf5}
+.ax72-library-grid .ax25-saved-player{grid-template-columns:40px 72px minmax(0,1fr) 18px 62px!important;background:linear-gradient(145deg,#f8faff,#f5f8fc)!important;border-color:#e1e8f4!important;padding:10px!important}
+.ax72-library-grid .ax25-saved-player button{border-radius:50%!important;background:linear-gradient(135deg,#1bd89b,#1fc4e6,#8260e5)!important;color:#fff!important;box-shadow:0 6px 14px rgba(69,96,160,.16)}
+.ax72-library-grid .ax25-saved-player input[type=range]{accent-color:#8062df!important}
+.ax72-library-grid .ax25-saved-actions{margin-top:12px!important}
+.ax72-library-grid .ax25-saved-actions a,.ax72-library-grid .ax25-saved-actions button{border-radius:999px!important;padding:9px 12px!important;background:#fff!important}
+.ax72-library-grid .ax25-saved-actions .primary{background:linear-gradient(115deg,#edfff7,#effbff,#f3efff)!important;color:#4e4da9!important;border-color:#d8d8f0!important}
+
+/* ---------------- About: fewer cards, bigger editorial principles ---------------- */
+.ax33-about .ax33-about-story{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:22px!important;align-items:stretch}
+.ax33-about .ax33-about-story>article{padding:34px!important;border-radius:28px!important;background:var(--ax72-glass)!important;border:1px solid var(--ax72-line)!important;box-shadow:var(--ax72-shadow)!important}
+.ax33-about .ax33-about-story>article h2{font-size:clamp(28px,3.2vw,43px)!important;line-height:1.06!important}
+.ax33-about .ax33-about-story>article p{font-size:13px!important;line-height:1.75!important;max-width:62ch}
+.ax33-about .ax33-about-flow{display:grid!important;grid-template-columns:1fr 1fr!important;gap:1px!important;overflow:hidden;border:1px solid #e1e8f3!important;border-radius:28px!important;background:#e8edf6!important;box-shadow:var(--ax72-shadow)!important}
+.ax33-about .ax33-about-flow>span{min-height:112px!important;padding:22px!important;border:0!important;border-radius:0!important;background:#fff!important;display:grid!important;align-content:center!important;gap:5px!important}
+.ax33-about .ax33-about-flow>span:nth-child(2),.ax33-about .ax33-about-flow>span:nth-child(3){background:#f9fbff!important}
+.ax33-about .ax33-about-flow b{font:900 17px var(--round)!important;color:#263a58}
+.ax33-about .ax33-about-flow em{font-size:10px!important;line-height:1.45!important}
+.ax33-about .ax26-about-manifesto{padding:40px 34px!important;border-radius:30px!important;background:radial-gradient(circle at 90% 20%,rgba(139,99,244,.08),transparent 32%),#fff!important}
+.ax72-about-intro{max-width:760px!important;margin-top:54px!important}
+.ax72-about-principles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0 50px}
+.ax72-about-principles>article{display:grid;grid-template-columns:58px 1fr;gap:18px;padding:27px;border:1px solid transparent;border-radius:30px;background:linear-gradient(#fff,#fff) padding-box,var(--ax72-rim) border-box;background-size:100% 100%,330% 330%;animation:ax72-rim-drift 16s linear infinite;box-shadow:0 16px 34px rgba(49,66,122,.07)}
+.ax72-principle-number{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(140deg,#effff8,#eef8ff,#f5efff);font:900 12px var(--round);color:#7150c8}
+.ax72-about-principles>article>div{display:grid;gap:22px}
+.ax72-about-principles section+section{padding-top:20px;border-top:1px solid #e8edf5}
+.ax72-about-principles small{font:900 9px var(--round);letter-spacing:.12em;color:#1eb992}
+.ax72-about-principles h3{font:900 20px/1.2 var(--round);color:#263a58;margin:5px 0 6px}
+.ax72-about-principles p{font-size:12px!important;line-height:1.65!important;color:#73849d!important;margin:0}
+.ax33-about .ax33-nexivo-teaser{padding:34px!important;border-radius:30px!important}
+
+/* ---------------- How It Works: circular linked workflow instead of rectangle list ---------------- */
+.ax46-workflow{grid-template-columns:minmax(330px,.88fr) minmax(0,1.12fr)!important;gap:clamp(28px,4vw,58px)!important}
+.ax72-workflow-orbit{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 14px;padding:8px 0 4px;isolation:isolate}
+.ax72-workflow-line{position:absolute;left:50%;top:40px;bottom:40px;width:3px;transform:translateX(-50%);border-radius:99px;background:repeating-linear-gradient(to bottom,#e6eaf5 0 12px,transparent 12px 21px);z-index:-2;overflow:hidden}
+.ax72-workflow-line::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0 5%,rgba(28,200,236,.32) 26%,rgba(139,99,244,.52) 54%,rgba(240,75,201,.25) 78%,transparent 98%);background-size:100% 220px;animation:ax72-line-flow 3.6s linear infinite}
+.ax72-workflow-line>i{display:block;width:100%;height:var(--workflow-progress);background:linear-gradient(var(--ax72-cyan),var(--ax72-violet),var(--ax72-pink));box-shadow:0 0 16px rgba(120,89,228,.34);transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.ax72-workflow-node{appearance:none;border:0!important;background:transparent!important;min-width:0;padding:0!important;display:grid!important;justify-items:center!important;gap:7px!important;cursor:pointer;color:#627590!important;text-align:center!important;transition:transform .25s ease!important}
+.ax72-workflow-node:hover{transform:translateY(-3px)!important}
+.ax72-node-ring{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;align-content:center;gap:2px;padding:10px;border:1px solid #dce5f3;background:#fff;box-shadow:0 9px 23px rgba(47,67,122,.07);position:relative;overflow:hidden;transition:border-color .25s,box-shadow .25s,background .25s}
+.ax72-node-ring::before{content:"";position:absolute;inset:-2px;border-radius:50%;padding:2px;background:conic-gradient(from 0deg,var(--ax72-green),var(--ax72-cyan),var(--ax72-violet),var(--ax72-pink),var(--ax72-green));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;opacity:0;transition:opacity .25s}
+.ax72-node-ring b{font:900 9px var(--round);letter-spacing:.08em;color:#9179cf}
+.ax72-node-ring strong{font:900 12px/1.1 var(--round);color:#2a3d5c}
+.ax72-workflow-node>small{font-size:9px;line-height:1.3;max-width:14ch;color:#8391a6}
+.ax72-workflow-node.active .ax72-node-ring{border-color:transparent;background:linear-gradient(145deg,#f4fffb,#f4f8ff,#faf3ff);animation:ax72-node-pulse 2.2s ease-in-out infinite}
+.ax72-workflow-node.active .ax72-node-ring::before{opacity:1}
+.ax72-workflow-node.active .ax72-node-ring strong{color:#6046bd}
+.ax72-workflow-node.active>small{color:#5f6d89;font-weight:800}
+.ax46-workflow-stage{border-radius:30px!important;border:1px solid #dce6f3!important;background:linear-gradient(150deg,#fff,#f8fbff)!important;box-shadow:0 24px 66px rgba(46,61,120,.10)!important}
+.ax46-workflow-screen{border-radius:22px!important;background:linear-gradient(145deg,#fbfdff,#f8faff)!important}
+.ax46-stage-info{padding:18px 2px 10px!important}
+.ax46-stage-info h3{font-size:25px!important;letter-spacing:-.025em!important}

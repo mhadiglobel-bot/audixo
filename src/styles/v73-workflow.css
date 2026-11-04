@@ -1,0 +1,40 @@
+/* AUDIXO V73 — scoped 12-step neon serpentine workflow */
+:root{--ax73-pink:#f23dd1;--ax73-purple:#9464f5;--ax73-cyan:#17d9ee;--ax73-green:#18e6a3}
+@keyframes ax73-ring-rotate{to{transform:rotate(360deg)}}
+.ax73-workflow{gap:clamp(27px,4.5vw,66px)!important;align-items:start!important}
+.ax73-workflow .ax46-workflow-sidebar{min-width:0}
+.ax73-workflow .ax46-workflow-sidebar>p{max-width:46ch!important;margin-bottom:17px!important}
+.ax73-flow-map{position:relative;width:100%;max-width:520px;height:720px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(6,120px);margin:8px auto 0;isolation:isolate}
+.ax73-flow-path{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:visible}
+.ax73-flow-underlay{fill:none;stroke:#e0e7f5;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.ax73-flow-lit,.ax73-flow-glow{fill:none;stroke:url(#ax73-flow-spectrum);stroke-linecap:round;stroke-dasharray:1 1;transition:stroke-dashoffset 1.12s cubic-bezier(.18,.7,.23,1)}
+.ax73-flow-lit{stroke-width:4.8}
+.ax73-flow-glow{stroke-width:13;opacity:.2}
+.ax73-flow-node{appearance:none;position:relative;z-index:1;justify-self:center;align-self:center;width:100px;height:100px;border:0!important;border-radius:50%!important;padding:0!important;margin:0!important;background:transparent!important;cursor:pointer;box-shadow:none!important;transform:none!important;transition:scale .35s cubic-bezier(.2,.85,.25,1)!important;color:#2a3c5d;text-align:center}
+.ax73-flow-node:hover{scale:1.06;transform:none!important}
+.ax73-flow-node:focus-visible{outline:3px solid #805ce2!important;outline-offset:5px!important}
+.ax73-flow-disc{position:relative;isolation:isolate;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:50%;background:linear-gradient(145deg,#fff,#f8faff 78%,#f6f5fe);border:1px solid #dfe6f6;box-shadow:0 10px 24px rgba(57,74,135,.09),inset 0 1px #fff;transition:box-shadow .4s,background .4s,border-color .4s}
+.ax73-flow-disc::before{content:"";position:absolute;inset:-3px;border-radius:50%;padding:3px;background:conic-gradient(from 0deg,var(--ax73-green),var(--ax73-cyan),var(--ax73-purple),var(--ax73-pink),var(--ax73-green));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;opacity:0;pointer-events:none;transition:opacity .35s}
+.ax73-flow-disc small{position:relative;z-index:1;font:900 10px/1.1 var(--round,'Nunito',sans-serif)!important;color:#8f78cc;letter-spacing:.10em}
+.ax73-flow-disc strong{position:relative;z-index:1;font:950 14px/1.1 var(--round,'Nunito',sans-serif)!important;color:#273a57;white-space:nowrap}
+.ax73-flow-node.is-complete .ax73-flow-disc{background:linear-gradient(135deg,#f7fffd,#fafbff,#fbf7ff);box-shadow:0 10px 24px rgba(66,75,151,.09)}
+.ax73-flow-node.is-complete .ax73-flow-disc::before{opacity:.64}
+.ax73-flow-node.is-active{scale:1.07}
+.ax73-flow-node.is-active .ax73-flow-disc{background:radial-gradient(circle at 30% 18%,#fff,#f4fffb 58%,#f7f2ff);border-color:transparent;box-shadow:0 0 0 8px rgba(141,91,239,.07),0 14px 33px rgba(80,73,160,.15)}
+.ax73-flow-node.is-active .ax73-flow-disc::before{opacity:1;animation:ax73-ring-rotate 4.5s linear infinite}
+.ax73-flow-node.is-active .ax73-flow-disc strong{color:#6240c1}
+.ax73-flow-node.is-active .ax73-flow-disc small{color:#da3ec6}
+.ax73-flow-note{max-width:520px;margin:9px auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:9px;font-weight:900;letter-spacing:.1em;color:#7b89ac}
+.ax73-flow-note span:first-child{display:flex;align-items:center;gap:8px}
+.ax73-flow-note i{width:7px;height:7px;background:#1bd6b6;border-radius:50%;box-shadow:0 0 0 4px rgba(27,214,182,.14)}
+.ax73-workflow .ax46-workflow-stage{top:99px!important;border-radius:29px!important}
+.ax73-workflow .ax46-workflow-screen{background:linear-gradient(152deg,#fbfdff,#f7faff)!important}
+.ax73-workflow .ax46-workflow-screen .ax46-scene-motion{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:23px!important;min-height:340px!important}
+.ax73-workflow .ax46-scene-motion .ax46-motion-orbit{flex:0 0 auto;margin:12px auto 20px!important;height:178px!important;width:178px!important;box-shadow:0 0 0 17px rgba(25,213,212,.045),0 0 0 35px rgba(139,91,236,.035)!important}
+.ax73-workflow .ax46-scene-motion .ax46-motion-orbit>span{animation-duration:7.2s!important}
+.ax73-workflow .ax46-scene-motion .ax46-demo-caption{text-align:center!important;align-self:center!important;margin:0!important;letter-spacing:.10em}
+.ax73-workflow .ax46-stage-info{min-height:167px}
+.ax73-workflow .ax46-workflow-progress>span{animation-duration:5.8s!important}
+@media(max-width:1100px){.ax73-workflow{grid-template-columns:1fr!important}.ax73-flow-map{max-width:510px}.ax73-workflow .ax46-workflow-stage{position:relative!important;top:auto!important}}
+@media(max-width:550px){.ax73-flow-node{width:86px;height:86px}.ax73-flow-disc strong{font-size:12px!important}.ax73-flow-disc small{font-size:9px!important}.ax73-flow-note{font-size:8px}.ax73-workflow .ax46-scene-motion .ax46-motion-orbit{width:150px!important;height:150px!important}}
+@media(prefers-reduced-motion:reduce){.ax73-flow-lit,.ax73-flow-glow,.ax73-flow-node,.ax73-flow-disc,.ax73-flow-disc::before{transition:none!important;animation:none!important}.ax73-workflow .ax46-scene-motion .ax46-motion-orbit>span,.ax73-workflow .ax46-workflow-progress>span{animation:none!important}}

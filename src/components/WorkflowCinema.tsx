@@ -40,21 +40,62 @@ function SceneDemo({id}:{id:SceneKind}){
  }
 }
 
+
+const FLOW_STEP_MS=5800
+const FLOW_POSITIONS=scenes.map((_,index)=>{
+ const row=Math.floor(index/2)
+ const column=row%2===0?index%2:1-index%2
+ return {row,column,x:column?300:100,y:60+row*120}
+})
+const FLOW_LINKS=FLOW_POSITIONS.slice(0,-1).map((start,index)=>{
+ const end=FLOW_POSITIONS[index+1]
+ return {index,d:'M '+start.x+' '+start.y+' L '+end.x+' '+end.y}
+})
+const FLOW_ROUTE=FLOW_POSITIONS.map((point,index)=>(index?'L ':'M ')+point.x+' '+point.y).join(' ')
+
 export default function WorkflowCinema(){
  const [step,setStep]=useState(0)
  useEffect(()=>{
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
-  const id=window.setInterval(()=>setStep(n=>(n+1)%scenes.length),6200)
-  return()=>window.clearInterval(id)
+  const interval=window.setInterval(()=>setStep(current=>(current+1)%scenes.length),FLOW_STEP_MS)
+  return()=>window.clearInterval(interval)
  },[])
  const current=scenes[step]
- return <section className="ax46-workflow" aria-label="Animated Audixo workflow">
-  <div className="ax46-workflow-sidebar"><span className="ax46-eyebrow">HOW AUDIXO MOVES</span><h2>Every step.<br/><em>One workspace.</em></h2><p>See how your audio goes from raw recording to finished track.</p>
-   <div className="ax72-workflow-orbit" role="group" aria-label="Editing stages"><span className="ax72-workflow-line" aria-hidden="true"><i style={{'--workflow-progress':`${step/(scenes.length-1)*100}%`} as CSSProperties}/></span>{scenes.map((scene,i)=><button key={scene.id} type="button" aria-pressed={step===i} className={`ax72-workflow-node ${step===i?'active':''}`} style={{'--node-index':i} as CSSProperties} onClick={()=>setStep(i)}><span className="ax72-node-ring"><b>{String(i+1).padStart(2,'0')}</b><strong>{scene.name}</strong></span><small>{scene.label}</small></button>)}</div>
+ return <section className="ax46-workflow ax73-workflow" aria-label="Animated Audixo workflow">
+  <div className="ax46-workflow-sidebar">
+   <span className="ax46-eyebrow">HOW AUDIXO MOVES</span>
+   <h2>Every step.<br/><em>One workspace.</em></h2>
+   <p>Follow one continuous creative journey from the first import to the final export.</p>
+   <div className="ax73-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
+    <svg className="ax73-flow-path" viewBox="0 0 400 720" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+     <defs><linearGradient id="ax73-flow-spectrum" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#18e69e"/><stop offset="31%" stopColor="#17d7ea"/><stop offset="65%" stopColor="#9260fa"/><stop offset="100%" stopColor="#f23cd0"/></linearGradient></defs>
+     <path className="ax73-flow-underlay" d={FLOW_ROUTE}/>
+     {FLOW_LINKS.map(link=><g key={link.index}>
+      <path className="ax73-flow-glow" d={link.d} pathLength={1} style={{strokeDashoffset:link.index<step?0:1}}/>
+      <path className="ax73-flow-lit" d={link.d} pathLength={1} style={{strokeDashoffset:link.index<step?0:1}}/>
+     </g>)}
+    </svg>
+    {scenes.map((scene,index)=>{
+     const position=FLOW_POSITIONS[index]
+     return <button key={scene.id} type="button" title={String(index+1).padStart(2,'0')+' · '+scene.label}
+      aria-label={'Step '+(index+1)+' of '+scenes.length+': '+scene.name+' — '+scene.label}
+      aria-pressed={step===index}
+      className={'ax73-flow-node '+(index<step?'is-complete ':'')+(step===index?'is-active':'')}
+      style={{gridColumn:position.column+1,gridRow:position.row+1}}
+      onClick={()=>setStep(index)}>
+      <span className="ax73-flow-disc"><small>{String(index+1).padStart(2,'0')}</small><strong>{scene.name}</strong></span>
+     </button>
+    })}
+   </div>
+   <div className="ax73-flow-note"><span><i/> LIVE NEON PATH</span><span>SELECT ANY STEP</span></div>
   </div>
-  <div className="ax46-workflow-stage"><header><div><i/> AUDIXO / LIVE WORKFLOW</div><span>{String(step+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></header>
-   <div className="ax46-workflow-screen"><div className="ax46-screen-top"><div><span/><span/><span/></div><strong>{current.name.toUpperCase()} / STUDIO VIEW</strong><small>LIVE PREVIEW</small></div><SceneDemo key={current.id} id={current.id}/></div>
-   <div className="ax46-stage-info" key={`info-${current.id}`}><span>STAGE {String(step+1).padStart(2,'0')}</span><h3>{current.label}</h3><p>{current.description}</p><Link to={current.link}>{current.action} ↗</Link></div>
+  <div className="ax46-workflow-stage ax73-workflow-stage">
+   <header><div><i/> AUDIXO / LIVE WORKFLOW</div><span>{String(step+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></header>
+   <div className="ax46-workflow-screen">
+    <div className="ax46-screen-top"><div><span/><span/><span/></div><strong>{current.name.toUpperCase()} / STUDIO VIEW</strong><small>LIVE PREVIEW</small></div>
+    <SceneDemo key={current.id} id={current.id}/>
+   </div>
+   <div className="ax46-stage-info" key={'info-'+current.id}><span>STAGE {String(step+1).padStart(2,'0')}</span><h3>{current.label}</h3><p>{current.description}</p><Link to={current.link}>{current.action} ↗</Link></div>
    <div className="ax46-workflow-progress" aria-hidden="true"><span key={current.id}/></div>
    <footer><small>Import</small><small>Edit</small><small>Preview</small><small>Export</small></footer>
   </div>

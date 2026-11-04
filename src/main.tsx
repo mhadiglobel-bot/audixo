@@ -7,6 +7,7 @@ import './styles/premium-v65.css'
 import './styles/v72-core.css'
 import './styles/v72-editors.css'
 import './styles/v72-stems.css'
+import './styles/v73-workflow.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

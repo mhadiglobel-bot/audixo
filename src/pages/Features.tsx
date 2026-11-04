@@ -2,6 +2,7 @@ import {Link} from 'react-router-dom'
 import {useEffect,useRef,useState,type CSSProperties} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
+import {useNeonJourney} from '../hooks/useNeonJourney'
 
 const featureGroups=[
  {n:'01',tag:'EDIT',title:'See the source while you shape it.',body:'Trim precise ranges while the full recording remains visible. Keep the original for confident editing.',points:['Large trim handles','Exact time fields','Remove or keep the middle'],link:'/tools/trim-audio',cta:'Open Trim Audio'},
@@ -22,6 +23,24 @@ const focusedTools=[
  {name:'Audio Recorder',url:'/tools/recorder',tag:'CAPTURE',description:'Record and refine a voice take.',symbol:'◉'},
  {name:'Local Library',url:'/library',tag:'SAVED SOUNDS',description:'Find and reuse finished audio.',symbol:'♫'},
 ] as const
+
+
+// Three rows of three. Every connector is a single consistent neon tone.
+const TOOL_COLORS=['#13e2a7','#16d9ed','#9855fa','#f23acd'] as const
+const TOOL_POINTS=focusedTools.map((_,i)=>({x:150+(i%3)*300,y:150+Math.floor(i/3)*300}))
+const TOOL_LINKS=TOOL_POINTS.slice(0,-1).map((from,index)=>{
+ const to=TOOL_POINTS[index+1]
+ if(index===2||index===5){
+  const y=from.y
+  return {index,color:TOOL_COLORS[index%4],
+   d:'M 750 '+y+' C 832 '+y+' 850 '+(y+38)+' 850 '+(y+94)+
+   ' C 850 '+(y+140)+' 817 '+(y+156)+' 756 '+(y+156)+
+   ' L 177 '+(y+156)+' Q 150 '+(y+156)+' 150 '+(y+184)+
+   ' L 150 '+(y+300)}
+ }
+ return {index,color:TOOL_COLORS[index%4],d:'M '+from.x+' '+from.y+' L '+to.x+' '+to.y}
+})
+const TOOL_RETURN='M 750 750 C 827 750 866 736 866 656 L 866 136 C 866 68 829 36 754 36 L 158 36 Q 110 36 110 90 L 110 110 Q 110 150 150 150'
 
 function FeatureVisual({kind}:{kind:string}){
  return <div className={`ax44-feature-preview is-${kind.toLowerCase()}`} aria-label={`${kind.toLowerCase()} interface illustration`}>
@@ -48,9 +67,9 @@ function FeatureVisual({kind}:{kind:string}){
 export default function Features(){
  const toolsRef=useRef<HTMLDivElement|null>(null)
  const [toolsRevealed,setToolsRevealed]=useState(false)
- const [activeTool,setActiveTool]=useState(0)
+ const {active:activeTool,phase,select:selectTool}=useNeonJourney(focusedTools.length,1650,2350)
  useEffect(()=>{const node=toolsRef.current;if(!node)return;if(!('IntersectionObserver' in window)){setToolsRevealed(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setToolsRevealed(true);observer.disconnect()}},{threshold:.12});observer.observe(node);return()=>observer.disconnect()},[])
- useEffect(()=>{if(!toolsRevealed||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const timer=window.setInterval(()=>setActiveTool(v=>(v+1)%focusedTools.length),1900);return()=>window.clearInterval(timer)},[toolsRevealed])
+
  return <SiteShell><Seo title="AUDIXO Features — Trim, Stems, Echo, Mixing & Export" description="Explore real Audixo tools for trimming audio, adding echo effects, separating supported stems, and exporting edits from the browser." path="/features"/>
  <main className="ax25-features ax27-features ax44-features">
   <section className="page-shell ax25-page-hero ax44-features-hero"><div className="ax25-kicker"><i/> FEATURES / PURPOSEFUL TOOLS</div><h1>Power where it matters.<br/><em>Clarity everywhere else.</em></h1><p>Four clear workflows in one browser studio. No cluttered control panels.</p></section>
@@ -61,24 +80,22 @@ export default function Features(){
    </article>)}
   </section>
   <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Every tool. <em>One creative flow.</em></h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
-   <div ref={toolsRef} className={'ax75-tool-orbit '+(toolsRevealed?'is-visible':'')} aria-label="Nine Audixo tools connected in one creative flow">
-    <svg className="ax75-tool-connections" viewBox="0 0 900 900" aria-hidden="true" focusable="false">
-     <defs><linearGradient id="ax75-tool-neon" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="900"><stop offset="0" stopColor="#16e7a9"/><stop offset=".32" stopColor="#10d8ef"/><stop offset=".68" stopColor="#8f4eff"/><stop offset="1" stopColor="#f43ed2"/></linearGradient></defs>
-     {focusedTools.slice(0,-1).map((tool,i)=>{
-      const from={x:150+(i%3)*300,y:150+Math.floor(i/3)*300}
-      const to={x:150+((i+1)%3)*300,y:150+Math.floor((i+1)/3)*300}
-      return i<activeTool?<path key={tool.url} d={'M '+from.x+' '+from.y+' L '+to.x+' '+to.y} pathLength="100" className="ax75-tool-connector" stroke="url(#ax75-tool-neon)"/>:null
-     })}
+   <div ref={toolsRef} className={'ax77-tool-orbit '+(toolsRevealed?'is-visible ':'')+(phase==='return'?'is-returning':phase==='settle'?'is-settling':'')} aria-label="Nine AUDIXO tools connected in a continuous three-row journey">
+    <svg className="ax77-tool-path" viewBox="0 0 900 900" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+     {TOOL_LINKS.filter(link=>link.index<activeTool).map(link=><path
+      key={link.index} className="ax77-tool-trace" d={link.d} pathLength={100} stroke={link.color}/>)}
+     {(phase==='return'||phase==='settle')&&<path className={phase==='return'?'ax77-tool-return':'ax77-tool-return is-dissolving'}
+       d={TOOL_RETURN} stroke="#19dce7" pathLength={100}/>}
     </svg>
     {focusedTools.map((tool,i)=><Link to={tool.url} key={tool.url}
-     className={'ax75-tool-circle '+(i===activeTool?'is-active ':i<activeTool?'is-complete ':'')}
+     className={'ax77-tool-circle '+(i===activeTool?'is-active ':i<activeTool?'is-complete ':'')}
      aria-label={'Open '+tool.name}
-     style={{left:((i%3)*300+150)/9+'%',top:((Math.floor(i/3))*300+150)/9+'%'} as CSSProperties}
-     onMouseEnter={()=>setActiveTool(i)} onFocus={()=>setActiveTool(i)}>
-      <span className="ax75-tool-number">{String(i+1).padStart(2,'0')}</span>
-      <span className="ax75-tool-symbol" aria-hidden="true">{tool.symbol}</span>
+     title={tool.tag+' — '+tool.description}
+     style={{left:(TOOL_POINTS[i].x/9)+'%',top:(TOOL_POINTS[i].y/9)+'%'} as CSSProperties}
+     onMouseEnter={()=>selectTool(i)} onFocus={()=>selectTool(i)}>
+      <span className="ax77-tool-number">{String(i+1).padStart(2,'0')}</span>
+      <span className="ax77-tool-icon" aria-hidden="true">{tool.symbol}</span>
       <strong>{tool.name}</strong>
-      <small>{tool.description}</small>
      </Link>)}
    </div>
   </section>

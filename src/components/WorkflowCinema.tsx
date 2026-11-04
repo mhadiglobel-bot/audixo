@@ -1,4 +1,5 @@
-import {useEffect,useState,type CSSProperties} from 'react'
+import {type CSSProperties} from 'react'
+import {useNeonJourney} from '../hooks/useNeonJourney'
 import {Link} from 'react-router-dom'
 
 type SceneKind='import'|'trim'|'select'|'stems'|'pitch'|'speed'|'echo'|'motion'|'mashup'|'presets'|'library'|'export'
@@ -49,43 +50,38 @@ const FLOW_POSITIONS=scenes.map((_,index)=>{
 })
 const FLOW_LINKS=FLOW_POSITIONS.slice(0,-1).map((start,index)=>{
  const end=FLOW_POSITIONS[index+1]
- return {index,start,end,d:'M '+start.x+' '+start.y+' L '+end.x+' '+end.y}
+ return {index,start,end,color:['#12e2a8','#16d8ed','#9856fa','#f43ccf'][index%4],d:'M '+start.x+' '+start.y+' L '+end.x+' '+end.y}
 })
 
+const FLOW_RETURN='M 300 594 C 353 594 375 569 375 514 L 375 91 C 375 43 345 21 301 21 L 106 21 Q 52 21 52 61 Q 52 83 100 54'
+
 export default function WorkflowCinema(){
- const [step,setStep]=useState(0)
- useEffect(()=>{
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
-  const timeout=window.setTimeout(()=>setStep(current=>(current+1)%scenes.length),FLOW_STEP_MS)
-  return()=>window.clearTimeout(timeout)
- },[step])
+ const {active:step,phase,select:setStep}=useNeonJourney(scenes.length,FLOW_STEP_MS,2350)
  const current=scenes[step]
- return <section className="ax46-workflow ax73-workflow ax74-workflow" aria-label="Animated Audixo workflow">
+ return <section className={"ax46-workflow ax73-workflow ax74-workflow ax77-workflow "+(phase==='return'?'is-returning':phase==='settle'?'is-settling':'')} aria-label="Animated Audixo workflow">
   <div className="ax46-workflow-sidebar">
    <span className="ax46-eyebrow">HOW AUDIXO MOVES</span>
    <h2>Every step.<br/><em>One workspace.</em></h2>
    <p>Follow one continuous creative journey from the first import to the final export.</p>
-   <div className="ax73-flow-map ax74-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
-    <svg className="ax73-flow-path ax74-flow-path" viewBox="0 0 400 648" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-     <defs>{FLOW_LINKS.map(link=><linearGradient key={link.index} id={'ax74-neon-'+link.index} gradientUnits="userSpaceOnUse" x1={link.start.x} y1={link.start.y} x2={link.end.x} y2={link.end.y}>
-      <stop offset="0%" stopColor="#ff2fc9"/><stop offset="33%" stopColor="#974cff"/><stop offset="67%" stopColor="#00dfff"/><stop offset="100%" stopColor="#09e9a6"/>
-     </linearGradient>)}</defs>
-     {FLOW_LINKS.filter(link=>link.index<step).map(link=><path key={link.index} className="ax74-flow-segment" d={link.d} pathLength={100} stroke={'url(#ax74-neon-'+link.index+')'}/>)}
+   <div className="ax73-flow-map ax74-flow-map ax77-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
+    <svg className="ax73-flow-path ax77-flow-path" viewBox="0 0 400 648" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+     {FLOW_LINKS.filter(link=>link.index<step).map(link=><path key={link.index} className="ax77-workflow-trace" d={link.d} pathLength={100} stroke={link.color}/>)}
+     {(phase==='return'||phase==='settle')&&<path className={phase==='return'?'ax77-workflow-return':'ax77-workflow-return is-dissolving'} d={FLOW_RETURN} pathLength={100} stroke="#14dce7"/>}
     </svg>
     {scenes.map((scene,index)=>{
      const position=FLOW_POSITIONS[index]
      return <button key={scene.id} type="button" title={String(index+1).padStart(2,'0')+' · '+scene.label}
       aria-label={'Step '+(index+1)+' of '+scenes.length+': '+scene.name+' — '+scene.label}
       aria-pressed={step===index}
-      className={'ax73-flow-node '+(index<step?'is-complete ':'')+(step===index?'is-active':'')}
+      className={'ax73-flow-node ax77-flow-node '+(index<step?'is-complete ':'')+(step===index?'is-active':'')}
       style={{gridColumn:position.column+1,gridRow:position.row+1}}
       onClick={()=>setStep(index)}>
-      <span className="ax73-flow-disc ax74-flow-disc"><small>{String(index+1).padStart(2,'0')}</small><strong>{scene.name}</strong></span>
+      <span className="ax73-flow-disc ax74-flow-disc ax77-flow-disc"><small>{String(index+1).padStart(2,'0')}</small><strong>{scene.name}</strong></span>
      </button>
     })}
    </div>
   </div>
-  <div className="ax46-workflow-stage ax73-workflow-stage ax74-workflow-stage">
+  <div className="ax46-workflow-stage ax73-workflow-stage ax74-workflow-stage ax77-workflow-stage">
    <header><div><i/> AUDIXO / LIVE WORKFLOW</div><span>{String(step+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></header>
    <div className="ax46-workflow-screen">
     <div className="ax46-screen-top"><div><span/><span/><span/></div><strong>{current.name.toUpperCase()} / STUDIO VIEW</strong><small>LIVE PREVIEW</small></div>

@@ -38,3 +38,31 @@
 @media(max-width:1100px){.ax73-workflow{grid-template-columns:1fr!important}.ax73-flow-map{max-width:510px}.ax73-workflow .ax46-workflow-stage{position:relative!important;top:auto!important}}
 @media(max-width:550px){.ax73-flow-node{width:86px;height:86px}.ax73-flow-disc strong{font-size:12px!important}.ax73-flow-disc small{font-size:9px!important}.ax73-flow-note{font-size:8px}.ax73-workflow .ax46-scene-motion .ax46-motion-orbit{width:150px!important;height:150px!important}}
 @media(prefers-reduced-motion:reduce){.ax73-flow-lit,.ax73-flow-glow,.ax73-flow-node,.ax73-flow-disc,.ax73-flow-disc::before{transition:none!important;animation:none!important}.ax73-workflow .ax46-scene-motion .ax46-motion-orbit>span,.ax73-workflow .ax46-workflow-progress>span{animation:none!important}}
+
+
+/* V73.1: row-major stepped zigzag; gently lit paths, crisp circular outlines. */
+.ax73-flow-lit,.ax73-flow-glow{
+ stroke-dasharray:100 100!important;
+ transition:stroke-dashoffset .58s cubic-bezier(.19,.78,.28,1)!important;
+}
+.ax73-flow-underlay{stroke:#e2e9f4;stroke-width:3.8}
+.ax73-flow-lit{stroke-width:5.6;filter:drop-shadow(0 0 2px rgba(67,174,218,.23))}
+.ax73-flow-glow{stroke-width:14;opacity:.30}
+.ax73-flow-disc::before{display:none!important;animation:none!important}
+.ax73-flow-disc{border:1.5px solid #d9e4f1!important;box-shadow:0 9px 25px rgba(53,74,119,.08),inset 0 1px #fff!important}
+.ax73-flow-node.is-complete .ax73-flow-disc{border:2px solid #43ceb9!important;background:#fff!important}
+.ax73-flow-node.is-active .ax73-flow-disc{border:2px solid #8c63eb!important;background:#fff!important;box-shadow:0 0 0 6px rgba(140,99,235,.055),0 12px 26px rgba(73,73,150,.13)!important}
+.ax73-flow-node.is-active{scale:1.035}
+.ax73-workflow .ax46-workflow-stage{border-radius:34px!important;border-color:#dce5f3!important;box-shadow:0 19px 51px rgba(52,73,130,.075)!important;padding:23px!important}
+.ax73-workflow .ax46-workflow-screen{border-radius:26px!important;border-color:#e3e9f6!important}
+.ax73-workflow .ax46-stage-info{min-height:157px}
+.ax73-workflow .ax46-workflow-progress>span{animation-duration:1.65s!important}
+.ax73-workflow .ax46-scene{animation-duration:.38s!important;animation-timing-function:cubic-bezier(.16,.8,.22,1)!important}
+@media(max-width:620px){
+ .ax73-workflow .ax46-workflow-stage{padding:15px!important;border-radius:24px!important}
+ .ax73-workflow .ax46-workflow-screen{border-radius:19px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax73-flow-lit,.ax73-flow-glow,.ax73-flow-disc,.ax73-flow-node{transition:none!important}
+ .ax73-workflow .ax46-scene,.ax73-workflow .ax46-workflow-progress>span{animation:none!important}
+}

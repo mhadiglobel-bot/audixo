@@ -41,10 +41,10 @@ function SceneDemo({id}:{id:SceneKind}){
 }
 
 
-const FLOW_STEP_MS=5800
+const FLOW_STEP_MS=1650
 const FLOW_POSITIONS=scenes.map((_,index)=>{
  const row=Math.floor(index/2)
- const column=row%2===0?index%2:1-index%2
+ const column=index%2
  return {row,column,x:column?300:100,y:60+row*120}
 })
 const FLOW_LINKS=FLOW_POSITIONS.slice(0,-1).map((start,index)=>{
@@ -57,9 +57,9 @@ export default function WorkflowCinema(){
  const [step,setStep]=useState(0)
  useEffect(()=>{
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
-  const interval=window.setInterval(()=>setStep(current=>(current+1)%scenes.length),FLOW_STEP_MS)
-  return()=>window.clearInterval(interval)
- },[])
+  const timeout=window.setTimeout(()=>setStep(current=>(current+1)%scenes.length),FLOW_STEP_MS)
+  return()=>window.clearTimeout(timeout)
+ },[step])
  const current=scenes[step]
  return <section className="ax46-workflow ax73-workflow" aria-label="Animated Audixo workflow">
   <div className="ax46-workflow-sidebar">
@@ -71,7 +71,7 @@ export default function WorkflowCinema(){
      <defs><linearGradient id="ax73-flow-spectrum" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#18e69e"/><stop offset="31%" stopColor="#17d7ea"/><stop offset="65%" stopColor="#9260fa"/><stop offset="100%" stopColor="#f23cd0"/></linearGradient></defs>
      <path className="ax73-flow-underlay" d={FLOW_ROUTE}/>
      {FLOW_LINKS.map(link=><g key={link.index}>
-      <path className="ax73-flow-glow" d={link.d} pathLength={1} style={{strokeDashoffset:link.index<step?0:1}}/>
+      <path className="ax73-flow-glow" d={link.d} pathLength={100} style={{strokeDasharray:'100 100',strokeDashoffset:link.index<step?0:100}}/>
       <path className="ax73-flow-lit" d={link.d} pathLength={1} style={{strokeDashoffset:link.index<step?0:1}}/>
      </g>)}
     </svg>
@@ -87,7 +87,6 @@ export default function WorkflowCinema(){
      </button>
     })}
    </div>
-   <div className="ax73-flow-note"><span><i/> LIVE NEON PATH</span><span>SELECT ANY STEP</span></div>
   </div>
   <div className="ax46-workflow-stage ax73-workflow-stage">
    <header><div><i/> AUDIXO / LIVE WORKFLOW</div><span>{String(step+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></header>

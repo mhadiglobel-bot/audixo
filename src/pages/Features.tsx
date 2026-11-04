@@ -18,7 +18,9 @@ const focusedTools=[
  {name:'Pitch Editor',url:'/tools/pitch',tag:'TONAL SHAPING',description:'Shift the tone and preview before exporting.',symbol:'♫'},
  {name:'Spatial Motion',url:'/tools/spatial-motion',tag:'STEREO ORBIT',description:'Move sound through headphone-focused space.',symbol:'◎'},
  {name:'Vocal Extractor',url:'/tools/vocals',tag:'STEM SEPARATION',description:'Inspect vocals, drums, bass and music layers.',symbol:'☷'},
- {name:'Mashup Editor',url:'/tools/mashup',tag:'ARRANGEMENT',description:'Split and align clips across multiple tracks.',symbol:'▤'},
+ {name:'Mashup Editor',url:'/tools/mashup',tag:'ARRANGEMENT',description:'Arrange and layer audio clips.',symbol:'▤'},
+ {name:'Audio Recorder',url:'/tools/recorder',tag:'CAPTURE',description:'Record and refine a voice take.',symbol:'◉'},
+ {name:'Local Library',url:'/library',tag:'SAVED SOUNDS',description:'Find and reuse finished audio.',symbol:'♫'},
 ] as const
 
 function FeatureVisual({kind}:{kind:string}){
@@ -46,7 +48,9 @@ function FeatureVisual({kind}:{kind:string}){
 export default function Features(){
  const toolsRef=useRef<HTMLDivElement|null>(null)
  const [toolsRevealed,setToolsRevealed]=useState(false)
+ const [activeTool,setActiveTool]=useState(0)
  useEffect(()=>{const node=toolsRef.current;if(!node)return;if(!('IntersectionObserver' in window)){setToolsRevealed(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setToolsRevealed(true);observer.disconnect()}},{threshold:.12});observer.observe(node);return()=>observer.disconnect()},[])
+ useEffect(()=>{if(!toolsRevealed||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const timer=window.setInterval(()=>setActiveTool(v=>(v+1)%focusedTools.length),1900);return()=>window.clearInterval(timer)},[toolsRevealed])
  return <SiteShell><Seo title="AUDIXO Features — Trim, Stems, Echo, Mixing & Export" description="Explore real Audixo tools for trimming audio, adding echo effects, separating supported stems, and exporting edits from the browser." path="/features"/>
  <main className="ax25-features ax27-features ax44-features">
   <section className="page-shell ax25-page-hero ax44-features-hero"><div className="ax25-kicker"><i/> FEATURES / PURPOSEFUL TOOLS</div><h1>Power where it matters.<br/><em>Clarity everywhere else.</em></h1><p>Four clear workflows in one browser studio. No cluttered control panels.</p></section>
@@ -57,6 +61,25 @@ export default function Features(){
    </article>)}
   </section>
   <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Every tool. <em>One creative flow.</em></h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
-   <div ref={toolsRef} className={`ax46-focused-grid ax71-focus-grid ax72-focus-grid ${toolsRevealed?'ax71-in-view':''}`}>{focusedTools.map((tool,i)=><Link to={tool.url} className="ax46-focused-card ax71-feature-card ax72-feature-card" key={tool.url} style={{'--ax71-card-index':i} as CSSProperties}><span className="ax72-feature-aura" aria-hidden="true"/><span className="ax46-tool-index">{String(i+1).padStart(2,'0')} / {tool.tag}</span><div className="ax46-tool-icon" aria-hidden="true">{tool.symbol}<i/></div><h3>{tool.name}</h3><p>{tool.description}</p><span className="ax72-feature-meter" aria-hidden="true"><i/></span><span className="ax46-tool-arrow">Open workspace <b>↗</b></span></Link>)}</div>
+   <div ref={toolsRef} className={'ax75-tool-orbit '+(toolsRevealed?'is-visible':'')} aria-label="Nine Audixo tools connected in one creative flow">
+    <svg className="ax75-tool-connections" viewBox="0 0 900 900" aria-hidden="true" focusable="false">
+     <defs><linearGradient id="ax75-tool-neon" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="900"><stop offset="0" stopColor="#16e7a9"/><stop offset=".32" stopColor="#10d8ef"/><stop offset=".68" stopColor="#8f4eff"/><stop offset="1" stopColor="#f43ed2"/></linearGradient></defs>
+     {focusedTools.slice(0,-1).map((tool,i)=>{
+      const from={x:150+(i%3)*300,y:150+Math.floor(i/3)*300}
+      const to={x:150+((i+1)%3)*300,y:150+Math.floor((i+1)/3)*300}
+      return i<activeTool?<path key={tool.url} d={'M '+from.x+' '+from.y+' L '+to.x+' '+to.y} pathLength="100" className="ax75-tool-connector" stroke="url(#ax75-tool-neon)"/>:null
+     })}
+    </svg>
+    {focusedTools.map((tool,i)=><Link to={tool.url} key={tool.url}
+     className={'ax75-tool-circle '+(i===activeTool?'is-active ':i<activeTool?'is-complete ':'')}
+     aria-label={'Open '+tool.name}
+     style={{left:((i%3)*300+150)/9+'%',top:((Math.floor(i/3))*300+150)/9+'%'} as CSSProperties}
+     onMouseEnter={()=>setActiveTool(i)} onFocus={()=>setActiveTool(i)}>
+      <span className="ax75-tool-number">{String(i+1).padStart(2,'0')}</span>
+      <span className="ax75-tool-symbol" aria-hidden="true">{tool.symbol}</span>
+      <strong>{tool.name}</strong>
+      <small>{tool.description}</small>
+     </Link>)}
+   </div>
   </section>
  </main></SiteShell>}

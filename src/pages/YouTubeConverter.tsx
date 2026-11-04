@@ -15,7 +15,39 @@ export default function YouTubeConverter(){
  const [format,setFormat]=useState<MediaKind>('mp3'),[quality,setQuality]=useState(''),[mp3Bitrate,setMp3Bitrate]=useState<Mp3Bitrate>(320)
  const [busy,setBusy]=useState(false),[progress,setProgress]=useState<Progress|null>(null),[notice,setNotice]=useState(''),[completed,setCompleted]=useState(false),[downloadHref,setDownloadHref]=useState('')
  const picker=useRef<HTMLInputElement|null>(null),running=useRef<AbortController|null>(null),version=useRef(0)
- useEffect(()=>{const controller=new AbortController();void mediaRequest<{ready:boolean}>('health',{},controller.signal).then(v=>setWorkerState(v.ready?'online':'offline')).catch(()=>{if(!controller.signal.aborted)setWorkerState('offline')});return()=>{controller.abort();running.current?.abort()}},[])
+ const downloadFrame=useRef<HTMLIFrameElement|null>(null)
+ const clearDownloadFrame=()=>{downloadFrame.current?.remove();downloadFrame.current=null}
+ const downloadOnThisPage=(href:string)=>{
+  clearDownloadFrame()
+  // The media endpoint sends Content-Disposition: attachment. Keep its response
+  // inside an invisible same-origin frame so the visible AUDIXO page never navigates.
+  const frame=document.createElement('iframe')
+  frame.title='AUDIXO background download'
+  frame.setAttribute('aria-hidden','true')
+  frame.tabIndex=-1
+  frame.style.display='none'
+  frame.referrerPolicy='no-referrer'
+  frame.addEventListener('load',()=>{
+   if(downloadFrame.current!==frame)return
+   // Server-side conversion errors are JSON, not media files. Surface them on
+   // this page instead of displaying an error in a new tab.
+   try{
+    const body=frame.contentDocument?.body?.textContent?.trim()||''
+    if(!body.startsWith('{'))return
+    const data=JSON.parse(body) as {error?:unknown}
+    if(typeof data.error==='string'&&data.error){
+     setCompleted(false);setNotice(data.error)
+    }
+   }catch{/* A successful attachment usually does not fire frame load. */}
+  })
+  frame.addEventListener('error',()=>{
+   if(downloadFrame.current===frame){setCompleted(false);setNotice('The download could not start. Please retry on this page.')}
+  })
+  document.body.appendChild(frame)
+  downloadFrame.current=frame
+  frame.src=href
+ }
+ useEffect(()=>{const controller=new AbortController();void mediaRequest<{ready:boolean}>('health',{},controller.signal).then(v=>setWorkerState(v.ready?'online':'offline')).catch(()=>{if(!controller.signal.aborted)setWorkerState('offline')});return()=>{controller.abort();running.current?.abort();downloadFrame.current?.remove();downloadFrame.current=null}},[])
  const available=local?local.qualities:(preview?.qualities||[])
  const active=!!(local||preview)
  const selectedQuality=confirmedVideoOptions(available).some(item=>item.value===quality)
@@ -23,8 +55,8 @@ export default function YouTubeConverter(){
  const mp4Ready=!!selectedQuality
  const canDownload=active&&(format==='mp3'?audioReady:mp4Ready)
  const target=local?.title||preview?.title||''
- const clear=()=>{version.current++;running.current?.abort();setUrl('');setPreview(null);setLocal(null);setQuality('');setBusy(false);setNotice('');setProgress(null);setCompleted(false);setDownloadHref('');if(picker.current)picker.current.value=''}
- const updateUrl=(value:string)=>{version.current++;setUrl(value);setPreview(null);setLocal(null);setQuality('');setNotice('');setProgress(null);setCompleted(false);setDownloadHref('');if(picker.current)picker.current.value=''}
+ const clear=()=>{version.current++;running.current?.abort();clearDownloadFrame();setUrl('');setPreview(null);setLocal(null);setQuality('');setBusy(false);setNotice('');setProgress(null);setCompleted(false);setDownloadHref('');if(picker.current)picker.current.value=''}
+ const updateUrl=(value:string)=>{clearDownloadFrame();version.current++;setUrl(value);setPreview(null);setLocal(null);setQuality('');setNotice('');setProgress(null);setCompleted(false);setDownloadHref('');if(picker.current)picker.current.value=''}
  const analyze=async()=>{
   if(busy)return
   if(!youtubeId(url)){setNotice('Paste a valid HTTPS YouTube video link (watch, shorts, live or youtu.be).');return}
@@ -52,8 +84,7 @@ export default function YouTubeConverter(){
   if(busy||!canDownload)return
   const controller=new AbortController();running.current?.abort();running.current=controller
   // Pre-open within the user's click gesture, before the async token request.
-  const downloadTab=preview&&!local?window.open('about:blank','_blank'):null
-  if(downloadTab){downloadTab.opener=null;downloadTab.document.title='AUDIXO Download';downloadTab.document.body.textContent='AUDIXO is preparing your download…'}
+  // No popups, new tabs or top-level navigation for remote downloads.
   setBusy(true);setCompleted(false);setDownloadHref('');setNotice('');setProgress({stage:local?'Preparing local download…':'Preparing secure download link…'})
   try{
    if(local){
@@ -69,15 +100,15 @@ export default function YouTubeConverter(){
     const result=await mediaRequest<MediaJob>('start',{url:preview.url,format,quality:format==='mp4'?quality:undefined,bitrate:format==='mp3'?mp3Bitrate:undefined},controller.signal)
     if(!result.url||!result.url.startsWith('/api/media?action=file&token='))throw new MediaServiceError('This site did not provide a valid download link.','BAD_DOWNLOAD_LINK')
     setDownloadHref(result.url)
-    if(downloadTab&&!downloadTab.closed){downloadTab.location.href=result.url}
-    setProgress({stage:'Download request opened in browser.',percent:100})
+    downloadOnThisPage(result.url)
+    setProgress({stage:'AUDIXO is preparing your browser download…'})
    }
 
-   if(!controller.signal.aborted){setCompleted(true);setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:downloadTab?'Download requested in a new tab. Vercel converts and streams the file there. If YouTube blocks it, the tab will show an error.':'Popup blocked. Click “Retry / Open download” below to open the prepared link manually.')}
-  }catch(e){downloadTab?.close();if(!aborted(e))setNotice(explainMediaError(e))}
+   if(!controller.signal.aborted){setCompleted(true);setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:'Download requested. Stay on AUDIXO while Vercel prepares your file; it will save through your browser without opening another page.')}
+  }catch(e){if(!aborted(e)){setCompleted(false);setNotice(explainMediaError(e))}}
   finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }
- const cancel=()=>{running.current?.abort();running.current=null;setBusy(false);setProgress(null);setNotice('The current browser operation was cancelled. Downloads opened in another tab must be cancelled from that tab.')}
+ const cancel=()=>{clearDownloadFrame();running.current?.abort();running.current=null;setBusy(false);setProgress(null);setNotice('The current browser operation was cancelled. The pending in-page download will also be stopped.')}
  const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Convert with FFmpeg at your chosen bitrate',glyph:'♫'},{id:'mp4' as const,title:'MP4 Video',copy:'Download source-verified video resolution',glyph:'▶'}]
  const cta=format==='mp3'?`Download MP3 · ${mp3Bitrate} kbps`:`Download MP4${quality?` · ${quality}p`:''}`
  const cannotDownload=active&&!canDownload
@@ -98,8 +129,8 @@ export default function YouTubeConverter(){
      <button type="button" className="ax39-create ax42-download" disabled={!canDownload||busy} onClick={()=>void start()}><span>{busy?'Preparing download…':cta}</span><b>↓</b></button>
      {cannotDownload&&<div className="ax59-limitation" role="status">{format==='mp3'?'No audio stream is available. Try a different video or a local file.':'No source resolution is available; try another video or a local MP4.'}</div>}
      {busy&&progress&&<div className="ax39-progress ax59-progress" role="status"><div><strong>{progress.stage}</strong><button type="button" onClick={cancel}>Cancel</button></div>{typeof progress.percent==='number'?<progress max="100" value={progress.percent} aria-label="Media processing progress"/>:<span className="ax59-progress-indeterminate" aria-hidden="true"/>}<small>{typeof progress.percent==='number'?`${progress.percent}% · `:''}{typeof progress.bytes==='number'?`${(progress.bytes/1048576).toFixed(1)} MB processed · `:''}Direct media preparation on Vercel.</small></div>}
-     {completed&&!busy&&<div className="ax59-complete" role="status">✓ Download initiated. Check the browser downloads or the new tab for errors.</div>}
-     {downloadHref&&!busy&&<a className="ax39-analyze" href={downloadHref} target="_blank" rel="noopener noreferrer" aria-label="Open the media download again">↓ Retry / Open download</a>}
+     {completed&&!busy&&<div className="ax59-complete" role="status">✓ Download requested in this browser. AUDIXO stays open.</div>}
+     {downloadHref&&!busy&&<button type="button" className="ax39-analyze" onClick={()=>{setCompleted(true);setNotice('Retrying the download on this page. Check your browser downloads.');downloadOnThisPage(downloadHref)}} aria-label="Retry the download without leaving AUDIXO">↓ Retry download here</button>}
     </div></div>
    </div>
    <div className="ax39-converter-bottom"><span>Original source title</span><span>MP3 / MP4</span><span>Real quality · Vercel conversion</span></div>

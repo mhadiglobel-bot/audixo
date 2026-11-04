@@ -1,63 +1,120 @@
 import {RotatingUploadLogo} from '../components/Logo'
-import { useEffect,useMemo,useRef,useState,type CSSProperties } from 'react'
-import { useLocation } from 'react-router-dom'
+import StemMixerStudio from '../components/StemMixerStudio'
+import {useEffect,useMemo,useRef,useState,type CSSProperties} from 'react'
+import {useLocation} from 'react-router-dom'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
-import AudioStudio,{type InitialAudio} from '../editor/AudioStudio'
 import LibraryDrawer from '../editor/LibraryDrawer'
-import { getLibraryMixes,type LibraryMix } from '../editor/library'
-import { separateLocally,type LocalStem,type StemProgress } from '../services/localStems'
-import { localMetadata } from '../services/media'
-import { createSoundBankClip,soundBank,type SoundBankItem } from '../services/soundBank'
+import {getLibraryMixes,type LibraryMix} from '../editor/library'
+import {separateLocally,type LocalStem,type StemProgress} from '../services/localStems'
+import {localMetadata} from '../services/media'
+import {createSoundBankClip,soundBank,type SoundBankItem} from '../services/soundBank'
+
+const layerNames=['Lyrics / Vocals','Music','Drums','Bass','Other instruments'] as const
+const fmt=(s:number)=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')
 
 export default function Vocals(){
- const [file,setFile]=useState<File|null>(null),[busy,setBusy]=useState(false),[status,setStatus]=useState<StemProgress|null>(null),[message,setMessage]=useState(''),[stems,setStems]=useState<LocalStem[]>([]),[initial,setInitial]=useState<InitialAudio[]>([]),[library,setLibrary]=useState(false),[version,setVersion]=useState(0),[elapsed,setElapsed]=useState(0),[bankFamily,setBankFamily]=useState('All'),[bankBusy,setBankBusy]=useState(''),[mix,setMix]=useState<'blend'|'voice'|'instrumental'>('blend'),[advancedOpen,setAdvancedOpen]=useState(false)
- const input=useRef<HTMLInputElement>(null),abort=useRef<AbortController|null>(null),preview=useRef<HTMLAudioElement|null>(null),location=useLocation(),webGpu=typeof navigator!=='undefined'&&Boolean((navigator as any).gpu),threaded=typeof crossOriginIsolated!=='undefined'&&crossOriginIsolated
- const choose=(next:File)=>{setFile(next);setStems([]);setInitial([]);setAdvancedOpen(false);setStatus(null);setMessage('')},useMix=(mix:LibraryMix)=>{choose(new File([mix.blob],`${mix.name}.${mix.format}`,{type:mix.blob.type}));setLibrary(false)}
- useEffect(()=>{const id=(location.state as any)?.libraryId;if(id)getLibraryMixes().then(mixes=>{const item=mixes.find(m=>m.id===id);if(item)useMix(item);else setMessage('That saved mix is no longer in this browser.')});return()=>{abort.current?.abort();preview.current?.pause()}},[])
- useEffect(()=>{if(!busy){setElapsed(0);return}const started=Date.now(),t=setInterval(()=>setElapsed(Math.floor((Date.now()-started)/1000)),1000);return()=>clearInterval(t)},[busy])
+ const [file,setFile]=useState<File|null>(null)
+ const [busy,setBusy]=useState(false)
+ const [status,setStatus]=useState<StemProgress|null>(null)
+ const [message,setMessage]=useState('')
+ const [stems,setStems]=useState<LocalStem[]>([])
+ const [layers,setLayers]=useState<LocalStem[]>([])
+ const [library,setLibrary]=useState(false)
+ const [elapsed,setElapsed]=useState(0)
+ const [bankFamily,setBankFamily]=useState('All')
+ const [bankBusy,setBankBusy]=useState('')
+ const [bankOpen,setBankOpen]=useState(false)
+ const input=useRef<HTMLInputElement>(null)
+ const abort=useRef<AbortController|null>(null)
+ const demoAudio=useRef<HTMLAudioElement|null>(null)
+ const demoUrl=useRef<string|null>(null)
+ const location=useLocation()
+ const webGpu=typeof navigator!=='undefined'&&Boolean((navigator as Navigator & {gpu?:unknown}).gpu)
+ const threaded=typeof crossOriginIsolated!=='undefined'&&crossOriginIsolated
+ const choose=(next:File)=>{abort.current?.abort();demoAudio.current?.pause();setFile(next);setStems([]);setLayers([]);setStatus(null);setMessage('')}
+ const useSaved=(mix:LibraryMix)=>{choose(new File([mix.blob],mix.name+'.'+mix.format,{type:mix.blob.type}));setLibrary(false)}
+ useEffect(()=>{
+  const id=(location.state as {libraryId?:string}|null)?.libraryId
+  if(id)void getLibraryMixes().then(items=>{const found=items.find(x=>x.id===id);if(found)useSaved(found);else setMessage('This saved mix is no longer available on this device.')})
+  return()=>{abort.current?.abort();demoAudio.current?.pause();if(demoUrl.current)URL.revokeObjectURL(demoUrl.current)}
+ },[])
+ useEffect(()=>{if(!busy){setElapsed(0);return}const start=Date.now(),t=window.setInterval(()=>setElapsed(Math.floor((Date.now()-start)/1000)),1000);return()=>window.clearInterval(t)},[busy])
  const analyze=async()=>{
   if(!file||busy)return
-  setBusy(true);setMessage('');setInitial([]);setStems([]);setAdvancedOpen(false);abort.current=new AbortController()
+  setBusy(true);setMessage('');setLayers([]);setStems([])
+  abort.current=new AbortController()
   try{
-   if(file.size>120*1048576)throw new Error('Choose audio under 120 MB for this browser workspace.')
-   const seconds=await localMetadata(file)
-   if(seconds>300)throw new Error('Stem separation is limited to five minutes. Trim a shorter section first.')
-   setStatus({phase:'read',message:'Reading audio…',progress:0})
-   const parts=await separateLocally(file,setStatus,abort.current.signal,'studio')
-   setStems(parts)
-   setInitial(parts.map(p=>({name:`${p.name}.wav`,blob:p.blob,muted:['Drums','Bass','Other instruments'].includes(p.name)})))
-   setVersion(v=>v+1);setStatus(null);setMix('blend')
-   setMessage('AI stem separation completed. Five independent tracks are ready. Some source bleed may remain depending on the recording.')
+   if(file.size>120*1048576)throw Error('Choose audio smaller than 120 MB.')
+   const length=await localMetadata(file)
+   if(length>300)throw Error('Stem extraction supports recordings of up to five minutes. Trim a shorter selection first.')
+   setStatus({phase:'read',message:'Reading your sound…',progress:0})
+   const separated=await separateLocally(file,setStatus,abort.current.signal,'studio')
+   setStems(separated);setLayers(separated)
+   setMessage('Five AI-estimated layers are ready. Start the synchronized mixer below to combine or isolate them.')
   }catch(e){
    if((e as Error).name!=='AbortError'){
     const raw=e instanceof Error?e.message:'Stem processing failed.'
-    const friendly=/MODEL_DOWNLOAD_TIMEOUT/.test(raw)?'AI model download timed out. Check connection or browser cache and retry.':/GPU_START_TIMEOUT|LOCAL_START_TIMEOUT/.test(raw)?'AI engine failed to initialize. Try recent Chrome or Edge with more available memory.':/SEPARATION_TIMEOUT/.test(raw)?'Processing exceeded the device time limit. Try a shorter segment.':raw
-    setMessage(`${friendly} No substitute stem tracks were generated.`)
+    const friendly=/MODEL_DOWNLOAD_TIMEOUT/.test(raw)?'AI model download timed out. Check your connection and try again.':/GPU_START_TIMEOUT|LOCAL_START_TIMEOUT/.test(raw)?'The device AI engine did not initialize. Try Chrome/Edge or a shorter song.':/SEPARATION_TIMEOUT/.test(raw)?'The device exceeded its AI processing window. Try a shorter recording.':raw
+    setMessage(friendly+' No approximate tracks were substituted for real AI stems.')
    }
   }finally{setBusy(false);setStatus(null)}
  }
- const changeMix=(next:'blend'|'voice'|'instrumental')=>{setMix(next);setInitial(cur=>cur.map(item=>{const name=item.name.replace(/\.wav$/i,'');const muted=name==='Lyrics / Vocals'?next==='instrumental':name==='Music'?next==='voice':true;return {...item,muted}}));window.dispatchEvent(new CustomEvent('audixo-stem-mix',{detail:{mode:next}}))}
- const saveStem=(name:string)=>{const stem=stems.find(s=>s.name===name);if(!stem)return;const url=URL.createObjectURL(stem.blob),a=document.createElement('a');const prefix=(file?.name||'audio').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,' ').trim()||'audio';a.href=url;a.download=`${prefix} - ${name} (Audixo).wav`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),120000)}
- const families=useMemo(()=>['All',...new Set(soundBank.map(s=>s.family))],[]),visibleBank=bankFamily==='All'?soundBank:soundBank.filter(s=>s.family===bankFamily)
- const createBankAudio=async(item:SoundBankItem,add=false)=>{if(bankBusy)return;setBankBusy(item.id);try{const blob=await createSoundBankClip(item);if(add){const detail={name:`${item.name}.wav`,blob};if(initial.length)window.dispatchEvent(new CustomEvent('audixo-import-audio',{detail}));else{setInitial([detail]);setVersion(v=>v+1)}setMessage(`${item.name} added as a new editable music layer.`)}else{preview.current?.pause();const url=URL.createObjectURL(blob),audio=new Audio(url);preview.current=audio;audio.onended=()=>URL.revokeObjectURL(url);audio.onerror=()=>URL.revokeObjectURL(url);await audio.play()}}catch(e){setMessage(e instanceof Error?e.message:'Music preview could not be created.')}finally{setBankBusy('')}}
- const order=['Lyrics / Vocals','Music','Drums','Bass','Other instruments']
- return <><SiteShell><Seo title="Audixo Vocal Extractor — Separate Voice, Music, Drums & Bass" description="Separate a song into editable Lyrics/Vocals, Music, Drums, Bass and Other Instrument tracks, then remix the stems or add music and beats." path="/tools/vocals"/><main className="page-shell ax25-vocals ax32-vocals"><section className="ax25-page-hero"><div className="ax25-kicker"><i/> VOCALS / MUSIC / STEMS</div><h1 className="ax47-marketing-hero">Audixo Vocal Extractor.<br/><em>Hear every layer.</em></h1><p>Extract the main singing voice from the backing music, then work with drums, bass and other instruments as independent tracks.</p></section>
-  {initial.length===0&&<section className="ax25-stem-launch ax32-stem-launch ax75-stem-launch"><div><span className={`ax25-engine-badge ${webGpu?'fast':'fallback'}`}><i/>{webGpu?'STUDIO AI · WEBGPU READY':threaded?'STUDIO AI · MULTI-CORE WASM':'STUDIO AI · COMPATIBILITY MODE'}</span><h2>Hear what lives inside your song.</h2><p>Studio AI uses a Demucs stem model to estimate vocals, drums, bass and other instruments. The ONNX runtime is hosted in AUDIXO; the first run still downloads the large AI model once, then reuses the browser cache.</p><div className="ax75-stem-mode-note"><span className="ax75-mode-dot"/> <strong>AI Separation</strong><small>Five distinct audio layers · processed on your device</small></div><div className="ax25-upload-actions"><button className="ax25-primary-button" disabled={busy} onClick={()=>input.current?.click()}>{file?'Change audio':'Choose audio'} <span>↗</span></button><button disabled={busy} onClick={()=>setLibrary(true)}>From Library</button></div>{file&&<div className="ax25-selected-audio ax75-selected-audio"><span className="ax75-mini-disc"><img src="/audixo-official-symbol.png" alt=""/></span><div><small>SELECTED SONG</small><strong>{file.name}</strong></div></div>}</div><div className="ax25-stem-visual ax32-stem-visual"><RotatingUploadLogo small label="AUDIXO · VOCAL EXTRACTOR"/>{order.map((name,i)=><i key={name} style={{'--i':i} as CSSProperties}><small>{name.toUpperCase()}</small><b>▥</b></i>)}<button className="ax25-primary-button" disabled={!file||busy} onClick={analyze}>{busy?'Separating…':'Separate audio'} <span>↗</span></button></div></section>}
-  {busy&&<section className="ax25-stem-progress ax75-stem-progress" role="status"><header><div><small>{status?.phase?.toUpperCase()||'PREPARING'}</small><strong>{status?.message||'Preparing the stem engine…'}</strong></div><b>{Math.floor(elapsed/60)}:{String(elapsed%60).padStart(2,'0')}</b></header><progress max="1" value={['read','init','engine'].includes(status?.phase||'read')?undefined:status?.progress||0}/><p>True AI isolation runs locally. First use downloads the model; subsequent runs can reuse its browser cache. GPU and CPU processing times vary by device and audio length.</p><button onClick={()=>{abort.current?.abort();setStatus(null)}}>Cancel separation</button></section>}
-  {message&&<div className="ax25-stem-message" role="status">{message}</div>}
-  {stems.length>0&&<section className="ax25-stem-results ax32-stem-results ax72-stem-results"><header><small>SEPARATION COMPLETE</small><h2>Five layers. One clean control deck.</h2><p>Preview each isolated layer directly. “Music” is the instrumental bus; Drums, Bass and Other are its editable sub-layers.</p></header><div className="ax39-stem-actions ax72-stem-actions"><div className="ax39-stem-modes" role="group" aria-label="Choose stem mix"><button className={mix==='blend'?'active':''} aria-pressed={mix==='blend'} onClick={()=>changeMix('blend')}>♫ Full mix</button><button className={mix==='voice'?'active':''} aria-pressed={mix==='voice'} onClick={()=>changeMix('voice')}>◉ Vocals only</button><button className={mix==='instrumental'?'active':''} aria-pressed={mix==='instrumental'} onClick={()=>changeMix('instrumental')}>▦ Instrumental</button></div><div className="ax39-stem-saves"><button onClick={()=>saveStem('Lyrics / Vocals')}>↓ Vocals WAV</button><button onClick={()=>saveStem('Music')}>↓ Instrumental WAV</button></div></div><div className="ax72-stem-grid ax75-stem-grid">{order.map((name,i)=>{const stem=stems.find(s=>s.name===name);return stem?<StemPreviewCard key={stem.name} stem={stem} index={i} onSave={()=>saveStem(stem.name)}/>:null})}</div></section>}
-  {initial.length>0&&<section className="ax32-stem-workspace ax72-stem-workspace"><div className="ax32-stem-workspace-head ax72-stem-workspace-head"><div><small>ADVANCED STEM EDITOR</small><h2>Open the full multitrack workspace only when you need it.</h2><p>The compact deck above is for listening and downloads. Open Studio controls for trimming, mute/solo, effects and extra music layers.</p></div><div><button className="ax72-advanced-toggle" aria-expanded={advancedOpen} onClick={()=>setAdvancedOpen(v=>!v)}>{advancedOpen?'Close advanced editor':'Open advanced editor'} <span>↗</span></button><button onClick={()=>{setInitial([]);setStems([]);setFile(null);setAdvancedOpen(false)}}>New separation</button></div></div>{advancedOpen&&<div className="ax32-stem-workspace-grid ax72-stem-workspace-grid"><div className="ax32-stem-studio"><AudioStudio key={version} initialAudio={initial}/></div><aside className="ax32-bank-panel"><header><small>MUSIC & BEATS</small><strong>60 music & beat loops</strong><p>Add a generated loop or instrument layer to the current stem mix.</p></header><nav>{families.map(f=><button key={f} className={bankFamily===f?'active':''} onClick={()=>setBankFamily(f)}>{f}</button>)}</nav><div className="ax32-bank-list">{visibleBank.map(item=><article key={item.id}><div><small>{item.family}</small><strong>{item.name}</strong><p>{item.note}</p></div><div><button disabled={!!bankBusy} onClick={()=>createBankAudio(item,false)}>{bankBusy===item.id?'Building…':'Preview'}</button><button className="add" disabled={!!bankBusy} onClick={()=>createBankAudio(item,true)}>+ Add</button></div></article>)}</div></aside></div>}</section>}
-  <input hidden type="file" accept="audio/*,.mp3,.wav,.flac,.m4a,.ogg" ref={input} onChange={e=>{if(e.target.files?.[0])choose(e.target.files[0]);e.target.value=''}}/>
- </main></SiteShell><LibraryDrawer open={library} onClose={()=>setLibrary(false)} onSelect={useMix}/></>
-}
-
-
-function StemPreviewCard({stem,index,onSave}:{stem:LocalStem;index:number;onSave:()=>void}){
- const audio=useRef<HTMLAudioElement|null>(null),[url,setUrl]=useState(''),[playing,setPlaying]=useState(false),[time,setTime]=useState(0),[duration,setDuration]=useState(0),[volume,setVolume]=useState(.85),[muted,setMuted]=useState(false)
- useEffect(()=>{const next=URL.createObjectURL(stem.blob);setUrl(next);return()=>URL.revokeObjectURL(next)},[stem.blob])
- useEffect(()=>{if(audio.current){audio.current.volume=volume;audio.current.muted=muted}},[volume,muted])
- useEffect(()=>{const pause=(event:Event)=>{if((event as CustomEvent).detail!==stem.name)audio.current?.pause()};window.addEventListener('audixo-stem-preview',pause);return()=>window.removeEventListener('audixo-stem-preview',pause)},[stem.name])
- const toggle=async()=>{const node=audio.current;if(!node)return;if(node.paused){window.dispatchEvent(new CustomEvent('audixo-stem-preview',{detail:stem.name}));try{await node.play()}catch{setPlaying(false)}}else node.pause()}
- return <article className={`ax72-stem-card ax75-stem-card stem-${index+1} ${playing?'is-playing':''}`}><header><span>{String(index+1).padStart(2,'0')}</span><div><small>{stem.mode==='ai'?'AI STEM':'FAST PREVIEW'}</small><strong>{stem.name}</strong></div><em>{stem.energy}%</em></header><div className="ax72-stem-energy" aria-hidden="true"><i style={{width:`${Math.max(4,stem.energy)}%`}}/></div><div className="ax75-stem-volume"><button type="button" onClick={()=>setMuted(v=>!v)} aria-label={muted?`Unmute ${stem.name}`:`Mute ${stem.name}`} aria-pressed={muted}>{muted?"Unmute":"Mute"}</button><input aria-label={`${stem.name} volume`} type="range" min="0" max="1" step=".05" value={volume} onChange={e=>setVolume(Number(e.target.value))}/><span>{Math.round(volume*100)}%</span></div><div className="ax72-stem-player"><button type="button" className="ax75-liquid-play" onClick={toggle} aria-label={`${playing?'Pause':'Play'} ${stem.name}`} aria-pressed={playing}>{playing?'Ⅱ':'▶'}</button><span>{Math.floor(time/60)}:{String(Math.floor(time%60)).padStart(2,'0')}</span><input type="range" min="0" max={Math.max(.01,duration)} step=".01" value={Math.min(time,Math.max(.01,duration))} onChange={e=>{const node=audio.current;if(node){node.currentTime=Number(e.target.value);setTime(node.currentTime)}}}/><button type="button" className="save" onClick={onSave}>↓ WAV</button><audio ref={audio} src={url} preload="metadata" onLoadedMetadata={e=>setDuration(Number.isFinite(e.currentTarget.duration)?e.currentTarget.duration:0)} onTimeUpdate={e=>setTime(e.currentTarget.currentTime)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>{setPlaying(false);setTime(0)}}/></div></article>
+ const saveStem=(name:string)=>{
+  const stem=layers.find(s=>s.name===name);if(!stem)return
+  const url=URL.createObjectURL(stem.blob),a=document.createElement('a')
+  const base=(file?.name||'Audio').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,' ').trim()||'Audio'
+  a.href=url;a.download=base+' - '+name.replace(/[\\/:*?"<>|]/g,' ')+' (Audixo).wav'
+  document.body.append(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),60_000)
+ }
+ const families=useMemo(()=>['All',...new Set(soundBank.map(s=>s.family))],[])
+ const available=bankFamily==='All'?soundBank:soundBank.filter(s=>s.family===bankFamily)
+ const useLoop=async(item:SoundBankItem,add:boolean)=>{
+  if(bankBusy)return
+  setBankBusy(item.id)
+  try{
+   const blob=await createSoundBankClip(item)
+   if(add){
+    const next:LocalStem={name:item.name,blob,mode:'quick',energy:0,peaks:[]}
+    setLayers(prev=>[...prev,next]);setMessage(item.name+' added as an independent sound layer.')
+   }else{
+    demoAudio.current?.pause()
+    if(demoUrl.current)URL.revokeObjectURL(demoUrl.current)
+    const url=URL.createObjectURL(blob);demoUrl.current=url
+    const node=new Audio(url);demoAudio.current=node
+    node.onended=()=>{URL.revokeObjectURL(url);if(demoUrl.current===url)demoUrl.current=null}
+    await node.play()
+   }
+  }catch(e){setMessage(e instanceof Error?e.message:'Unable to prepare that sound.')}
+  finally{setBankBusy('')}
+ }
+ return <><SiteShell><Seo title="AUDIXO Vocal Extractor — Five-Stem Audio Mixer" description="Extract vocals, instrumental music, drums, bass and other instruments into independent synchronized tracks with mute, solo, EQ, echo, selection controls and WAV export." path="/tools/vocals"/>
+  <main className="page-shell ax25-vocals ax32-vocals ax78-vocals">
+   <section className="ax25-page-hero"><div className="ax25-kicker"><i/> VOCALS / MUSIC / STEMS</div><h1 className="ax47-marketing-hero">AUDIXO Vocal Extractor.<br/><em>Hear every layer.</em></h1><p>Extract the lead voice and instrument parts. Remix five distinct layers in one synchronized control deck.</p></section>
+   {!stems.length&&<section className="ax25-stem-launch ax32-stem-launch ax75-stem-launch ax78-stem-launch">
+    <div className="ax78-stem-intro"><span className={'ax25-engine-badge '+(webGpu?'fast':'fallback')}><i/>{webGpu?'STUDIO AI · WEBGPU AVAILABLE':threaded?'STUDIO AI · MULTI-CORE WASM':'STUDIO AI · CPU MODE'}</span>
+     <h2>Find the sound behind the sound.</h2><p>Upload a song to separate its singing voice, instrumental music, drums, bass and other sources. Processing uses the browser's AI engine; the first session may need to download a large model.</p>
+     <div className="ax75-stem-mode-note"><span className="ax75-mode-dot"/><strong>Five-layer AI extraction</strong><small>True model separation — not a fake frequency-only split</small></div>
+     <div className="ax25-upload-actions ax78-upload-actions"><button className="ax25-primary-button" disabled={busy} onClick={()=>input.current?.click()}>{file?'Replace audio':'Choose a song'} <span>↗</span></button><button disabled={busy} onClick={()=>setLibrary(true)}>Open Library</button></div>
+     {file&&<div className="ax25-selected-audio ax75-selected-audio"><span className="ax75-mini-disc"><img src="/audixo-official-symbol.png" alt=""/></span><div><small>SELECTED AUDIO</small><strong>{file.name}</strong></div></div>}
+    </div>
+    <div className="ax25-stem-visual ax32-stem-visual ax78-stem-visual"><RotatingUploadLogo small label="AUDIXO · STEM ENGINE"/>
+     {layerNames.map((name,i)=><i key={name} style={{'--i':i} as CSSProperties}><small>{name}</small><b>∿</b></i>)}
+     <button className="ax25-primary-button" disabled={!file||busy} onClick={()=>void analyze()}>{busy?'Processing…':'Extract five layers'} <span>↗</span></button>
+    </div>
+   </section>}
+   {busy&&<section className="ax25-stem-progress ax75-stem-progress" role="status"><header><div><small>{status?.phase?.toUpperCase()||'PREPARING'}</small><strong>{status?.message||'Preparing your audio…'}</strong></div><b>{fmt(elapsed)}</b></header>
+    <progress max="1" value={['read','init','engine'].includes(status?.phase||'read')?undefined:status?.progress||0}/>
+    <p>First-time AI model loading and separation speed depend on the device and audio duration. This is real local processing, not an artificial progress timer.</p><button onClick={()=>abort.current?.abort()}>Cancel processing</button></section>}
+   {message&&<div className="ax25-stem-message" role="status">{message}</div>}
+   {stems.length>0&&<section className="ax25-stem-results ax72-stem-results ax78-results">
+    <header className="ax78-results-heading"><div><small>SEPARATION COMPLETE</small><h2>Five sources. One synced mix.</h2><p>Turn on several stems simultaneously, solo one, change its level, or apply effects to a specific time range.</p></div><button type="button" onClick={()=>{setStems([]);setLayers([]);setFile(null);setBankOpen(false)}}>New extraction ↗</button></header>
+    <StemMixerStudio stems={layers} sourceName={file?.name||'Audixo Audio'} onSave={saveStem}/>
+   </section>}
+   {stems.length>0&&<section className="ax78-sound-library"><header><div><small>SOUND & INSTRUMENT LIBRARY</small><h2>Add a beat. Keep full control.</h2><p>Optional sound layers appear below the extracted stems and can be adjusted independently. These generated loops are not AI-detected instruments.</p></div><button aria-expanded={bankOpen} onClick={()=>setBankOpen(v=>!v)}>{bankOpen?'Close sound library':'Browse 60 sounds'} <span>{bankOpen?'−':'+'}</span></button></header>
+    {bankOpen&&<><nav role="group" aria-label="Sound bank categories">{families.map(f=><button key={f} className={bankFamily===f?'active':''} onClick={()=>setBankFamily(f)}>{f}</button>)}</nav><div className="ax78-loop-grid">{available.map(item=><article key={item.id}><div><small>{item.family}</small><strong>{item.name}</strong><p>{item.note}</p></div><div><button disabled={!!bankBusy} onClick={()=>void useLoop(item,false)}>{bankBusy===item.id?'Preparing…':'Preview'}</button><button disabled={!!bankBusy} onClick={()=>void useLoop(item,true)}>+ Add to mix</button></div></article>)}</div></>}
+   </section>}
+   <input ref={input} type="file" hidden accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" onChange={e=>{if(e.target.files?.[0])choose(e.target.files[0]);e.target.value=''}}/>
+  </main>
+ </SiteShell><LibraryDrawer open={library} onClose={()=>setLibrary(false)} onSelect={useSaved}/></>
 }

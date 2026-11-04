@@ -1,5 +1,5 @@
 import { encodeWav } from '../editor/encoder'
-export type LocalStem={name:string;blob:Blob;energy:number;mode:'ai'|'quick'}
+export type LocalStem={name:string;blob:Blob;energy:number;mode:'ai'|'quick';peaks:number[]}
 export type StemProgress={phase:string;message:string;progress:number;provider?:string}
 type WorkerResult={result:any;accelerator:string}
 
@@ -24,7 +24,7 @@ function workerAttempt(left:Float32Array,right:Float32Array,provider:'auto'|'was
 
 function normalizePair(left:Float32Array,right:Float32Array){let peak=0;for(let i=0;i<left.length;i+=32)peak=Math.max(peak,Math.abs(left[i]),Math.abs(right[i]));if(peak<=.99)return;const k=.98/peak;for(let i=0;i<left.length;i++){left[i]*=k;right[i]*=k}}
 function buildStem(name:string,left:Float32Array,right:Float32Array,mode:'ai'|'quick'){
- normalizePair(left,right);const buffer=new AudioBuffer({numberOfChannels:2,length:left.length,sampleRate:44100});buffer.copyToChannel(left,0);buffer.copyToChannel(right,1);let sum=0;for(let i=0;i<left.length;i+=16)sum+=left[i]*left[i]+right[i]*right[i];return {name,blob:encodeWav(buffer),energy:sum,mode}
+ normalizePair(left,right);const buffer=new AudioBuffer({numberOfChannels:2,length:left.length,sampleRate:44100});buffer.copyToChannel(left,0);buffer.copyToChannel(right,1);let sum=0;for(let i=0;i<left.length;i+=16)sum+=left[i]*left[i]+right[i]*right[i];const columns=112,peaks=Array.from({length:columns},(_,i)=>{const a=Math.floor(i*left.length/columns),end=Math.min(left.length,Math.ceil((i+1)*left.length/columns)),step=Math.max(1,Math.floor((end-a)/28));let top=0;for(let j=a;j<end;j+=step)top=Math.max(top,Math.abs(left[j]||0),Math.abs(right[j]||0));return Math.min(1,top)});return {name,blob:encodeWav(buffer),energy:sum,mode,peaks}
 }
 
 function suppressVocalBleed(stemL:Float32Array,stemR:Float32Array,vocalL:Float32Array,vocalR:Float32Array,strength=.52){

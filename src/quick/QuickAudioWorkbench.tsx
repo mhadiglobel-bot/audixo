@@ -31,21 +31,34 @@ function Slider({label,value,min,max,step,onChange,display,help,active=false}:{l
   return <label className={`v13-slider ${active?'is-active':''}`}><div><span><b>{label}</b>{help&&<small>{help}</small>}</span><strong>{display ?? value}</strong></div><input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} style={{'--quick-range':`${Math.max(0,Math.min(100,percent))}%`} as CSSProperties}/></label>
 }
 
-function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer){
-  const rect=canvas.getBoundingClientRect();if(rect.width<2||rect.height<2)return
-  const dpr=Math.min(window.devicePixelRatio||1,1.6);canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr)
-  const ctx=canvas.getContext('2d');if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,rect.width,rect.height)
-  const channels=Array.from({length:Math.max(1,buffer.numberOfChannels)},(_,i)=>buffer.getChannelData(i))
-  const center=rect.height/2;const amp=rect.height*.39;const cols=Math.max(160,Math.floor(rect.width));const sampleStep=Math.max(1,Math.floor(buffer.length/cols))
-  const gradient=ctx.createLinearGradient(0,0,rect.width,0);gradient.addColorStop(0,'#16df72');gradient.addColorStop(.48,'#20dff6');gradient.addColorStop(.78,'#8a63ff');gradient.addColorStop(1,'#ff50d3')
-  ctx.strokeStyle=gradient;ctx.lineWidth=1.45;ctx.globalAlpha=.94;ctx.beginPath()
-  for(let x=0;x<cols;x+=1){
-    const a=x*sampleStep,b=Math.min(buffer.length,a+sampleStep);let min=1,max=-1;const stride=Math.max(1,Math.floor((b-a)/18))
-    for(let i=a;i<b;i+=stride){let v=0;for(const ch of channels)v+=ch[i]||0;v/=channels.length;if(v<min)min=v;if(v>max)max=v}
-    const px=(x/Math.max(1,cols-1))*rect.width;ctx.moveTo(px,center+min*amp);ctx.lineTo(px,center+max*amp)
-  }
-  ctx.stroke();ctx.globalAlpha=1
-  ctx.strokeStyle='rgba(10,26,18,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,center+.5);ctx.lineTo(rect.width,center+.5);ctx.stroke()
+function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer,trimStart=0,trimEnd=buffer.duration,fadeIn=0,fadeOut=0){
+ const rect=canvas.getBoundingClientRect();if(rect.width<2||rect.height<2)return
+ const dpr=Math.min(window.devicePixelRatio||1,1.6);canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr)
+ const ctx=canvas.getContext('2d');if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,rect.width,rect.height)
+ const channels=Array.from({length:Math.max(1,buffer.numberOfChannels)},(_,i)=>buffer.getChannelData(i))
+ const center=rect.height/2,amp=rect.height*.40,cols=Math.max(160,Math.floor(rect.width)),sampleStep=Math.max(1,Math.floor(buffer.length/cols))
+ const gradient=ctx.createLinearGradient(0,0,rect.width,0)
+ gradient.addColorStop(0,'#13e5a9');gradient.addColorStop(.36,'#18d9eb');gradient.addColorStop(.69,'#9259ed');gradient.addColorStop(1,'#f238cc')
+ const bars:{x:number;min:number;max:number;time:number}[]=[]
+ for(let x=0;x<cols;x++){
+  const a=x*sampleStep,b=Math.min(buffer.length,a+sampleStep);let min=1,max=-1;const stride=Math.max(1,Math.floor((b-a)/18))
+  for(let i=a;i<b;i+=stride){let v=0;for(const ch of channels)v+=ch[i]||0;v/=channels.length;if(v<min)min=v;if(v>max)max=v}
+  bars.push({x:x/Math.max(1,cols-1)*rect.width,min,max,time:x/Math.max(1,cols-1)*buffer.duration})
+ }
+ // Keep original source visible faintly, then draw the active region at full contrast.
+ ctx.lineWidth=1.1;ctx.strokeStyle='#9db5cc';ctx.globalAlpha=.34;ctx.beginPath()
+ for(const bar of bars){ctx.moveTo(bar.x,center+bar.min*amp);ctx.lineTo(bar.x,center+bar.max*amp)}
+ ctx.stroke()
+ ctx.strokeStyle=gradient;ctx.lineWidth=1.55;ctx.globalAlpha=.98;ctx.beginPath()
+ for(const bar of bars){
+  if(bar.time<trimStart||bar.time>trimEnd)continue
+  const inward=fadeIn>.01?Math.min(1,Math.max(.015,(bar.time-trimStart)/fadeIn)):1
+  const outward=fadeOut>.01?Math.min(1,Math.max(.015,(trimEnd-bar.time)/fadeOut)):1
+  const taper=Math.min(inward,outward)
+  ctx.moveTo(bar.x,center+bar.min*amp*taper);ctx.lineTo(bar.x,center+bar.max*amp*taper)
+ }
+ ctx.stroke();ctx.globalAlpha=1
+ ctx.strokeStyle='rgba(33,58,86,.10)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,center+.5);ctx.lineTo(rect.width,center+.5);ctx.stroke()
 }
 
 /** Custom A/B transport with accurate play time, seeking, mute and rate controls. */
@@ -81,7 +94,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
   // Revoke URLs independently: replacing the preview must NOT invalidate original audio.
   useEffect(()=>()=>{if(previewUrl)URL.revokeObjectURL(previewUrl)},[previewUrl])
   useEffect(()=>()=>{if(sourceUrl)URL.revokeObjectURL(sourceUrl)},[sourceUrl])
-  useEffect(()=>{const canvas=canvasRef.current,buffer=bufferRef.current;if(!canvas||!buffer)return;const draw=()=>drawWave(canvas,buffer);draw();const ro=new ResizeObserver(draw);ro.observe(canvas);return()=>ro.disconnect()},[duration])
+  useEffect(()=>{const canvas=canvasRef.current,buffer=bufferRef.current;if(!canvas||!buffer)return;const draw=()=>drawWave(canvas,buffer,trimStart,trimEnd,fadeIn,fadeOut);draw();const ro=new ResizeObserver(draw);ro.observe(canvas);return()=>ro.disconnect()},[duration,trimStart,trimEnd,fadeIn,fadeOut])
   useEffect(()=>{const on=()=>{const active=Boolean(document.fullscreenElement);setIsFullscreen(active);if(active)setIsPseudoFullscreen(false)};document.addEventListener('fullscreenchange',on);return()=>document.removeEventListener('fullscreenchange',on)},[])
   useEffect(()=>{if(!isPseudoFullscreen)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous}},[isPseudoFullscreen])
   useEffect(()=>{if(bufferRef.current)setPreviewDirty(true)},[trimStart,trimEnd,gainDb,speed,fadeIn,fadeOut,delayMs,delayWet,feedback,reverb,pitch,preservePitch,motionMode,motionDepth,motionHz,echoEnabled,pitchEnabled])

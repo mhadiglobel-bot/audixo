@@ -24,7 +24,7 @@ export const site = {
  url:configured || (typeof window!=='undefined'?window.location.origin:''),
  email:(manualSupportEmail||envEmail).trim(),
  company:'Nexivo',
- description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted MP3 or MP4 downloads.'
+ description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted public social-video MP3 or MP4 downloads.'
 }
 export const contactEmailReady=Boolean(site.email)
 export const mediaUiConfig={allMp4Qualities:[...MP4_QUALITIES],normalizeMp4Quality}

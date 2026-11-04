@@ -2119,3 +2119,10 @@
  .v13-quick-page .ax68-upload-logo-plate .ax48-upload-orbit img{animation:none!important;filter:none!important}
  .ax44-feature-tools .ax71-feature-card{opacity:1!important;translate:0!important;rotate:0deg!important;scale:1!important}
 }
+
+/* Social Video Downloader: compact site chips in the existing converter design. */
+.ax80-social-sites{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:16px 0 1px}
+.ax80-social-sites span{display:inline-flex;align-items:center;justify-content:center;padding:6px 11px;border-radius:999px;border:1px solid rgba(129,105,223,.18);background:rgba(255,255,255,.75);box-shadow:0 3px 10px rgba(35,53,86,.055);color:#4b5781;font-size:11px;font-weight:700;letter-spacing:.012em;white-space:nowrap;backdrop-filter:blur(8px)}
+.ax80-social-sites span:first-child,.ax80-social-sites span:nth-child(2){border-color:rgba(152,90,232,.32);color:#7945ca}
+.ax80-social-sites span:last-child{border-color:rgba(34,190,206,.32);color:#087c92}
+@media(max-width:650px){.ax80-social-sites{gap:6px;margin:13px 0 2px}.ax80-social-sites span{padding:5px 9px;font-size:10px}}

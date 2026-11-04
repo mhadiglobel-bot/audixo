@@ -16,8 +16,11 @@ function resFactory(){const o={statusCode:200,headers:{},text:null,done:null,buf
 const req=(method,action,body={},more={})=>({method,query:{action},body,headers:{...more}})
 async function call(h,r){const response=resFactory();await h(r,response);return response}
 (async()=>{
- assert.equal(youtube.parseVideoUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),'dQw4w9WgXcQ');assert.throws(()=>youtube.parseVideoUrl('https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ'));
+ assert.equal(youtube.parseVideoUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),'https://www.youtube.com/watch?v=dQw4w9WgXcQ');assert.throws(()=>youtube.parseVideoUrl('https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ'));
+ for(const [url,expected] of [['https://www.instagram.com/reel/ABC1234567/','Instagram'],['https://www.tiktok.com/@audixo/video/1234567890123456789','TikTok'],['https://www.facebook.com/reel/123456789','Facebook'],['https://x.com/audixo/status/123456789012345','X / Twitter'],['https://www.reddit.com/r/a/comments/abcdef/demo/','Reddit'],['https://vimeo.com/1234567','Vimeo'],['https://www.dailymotion.com/video/x8abcde','Dailymotion']]){assert.equal(youtube.sourceName(youtube.parseVideoUrl(url)),expected)}
+ for(const badUrl of ['http://www.instagram.com/reel/ABC123','https://localhost/admin','https://127.0.0.1/','https://instagram.com.evil.com/reel/ABC123','https://www.youtube.com/channel/UCSample'])assert.throws(()=>youtube.parseVideoUrl(badUrl));
  const m=await call(handler,req('POST','meta',{url:'https://youtu.be/dQw4w9WgXcQ'}));assert.equal(m.statusCode,200);assert.equal(m.text.title,'Example Video');assert.equal(m.text.qualities.length,2);
+ const social=await call(handler,req('POST','meta',{url:'https://www.instagram.com/reel/ABC1234567/'}));assert.equal(social.statusCode,200);assert.equal(social.text.platform,'Instagram');
  const start=await call(handler,req('POST','start',{url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',format:'mp3',bitrate:320}));assert.equal(start.statusCode,200);const url=new URL('https://audixo.local'+start.text.url);const token=url.searchParams.get('token');assert.ok(token);
  const f=await call(handler,req('GET','file',{},{}));assert.equal(f.statusCode,403);
  const bad=await call(admin,req('POST','',{password:'bad',cookiesText:'# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t1999999999\tSID\ttest'}));assert.equal(bad.statusCode,403);
@@ -25,5 +28,5 @@ async function call(h,r){const response=resFactory();await h(r,response);return 
  const after=await call(handler,req('POST','meta',{url:'https://youtu.be/dQw4w9WgXcQ'}));assert.equal(after.statusCode,200);
  const f2=await call(handler,{method:'GET',query:{action:'file',token},headers:{}});assert.equal(f2.statusCode,200);assert.equal(Buffer.concat(f2.buf.map(Buffer.from)).toString(),'FAKE_MP3');
  const start4=await call(handler,req('POST','start',{url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',format:'mp4',quality:'1080'}));const tok4=new URL('https://audixo.local'+start4.text.url).searchParams.get('token');const f4=await call(handler,{method:'GET',query:{action:'file',token:tok4},headers:{}});assert.equal(f4.statusCode,200);assert.equal(Buffer.concat(f4.buf.map(Buffer.from)).toString(),'FAKE_MP4');
- console.log('PASSED: parse-video-url, SSRF guard, metadata, confirmed qualities, signed URLs, invalid tokens, wrong password, private Blob cookie save, cookie reuse, mock MP3 stream, mock MP4 stream');
+ console.log('PASSED: public social sources, URL guard, metadata, confirmed qualities, signed media tokens, private cookie save, mock MP3/MP4 stream');
 })().catch(e=>{console.error(e);process.exitCode=1})

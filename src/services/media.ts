@@ -4,14 +4,48 @@
 export type MediaKind='mp3'|'mp4'
 export type MediaQuality={value:string;label:string}
 export type DirectStream={kind:'audio'|'mp4';url:string;mimeType:string;quality?:string;bitrate?:number;contentLength?:number}
-export type MediaPreview={url:string;title:string;author:string;duration:number;thumbnail:string;qualities:MediaQuality[];streams:DirectStream[];audioAvailable:boolean;sourceNote:string;remote?:boolean}
+export type MediaPreview={url:string;platform?:string;title:string;author:string;duration:number;thumbnail:string;qualities:MediaQuality[];streams:DirectStream[];audioAvailable:boolean;sourceNote:string;remote?:boolean}
 export type MediaJob={ok:boolean;url?:string;status?:string;error?:string}
 export class MediaServiceError extends Error{constructor(message:string,public code='MEDIA_ERROR',public status=0){super(message);this.name='MediaServiceError'}}
-export function youtubeId(raw:string){
- try{const u=new URL(raw.trim()),hosts=new Set(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be','www.youtu.be'])
-  if(u.protocol!=='https:'||!hosts.has(u.hostname.toLowerCase())||u.username||u.password||u.port)return null
-  const id=u.hostname.endsWith('youtu.be')?u.pathname.split('/')[1]:u.pathname==='/watch'?u.searchParams.get('v'):u.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]{11})\/?$/)?.[1]
-  return id&&/^[\w-]{11}$/.test(id)?id:null
+
+/** Client-side fast validation; the Vercel handler repeats the check before calling yt-dlp. */
+const socialSources:ReadonlyArray<[string,readonly string[]]>=[
+ ['YouTube',['youtube.com','youtu.be']],
+ ['Instagram',['instagram.com']],
+ ['TikTok',['tiktok.com','tiktokv.com']],
+ ['Facebook',['facebook.com','fb.watch','fb.com']],
+ ['X / Twitter',['x.com','twitter.com']],
+ ['Reddit',['reddit.com','redd.it','v.redd.it']],
+ ['Vimeo',['vimeo.com']],
+ ['Dailymotion',['dailymotion.com','dai.ly']],
+ ['Twitch',['twitch.tv']],
+ ['Threads',['threads.net','threads.com']],
+ ['Pinterest',['pinterest.com','pin.it']],
+ ['Snapchat',['snapchat.com']],
+ ['LinkedIn',['linkedin.com']],
+ ['Bilibili',['bilibili.com','b23.tv']],
+ ['Bluesky',['bsky.app']],
+ ['Tumblr',['tumblr.com']],
+ ['Streamable',['streamable.com']],
+ ['Rumble',['rumble.com']],
+ ['Odysee',['odysee.com']],
+ ['SoundCloud',['soundcloud.com']],
+ ['Bandcamp',['bandcamp.com']],
+ ['Mixcloud',['mixcloud.com']],
+ ['Douyin',['douyin.com']]
+]
+export function supportedSocialPlatform(raw:string):string|null{
+ try{
+  if(typeof raw!=='string'||raw.length>2048)return null
+  const u=new URL(raw.trim()),host=u.hostname.toLowerCase().replace(/\.$/,'')
+  if(u.protocol!=='https:'||u.username||u.password||u.port)return null
+  const match=socialSources.find(([,domains])=>domains.some(d=>host===d||host.endsWith('.'+d)))
+  if(!match||!u.pathname||u.pathname==='/')return null
+  if(match[0]==='YouTube'){
+   const id=host.endsWith('youtu.be')?u.pathname.split('/')[1]:u.pathname==='/watch'?u.searchParams.get('v'):u.pathname.match(/^\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})\/?$/)?.[1]
+   if(!id||!/^[A-Za-z0-9_-]{11}$/.test(id))return null
+  }
+  return match[0]
  }catch{return null}
 }
 export async function mediaRequest<T>(action:'health'|'meta'|'start',body:Record<string,unknown>={},signal?:AbortSignal):Promise<T>{
@@ -29,7 +63,7 @@ export function explainMediaError(error:unknown):string{
  if(error instanceof MediaServiceError){
   if(error.code==='MEMORY_LIMIT')return 'This file exceeds the safe browser processing limit. Try a shorter file on desktop.'
   if(error.status===503)return 'Media function or converter is unavailable on Vercel. Check deployment function logs.'
-  if(error.status===504)return 'YouTube analysis timed out. Try again shortly.'
+  if(error.status===504)return 'This platform took too long to respond. Try another public link.'
  }
  return error instanceof Error?error.message:'Media conversion failed. Please try again.'
 }

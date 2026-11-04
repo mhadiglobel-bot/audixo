@@ -34,7 +34,7 @@ export function Mp3QualityRail({bitrate,onChange,duration,disabled=false}:{bitra
 export function VideoQualityRail({quality,onChange,available,analyzed,disabled=false}:{quality:string;onChange:(v:string)=>void;available:AvailableVideoQuality[];analyzed:boolean;disabled?:boolean}){
  const options=confirmedVideoOptions(available),selected=options.find(q=>q.value===quality)
  const index=options.findIndex(q=>q.value===quality)
- const hint=!analyzed?'Analyze a video to load source-confirmed resolutions, or select a local MP4 file.':!options.length?'No MP4 source resolutions were confirmed.':'Only source-reported resolutions are shown. Final availability depends on YouTube and the Vercel runtime.'
+ const hint=!analyzed?'Analyze a video to load source-confirmed resolutions, or select a local MP4 file.':!options.length?'No MP4 source resolutions were confirmed.':'Only source-reported resolutions are shown. Final availability depends on the source platform and the Vercel runtime.'
  return <section className="ax46-quality-panel ax59-video-panel" aria-label="MP4 video quality">
   <div className="ax46-quality-heading"><div><span className="ax46-eyebrow">VIDEO RESOLUTION</span><h3>{selected?selected.label:analyzed?'No MP4 format':'Analyze video'} {selected&&<small>{descriptor(Number(selected.value))}</small>}</h3><p role={analyzed&&!options.length?'status':undefined}>{hint}</p></div><span className="ax46-quality-chip">{options.length?`${options.length} FORMAT${options.length===1?'':'S'}`:'MP4 VIDEO'}</span></div>
   {options.length>0&&<div className="ax59-quality-pick"><div className="ax59-quality-summary"><span>Confirmed resolutions</span><span>Max {options.at(-1)?.label}</span></div>

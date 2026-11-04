@@ -4,7 +4,7 @@ import {useEffect,useState} from 'react'
 type InstallEvent=Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>}
 const links=[
  {url:'/',label:'Home',icon:'⌂'},
- {url:'/tools/youtube-to-mp3',label:'Download',icon:'↓'},
+ {url:'/tools/social-video-downloader',label:'Download',icon:'↓'},
  {url:'/editor',label:'Studio',icon:'◈'},
  {url:'/tools/vocals',label:'Stems',icon:'♫'},
  {url:'/library',label:'Library',icon:'▤'},

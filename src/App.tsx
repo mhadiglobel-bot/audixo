@@ -37,6 +37,7 @@ export default function App(){return <SoundExperienceProvider><Suspense fallback
   <Route path="/tools/vocals" element={<Vocals/>}/>
   <Route path="/editor" element={<Editor/>}/>
   <Route path="/tools/mashup" element={<MashupTool/>}/>
+  <Route path="/tools/social-video-downloader" element={<YouTubeConverter/>}/>
   <Route path="/tools/youtube-to-mp3" element={<YouTubeConverter/>}/>
   <Route path="/tools/trim-audio" element={<QuickTrim/>}/>
   <Route path="/tools/echo" element={<EchoTool/>}/>

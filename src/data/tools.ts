@@ -24,12 +24,12 @@ export type ProductTool = {
 export const productTools: ProductTool[] = [
   {
     id: 'youtube-mp3',
-    name: 'YouTube MP3 / MP4',
-    route: '/tools/youtube-to-mp3',
-    short: 'One converter for audio MP3 and video MP4, with original titles and available resolutions.',
+    name: 'Social Video Downloader',
+    route: '/tools/social-video-downloader',
+    short: 'Download authorized public videos or audio from Instagram, TikTok, Facebook, YouTube, X and more.',
     group: 'Convert',
     icon: '↓',
-    bullets: ['Original video title', '320 kbps MP3 encoding target', '240p–2160p MP4 where supported'],
+    bullets: ['Multiple public social video platforms', '64–320 kbps MP3 encoding', 'Source-confirmed MP4 resolution'],
   },
   {
     id: 'mashup',

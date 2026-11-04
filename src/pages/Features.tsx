@@ -80,11 +80,11 @@ export default function Features(){
    </article>)}
   </section>
   <section className="page-shell ax44-feature-tools"><header><div className="ax25-kicker"><i/> FOCUSED TOOLS</div><h2>Every tool. <em>One creative flow.</em></h2><p>Go directly to a tool without sorting through a giant settings panel.</p></header>
-   <div ref={toolsRef} className={'ax77-tool-orbit '+(toolsRevealed?'is-visible ':'')+(phase==='return'?'is-returning':phase==='settle'?'is-settling':'')} aria-label="Nine AUDIXO tools connected in a continuous three-row journey">
+   <div ref={toolsRef} className={'ax77-tool-orbit '+(toolsRevealed?'is-visible ':'')+(phase==='return'?'is-returning':phase==='rewind'?'is-rewinding':phase==='settle'?'is-settling':'')} aria-label="Nine AUDIXO tools connected in a continuous three-row journey">
     <svg className="ax77-tool-path" viewBox="0 0 900 900" preserveAspectRatio="none" aria-hidden="true" focusable="false">
      {TOOL_LINKS.filter(link=>link.index<activeTool).map(link=><path
       key={link.index} className="ax77-tool-trace" d={link.d} pathLength={100} stroke={link.color}/>)}
-     {(phase==='return'||phase==='settle')&&<path className={phase==='return'?'ax77-tool-return':'ax77-tool-return is-dissolving'}
+     {(phase==='return'||phase==='rewind'||phase==='settle')&&<path className={phase==='return'?'ax77-tool-return':phase==='rewind'?'ax77-tool-return is-rewinding':'ax77-tool-return is-dissolving'}
        d={TOOL_RETURN} stroke="#19dce7" pathLength={100}/>}
     </svg>
     {focusedTools.map((tool,i)=><Link to={tool.url} key={tool.url}

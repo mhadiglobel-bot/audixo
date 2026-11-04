@@ -76,3 +76,7 @@
  .ax77-tool-trace,.ax77-tool-return,.ax77-workflow-trace,.ax77-workflow-return{animation:none!important;stroke-dashoffset:0!important}
  .ax44-feature-tools .ax77-tool-orbit > a.ax77-tool-circle{animation:none!important}
 }
+
+/* Last-to-first return holds its trace while completed links retract in reverse order. */
+@keyframes ax77-return-dim{from{stroke-dashoffset:0;opacity:1}to{stroke-dashoffset:0;opacity:.2}}
+.ax77-tool-return.is-rewinding,.ax77-workflow-return.is-rewinding{stroke-dashoffset:0;animation:ax77-return-dim 1.4s ease-in both}

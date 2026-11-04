@@ -58,7 +58,7 @@ const FLOW_RETURN='M 300 594 C 353 594 375 569 375 514 L 375 91 C 375 43 345 21 
 export default function WorkflowCinema(){
  const {active:step,phase,select:setStep}=useNeonJourney(scenes.length,FLOW_STEP_MS,2350)
  const current=scenes[step]
- return <section className={"ax46-workflow ax73-workflow ax74-workflow ax77-workflow "+(phase==='return'?'is-returning':phase==='settle'?'is-settling':'')} aria-label="Animated Audixo workflow">
+ return <section className={"ax46-workflow ax73-workflow ax74-workflow ax77-workflow "+(phase==='return'?'is-returning':phase==='rewind'?'is-rewinding':phase==='settle'?'is-settling':'')} aria-label="Animated Audixo workflow">
   <div className="ax46-workflow-sidebar">
    <span className="ax46-eyebrow">HOW AUDIXO MOVES</span>
    <h2>Every step.<br/><em>One workspace.</em></h2>
@@ -66,7 +66,7 @@ export default function WorkflowCinema(){
    <div className="ax73-flow-map ax74-flow-map ax77-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
     <svg className="ax73-flow-path ax77-flow-path" viewBox="0 0 400 648" preserveAspectRatio="none" aria-hidden="true" focusable="false">
      {FLOW_LINKS.filter(link=>link.index<step).map(link=><path key={link.index} className="ax77-workflow-trace" d={link.d} pathLength={100} stroke={link.color}/>)}
-     {(phase==='return'||phase==='settle')&&<path className={phase==='return'?'ax77-workflow-return':'ax77-workflow-return is-dissolving'} d={FLOW_RETURN} pathLength={100} stroke="#14dce7"/>}
+     {(phase==='return'||phase==='rewind'||phase==='settle')&&<path className={phase==='return'?'ax77-workflow-return':phase==='rewind'?'ax77-workflow-return is-rewinding':'ax77-workflow-return is-dissolving'} d={FLOW_RETURN} pathLength={100} stroke="#14dce7"/>}
     </svg>
     {scenes.map((scene,index)=>{
      const position=FLOW_POSITIONS[index]

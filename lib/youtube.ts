@@ -70,7 +70,7 @@ function tidyError(text:string){
 export async function extract(source:string,selector?:string):Promise<any>{
  const url=parseVideoUrl(source),isYoutube=sourceName(url)==='YouTube'
  const cookieSession=isYoutube?await cookieArgs():{args:[],cleanup:async()=>{}}
- const flags=['--no-playlist','--no-warnings','--no-default-search','--skip-download','--dump-single-json','--socket-timeout','20','--retries','2','--extractor-retries','2',...(isYoutube?['--js-runtimes','node','--remote-components','ejs:github']:[]),...cookieSession.args]
+ const flags=['--no-playlist','--no-warnings','--default-search','error','--skip-download','--dump-single-json','--socket-timeout','20','--retries','2','--extractor-retries','2',...(isYoutube?['--js-runtimes','node','--remote-components','ejs:github']:[]),...cookieSession.args]
  if(selector)flags.push('--format',selector)
  flags.push('--',url)
  try{

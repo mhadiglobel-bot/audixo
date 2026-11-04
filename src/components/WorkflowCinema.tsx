@@ -45,13 +45,12 @@ const FLOW_STEP_MS=1650
 const FLOW_POSITIONS=scenes.map((_,index)=>{
  const row=Math.floor(index/2)
  const column=index%2
- return {row,column,x:column?300:100,y:60+row*120}
+ return {row,column,x:column?300:100,y:54+row*108}
 })
 const FLOW_LINKS=FLOW_POSITIONS.slice(0,-1).map((start,index)=>{
  const end=FLOW_POSITIONS[index+1]
- return {index,d:'M '+start.x+' '+start.y+' L '+end.x+' '+end.y}
+ return {index,start,end,d:'M '+start.x+' '+start.y+' L '+end.x+' '+end.y}
 })
-const FLOW_ROUTE=FLOW_POSITIONS.map((point,index)=>(index?'L ':'M ')+point.x+' '+point.y).join(' ')
 
 export default function WorkflowCinema(){
  const [step,setStep]=useState(0)
@@ -61,19 +60,17 @@ export default function WorkflowCinema(){
   return()=>window.clearTimeout(timeout)
  },[step])
  const current=scenes[step]
- return <section className="ax46-workflow ax73-workflow" aria-label="Animated Audixo workflow">
+ return <section className="ax46-workflow ax73-workflow ax74-workflow" aria-label="Animated Audixo workflow">
   <div className="ax46-workflow-sidebar">
    <span className="ax46-eyebrow">HOW AUDIXO MOVES</span>
    <h2>Every step.<br/><em>One workspace.</em></h2>
    <p>Follow one continuous creative journey from the first import to the final export.</p>
-   <div className="ax73-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
-    <svg className="ax73-flow-path" viewBox="0 0 400 720" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-     <defs><linearGradient id="ax73-flow-spectrum" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#18e69e"/><stop offset="31%" stopColor="#17d7ea"/><stop offset="65%" stopColor="#9260fa"/><stop offset="100%" stopColor="#f23cd0"/></linearGradient></defs>
-     <path className="ax73-flow-underlay" d={FLOW_ROUTE}/>
-     {FLOW_LINKS.map(link=><g key={link.index}>
-      <path className="ax73-flow-glow" d={link.d} pathLength={100} style={{strokeDasharray:'100 100',strokeDashoffset:link.index<step?0:100}}/>
-      <path className="ax73-flow-lit" d={link.d} pathLength={1} style={{strokeDashoffset:link.index<step?0:1}}/>
-     </g>)}
+   <div className="ax73-flow-map ax74-flow-map" role="group" aria-label="12 editing stages connected in a zigzag sequence">
+    <svg className="ax73-flow-path ax74-flow-path" viewBox="0 0 400 648" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+     <defs>{FLOW_LINKS.map(link=><linearGradient key={link.index} id={'ax74-neon-'+link.index} gradientUnits="userSpaceOnUse" x1={link.start.x} y1={link.start.y} x2={link.end.x} y2={link.end.y}>
+      <stop offset="0%" stopColor="#ff2fc9"/><stop offset="33%" stopColor="#974cff"/><stop offset="67%" stopColor="#00dfff"/><stop offset="100%" stopColor="#09e9a6"/>
+     </linearGradient>)}</defs>
+     {FLOW_LINKS.filter(link=>link.index<step).map(link=><path key={link.index} className="ax74-flow-segment" d={link.d} pathLength={100} stroke={'url(#ax74-neon-'+link.index+')'}/>)}
     </svg>
     {scenes.map((scene,index)=>{
      const position=FLOW_POSITIONS[index]
@@ -83,12 +80,12 @@ export default function WorkflowCinema(){
       className={'ax73-flow-node '+(index<step?'is-complete ':'')+(step===index?'is-active':'')}
       style={{gridColumn:position.column+1,gridRow:position.row+1}}
       onClick={()=>setStep(index)}>
-      <span className="ax73-flow-disc"><small>{String(index+1).padStart(2,'0')}</small><strong>{scene.name}</strong></span>
+      <span className="ax73-flow-disc ax74-flow-disc"><small>{String(index+1).padStart(2,'0')}</small><strong>{scene.name}</strong></span>
      </button>
     })}
    </div>
   </div>
-  <div className="ax46-workflow-stage ax73-workflow-stage">
+  <div className="ax46-workflow-stage ax73-workflow-stage ax74-workflow-stage">
    <header><div><i/> AUDIXO / LIVE WORKFLOW</div><span>{String(step+1).padStart(2,'0')} / {String(scenes.length).padStart(2,'0')}</span></header>
    <div className="ax46-workflow-screen">
     <div className="ax46-screen-top"><div><span/><span/><span/></div><strong>{current.name.toUpperCase()} / STUDIO VIEW</strong><small>LIVE PREVIEW</small></div>

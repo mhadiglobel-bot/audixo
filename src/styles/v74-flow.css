@@ -1,0 +1,51 @@
+/* AUDIXO V74 / How It Works — slim traveling neon, zero visible unvisited links. */
+@keyframes ax74-trace{0%{stroke-dashoffset:100;opacity:.88}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes ax74-arrive{0%{opacity:.65;transform:scale(.976)}100%{opacity:1;transform:scale(1)}}
+@keyframes ax74-panel-enter{from{opacity:.7;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.ax74-workflow{gap:clamp(30px,4.5vw,64px)!important;align-items:start!important}
+.ax74-workflow .ax46-workflow-sidebar{min-width:0}
+.ax74-workflow .ax46-workflow-sidebar>p{color:#7486a0!important;line-height:1.72!important;margin:0 0 20px!important;max-width:43ch}
+.ax74-flow-map{position:relative;max-width:490px!important;height:648px!important;grid-template-rows:repeat(6,108px)!important;margin:0 auto!important}
+.ax74-flow-path{z-index:0!important;overflow:visible}
+.ax74-flow-path .ax73-flow-underlay,.ax74-flow-path .ax73-flow-lit,.ax74-flow-path .ax73-flow-glow{display:none!important}
+.ax74-flow-segment{
+ fill:none!important;stroke-width:2.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;
+ stroke-dasharray:100 100!important;stroke-dashoffset:100;
+ vector-effect:non-scaling-stroke;filter:none!important;opacity:1;
+ animation:ax74-trace .66s cubic-bezier(.16,.78,.23,1) both
+}
+.ax74-workflow .ax73-flow-node{width:92px!important;height:92px!important;scale:1!important;transform:none!important;transition:transform .25s ease!important}
+.ax74-workflow .ax73-flow-node:hover{scale:1!important;transform:translateY(-2px)!important}
+.ax74-workflow .ax74-flow-disc{
+ border:1.5px solid #e0e8f3!important;border-radius:50%!important;background:#fff!important;
+ box-shadow:0 7px 20px rgba(55,75,114,.06),inset 0 1px #fff!important;
+ transition:border-color .28s ease,box-shadow .28s ease!important
+}
+.ax74-workflow .ax74-flow-disc::before,.ax74-workflow .ax74-flow-disc::after{display:none!important;content:none!important}
+.ax74-workflow .ax73-flow-node.is-complete .ax74-flow-disc{
+ border:1.5px solid #d8e7ef!important;background:#fff!important;box-shadow:0 7px 20px rgba(55,75,114,.06)!important
+}
+.ax74-workflow .ax73-flow-node.is-active .ax74-flow-disc{
+ border:1.8px solid transparent!important;
+ background:linear-gradient(#fff,#fff) padding-box,linear-gradient(120deg,#ff2fc9,#974cff 38%,#00dfff 73%,#09e9a6) border-box!important;
+ box-shadow:0 8px 22px rgba(67,79,124,.10)!important;
+ animation:ax74-arrive .36s ease-out both
+}
+.ax74-workflow .ax73-flow-node.is-active .ax74-flow-disc strong{color:#673bc3!important}
+.ax74-workflow .ax73-flow-node.is-active .ax74-flow-disc small{color:#a347d7!important}
+.ax74-workflow .ax46-workflow-stage{
+ top:72px!important;border:1px solid #dfe7f2!important;border-radius:31px!important;padding:21px!important;
+ background:linear-gradient(150deg,rgba(255,255,255,.985),rgba(248,251,255,.97))!important;
+ box-shadow:0 22px 54px rgba(48,69,115,.075),inset 0 1px #fff!important
+}
+.ax74-workflow .ax46-workflow-stage>header{padding:0 4px 14px!important;border-bottom:1px solid #ecf0f7!important}
+.ax74-workflow .ax46-workflow-screen{border:1px solid #e4eaf5!important;border-radius:22px!important;overflow:hidden!important;background:linear-gradient(140deg,#fbfdff,#f6f9fe)!important}
+.ax74-workflow .ax46-workflow-screen .ax46-scene{animation-duration:.29s!important;animation-timing-function:cubic-bezier(.2,.85,.26,1)!important}
+.ax74-workflow .ax46-stage-info{min-height:150px!important;padding:19px 1px 9px!important;animation:ax74-panel-enter .35s cubic-bezier(.2,.78,.24,1) both}
+.ax74-workflow .ax46-stage-info h3{letter-spacing:-.035em!important}
+.ax74-workflow .ax46-workflow-progress{height:3px!important;border-radius:99px!important;background:#e8edf6!important;overflow:hidden!important}
+.ax74-workflow .ax46-workflow-progress>span{animation-duration:1.65s!important}
+.ax74-workflow .ax46-workflow-stage footer{padding-top:12px!important}
+@media(max-width:1100px){.ax74-workflow .ax46-workflow-stage{top:auto!important}.ax74-flow-map{max-width:470px!important}}
+@media(max-width:560px){.ax74-workflow .ax73-flow-node{width:78px!important;height:78px!important}.ax74-workflow .ax46-workflow-stage{border-radius:24px!important;padding:13px!important}.ax74-workflow .ax46-workflow-screen{border-radius:17px!important}}
+@media(prefers-reduced-motion:reduce){.ax74-flow-segment{animation:none!important;stroke-dashoffset:0!important}.ax74-workflow .ax73-flow-node.is-active .ax74-flow-disc,.ax74-workflow .ax46-stage-info{animation:none!important}}

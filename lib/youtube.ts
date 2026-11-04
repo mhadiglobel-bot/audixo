@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import path from 'node:path'
 import fs from 'node:fs'
-import { cookieArgs } from './cookies'
+import { cookieArgs } from './cookies.js'
 const videoId=/^[A-Za-z0-9_-]{11}$/
 const allowedHosts=new Set(['youtube.com','www.youtube.com','music.youtube.com','m.youtube.com','youtu.be','www.youtu.be'])
 export function parseVideoUrl(input:unknown):string{

@@ -1,6 +1,6 @@
 /** AUDIXO protected same-project cookie manager (private Vercel Blob). */
 import { timingSafeEqual } from 'node:crypto'
-import { parseCookieText, saveCookies, loadCookies, cookiesConfigured } from '../lib/cookies'
+import { parseCookieText, saveCookies, loadCookies, cookiesConfigured } from '../lib/cookies.js'
 type Req={method?:string;body?:any;headers?:Record<string,string|undefined>}
 type Res={setHeader:(k:string,v:string)=>void;status:(n:number)=>Res;json:(x:unknown)=>void;type:(v:string)=>Res;send:(v:string)=>void}
 function equal(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y)}

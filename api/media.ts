@@ -1,7 +1,7 @@
 /** Single-project Vercel media endpoints. No external REST YTDL server is called. */
 import { spawn } from 'node:child_process'
-import { extractorInstalled,extract,canonicalUrl,parseVideoUrl,formatQualities,audioAvailable,makeToken,readToken,qualitySelector,selectStreams,safeFilename,ExtractorError,secureSource } from '../lib/youtube'
-import {cookiesConfigured,loadCookies} from '../lib/cookies'
+import { extractorInstalled,extract,canonicalUrl,parseVideoUrl,formatQualities,audioAvailable,makeToken,readToken,qualitySelector,selectStreams,safeFilename,ExtractorError,secureSource } from '../lib/youtube.js'
+import {cookiesConfigured,loadCookies} from '../lib/cookies.js'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 const ffmpegStatic=path.resolve(process.cwd(),'bin','ffmpeg')

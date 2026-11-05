@@ -13,6 +13,7 @@ import './styles/v75-tools.css'
 import './styles/v77-journey.css'
 import './styles/v78-audio.css'
 import './styles/v81-social-downloader.css'
+import './styles/v82-production-refinements.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

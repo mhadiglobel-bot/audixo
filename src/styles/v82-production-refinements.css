@@ -1,0 +1,83 @@
+
+/* AUDIXO V82 — scoped production styling; DSP behavior and feature routes are preserved. */
+:root{--ax82-mint:#15c8af;--ax82-cyan:#29acd9;--ax82-violet:#865ce1;--ax82-pink:#e94dcf;--ax82-ink:#263958}
+.ax39-converter .ax82-converter-actions{display:flex;align-items:center;justify-content:space-between;min-height:39px;padding:1px 9px 0;color:#927dba;letter-spacing:.13em;font-size:10px;font-weight:850}
+.ax39-converter .ax82-reset{width:39px;height:39px;display:grid;place-items:center;background:white;border:1px solid #dce3f3;border-radius:50%;cursor:pointer;color:#677b97;font:500 25px/1 Arial;box-shadow:0 6px 19px #4053910e;transition:transform .25s}
+.ax39-converter .ax82-reset:hover:not(:disabled){transform:rotate(90deg)}
+.ax39-converter .ax81-format-control{width:min(100%,680px)!important;margin:4px auto 22px!important;gap:5px!important;padding:6px!important;border-radius:999px!important}
+.ax39-converter .ax81-format-control button{min-height:57px!important;border-radius:999px!important;transition:background .25s,box-shadow .25s,transform .25s!important}
+.ax39-converter .ax81-format-control button.active{background:linear-gradient(104deg,#17beb5,#398fd9,#8061dc)!important;box-shadow:0 8px 22px #4b7bb034!important}
+.ax39-converter .ax39-urlbar .ax42-url-input{min-height:56px!important;border-radius:999px!important;overflow:hidden}
+.ax39-converter .ax39-urlbar .ax39-analyze{min-height:56px!important;border-radius:999px!important;padding:0 26px!important}
+.ax39-converter .ax39-create.ax42-download{min-height:64px!important;border-radius:999px!important;background:linear-gradient(105deg,#1bbfba,#3c9ddd,#8460d9)!important}
+.ax39-converter .ax39-progress.ax59-progress{margin-top:16px!important;padding:19px 23px!important;max-width:none!important;width:100%!important;box-sizing:border-box;border-radius:20px!important}
+.ax39-converter .ax39-progress.ax59-progress progress{height:9px!important;border-radius:99px!important}
+.ax39-converter .ax59-progress-indeterminate{height:9px!important;border-radius:99px!important}
+.ax39-converter .ax82-quality{padding:24px 25px 19px;border:1px solid #dee7f5;border-radius:22px;background:linear-gradient(122deg,#fafcff,#f1f8fb);color:var(--ax82-ink);box-shadow:0 7px 26px #283e760b;min-width:0}
+.ax39-converter .ax82-quality header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ax39-converter .ax82-quality header small{font-size:10px;letter-spacing:.14em;color:#8e6bce;font-weight:850}
+.ax39-converter .ax82-quality header h3{margin:6px 0 6px;font-size:clamp(26px,3.8vw,38px);line-height:1.1;font-weight:900;letter-spacing:-.04em;color:#263959}
+.ax39-converter .ax82-quality header h3 span{font-size:12px;letter-spacing:0;color:#7859cb;font-weight:800}
+.ax39-converter .ax82-quality header p{margin:0;color:#7586a1;font-size:12px;line-height:1.55;max-width:640px}
+.ax39-converter .ax82-quality header>b{padding:7px 13px;border:1px solid #e4def6;border-radius:999px;background:white;color:#7957c6;font-size:10px;letter-spacing:.06em}
+.ax39-converter .ax82-rail{position:relative;margin:32px 12px 29px}
+.ax39-converter .ax82-rail>input[type=range]{display:block;width:100%;height:7px;appearance:none;-webkit-appearance:none;border-radius:999px;background:linear-gradient(90deg,var(--ax82-mint),#3b9cdd,var(--ax82-violet)) 0 0 / var(--ax82-progress) 100% no-repeat,#e2e8f4;cursor:ew-resize;outline-offset:9px}
+.ax39-converter .ax82-rail>input[type=range]::-webkit-slider-thumb{width:24px;height:24px;border-radius:50%;border:3px solid #8d64e1;background:#fff;appearance:none;-webkit-appearance:none;box-shadow:0 3px 10px #6c5bab42}
+.ax39-converter .ax82-rail>input[type=range]::-moz-range-thumb{width:19px;height:19px;border-radius:50%;border:3px solid #8d64e1;background:#fff;box-shadow:0 3px 10px #6c5bab42}
+.ax39-converter .ax82-rail>input[type=range]:focus-visible{outline:3px solid #ac94fa}
+.ax39-converter .ax82-ticks{display:flex;justify-content:space-between;gap:2px;align-items:flex-start;margin-top:20px}
+.ax39-converter .ax82-ticks>span{display:flex;min-width:0;align-items:center;gap:4px;flex-direction:column;color:#8797b1;white-space:nowrap;font-size:10px}
+.ax39-converter .ax82-ticks>span strong{font-size:clamp(9px,1.1vw,12px);font-weight:800}
+.ax39-converter .ax82-ticks>span i{width:5px;height:5px;border-radius:50%;background:#d3dcec}
+.ax39-converter .ax82-ticks>span.active{color:#7b54d6}
+.ax39-converter .ax82-ticks>span.active i{background:#8b63e2}
+.ax39-converter .ax82-quality footer{margin-top:9px;display:block;font-size:11px;text-align:right;color:#7a88a3}
+.ax39-converter .ax82-quality footer strong{color:#7658c6}
+.ax39-converter .ax39-preview{border-radius:19px!important}
+.ax39-converter .ax39-alert,.ax39-converter .ax59-limitation{border-radius:17px}
+@media(max-width:620px){.ax39-converter .ax81-format-control{width:100%!important}.ax39-converter .ax81-format-control button{min-height:49px!important}.ax39-converter .ax82-quality{padding:17px 12px}.ax39-converter .ax82-rail{margin:25px 3px 28px}.ax39-converter .ax82-ticks>span strong{font-size:9px}.ax39-converter .ax82-quality header h3{font-size:30px}.ax39-converter .ax39-progress.ax59-progress{padding:15px!important}}
+/* Consolidated export surface. Internal mastering defaults remain active. */
+.ax82-export-modal{max-width:620px!important;width:min(94vw,620px)!important;padding:33px!important;border-radius:30px!important;background:linear-gradient(160deg,#fff,#f9fbff)!important;box-shadow:0 26px 75px #1d315b31!important}
+.ax82-export-modal h2{font-size:29px!important;font-weight:900!important;color:#263754!important}
+.ax82-export-modal>p{font-size:13px!important;color:#7a88a0!important;line-height:1.6}
+.ax82-export-modal .format-switch{border:1px solid #e3e8f4!important;border-radius:18px!important;padding:5px!important;gap:7px!important;background:#f6f9ff!important}
+.ax82-export-modal .format-switch button{border-radius:13px!important;min-height:66px!important}
+.ax82-export-modal .format-switch button.active{background:linear-gradient(130deg,#e9fbf6,#f0ebff)!important;box-shadow:inset 0 0 0 1px #abbbdf!important}
+.ax82-export-modal .export-name-input{border-radius:14px!important;background:white!important;border:1px solid #dce4f3!important;min-height:51px!important;font-weight:650}
+.ax82-export-modal .export-row{padding:17px 0!important;border-color:#e5ebf4!important}
+.ax82-export-modal .modal-actions button{border-radius:999px!important;min-height:45px!important}
+.ax82-export-modal .export-summary{margin-top:16px!important;gap:7px!important}
+.ax82-export-modal .export-summary span{border-radius:999px!important;background:#f1f7fc!important;border:1px solid #e2e9f4!important}
+@media(max-width:620px){.ax82-export-modal{padding:19px!important;border-radius:23px!important}.ax82-export-modal h2{font-size:24px!important}}
+/* Recorder: native audio controls replaced by seekable custom player. */
+.ax82-recorder{border:1px solid #dce5f4!important;border-radius:25px!important;background:#fff!important;padding:21px!important;max-width:none!important;box-shadow:0 14px 35px #3048700d!important}
+.ax82-recorder header h2{font-size:23px!important;color:#233753!important}
+.ax82-recorder header button{width:37px;height:37px;border-radius:50%!important;background:white!important;border:1px solid #e2e8f3!important}
+.ax82-recorder .nx-record-display{border-radius:19px!important;background:linear-gradient(135deg,#f6fbff,#f9f7ff)!important}
+.ax82-recorder .nx-record-actions button{border-radius:999px!important}
+.ax82-recorder-preview{margin-top:16px;background:#f8fbff;border:1px solid #dfe7f7;padding:14px;border-radius:19px}
+.ax82-player-label{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.ax82-player-label strong{font-size:12px;color:#273a59}.ax82-player-label small{font-size:10px;color:#7487a3;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax82-player{display:flex;align-items:center;gap:12px}.ax82-player button{display:grid;place-items:center;width:40px;height:40px;border:0!important;border-radius:50%!important;background:linear-gradient(120deg,#20c8b4,#8f60e3)!important;color:white!important;flex:none;cursor:pointer}
+.ax82-player input[type=range]{flex:1;min-width:0;accent-color:#8660dd}.ax82-player span{color:#7d8ca6;font-size:10px;white-space:nowrap}
+.ax82-recorder-preview audio{display:none}
+/* Studio controls + edit stack, consistent with the main palette. */
+.ax25-studio .ax25-transport,.ax25-studio .ax25-editor-toolbar,.ax25-studio .ax25-inspector{border-radius:21px!important}
+.ax25-studio :is(button,input[type=range]):focus-visible{outline:2px solid #9e80e5;outline-offset:2px}
+.ax25-fx-control.ax82-fx-control{display:block;background:#fbfcff;border:1px solid #e1e8f5;border-radius:16px;padding:13px;margin:0 0 10px}
+.ax25-fx-control.ax82-fx-control .ax82-control-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.ax25-fx-control.ax82-fx-control input[type=range]{flex:1;min-width:0;width:100%;accent-color:#8862df}
+.ax82-nudge{display:grid!important;place-items:center!important;flex:none!important;width:33px!important;height:33px!important;border:1px solid #dde6f5!important;border-radius:50%!important;background:#fff!important;color:#8260d7!important;font:800 20px/1 sans-serif!important;cursor:pointer;box-shadow:0 4px 12px #364b870e}
+.ax82-nudge:disabled{opacity:.33;cursor:not-allowed}
+.ax25-fx-toggle{border-radius:17px!important}
+.ax25-applied.ax82-applied{max-height:145px;padding:12px 16px!important;margin:12px 0!important;overflow:auto;border-radius:20px!important;background:white!important;box-shadow:0 8px 23px #3e50870b!important}
+.ax25-applied.ax82-applied header{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+.ax25-applied.ax82-applied header h3{font-size:14px!important;margin:0!important}
+.ax25-applied.ax82-applied header p{display:none!important}
+.ax25-applied.ax82-applied .ax25-edit-list{display:flex!important;flex-flow:row nowrap!important;overflow-x:auto!important;max-height:75px!important;gap:8px!important}
+.ax25-applied.ax82-applied .ax25-edit-list article{min-width:170px;max-width:270px;flex:none;border:1px solid #e2e9f6!important;border-radius:16px!important;padding:8px!important}
+.ax25-applied.ax82-applied .ax25-edit-list article small{display:none}
+.ax25-applied.ax82-applied .ax25-edit-empty p{display:none}
+.ax48-upload-orbit>i:first-child{border-width:3px!important;border-top-color:#17cdb1!important;border-right-color:#2bb6df!important;border-bottom-color:#875cde!important;border-left-color:#e44bd0!important}
+.ax48-upload-orbit>i:nth-child(2){border-width:2px!important}
+@media(prefers-reduced-motion:reduce){.ax39-converter .ax81-format-control button,.ax39-converter .ax82-reset{transition:none!important}}

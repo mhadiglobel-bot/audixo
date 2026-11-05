@@ -80,7 +80,7 @@ export default async function handler(req:Req,res:Res){
  try{
   const action=String(req.query?.action||'')
   if(action==='probe'&&req.method==='GET'&&process.env.VERCEL_ENV==='preview'){
-   const args=['--ignore-config','--no-playlist','--no-warnings','--skip-download','--dump-single-json','--socket-timeout','8','--retries','0','--extractor-retries','0','--js-runtimes','node','--remote-components','ejs:github','--','https://www.youtube.com/watch?v=dQw4w9WgXcQ']
+   const args=['--ignore-config','--no-playlist','--no-warnings','--skip-download','--dump-single-json','--socket-timeout','8','--retries','0','--extractor-retries','0','--js-runtimes','node','--remote-components','ejs:github','--','https://www.youtube.com/watch?v=e34Vx3K4zwo']
    const result=await new Promise<{code:number;message:string;title?:string}>(resolve=>{
     let output='',err='',done=false
     const p=spawn(path.resolve(process.cwd(),'bin','yt-dlp'),args,{stdio:['ignore','pipe','pipe']})

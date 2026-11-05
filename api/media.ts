@@ -80,10 +80,42 @@ export default async function handler(req:Req,res:Res){
  try{
   const action=String(req.query?.action||'')
   if(action==='probe'&&req.method==='GET'&&process.env.VERCEL_ENV==='preview'){
+   const kind=String(req.query?.kind||'meta')
+   const videoUrl='https://www.youtube.com/watch?v=e34Vx3K4zwo'
    try{
-    const meta=await extract('https://www.youtube.com/watch?v=e34Vx3K4zwo')
-    return res.status(200).json({code:0,title:String(meta?.title||'').slice(0,90),formats:formatQualities(meta).map(x=>x.value),audio:audioAvailable(meta)})
-   }catch(e){return res.status(200).json({code:1,message:e instanceof Error?e.message:'unknown'})}
+    const selector=kind==='mp3'?'bestaudio/best':kind==='mp4'?qualitySelector(720):undefined
+    const meta=await extract(videoUrl,selector)
+    if(kind==='meta')return res.status(200).json({code:0,title:String(meta?.title||'').slice(0,90),formats:formatQualities(meta).map(x=>x.value),audio:audioAvailable(meta)})
+    const {video,audio}=await selectStreams(meta,kind==='mp4'?'mp4':'mp3')
+    const args=['-hide_banner','-loglevel','error','-nostdin','-y','-t','2']
+    const input=async(f:MediaFormat)=>{
+     const h=f.http_headers||meta.http_headers||{}
+     args.push('-user_agent',String(h['User-Agent']||h['user-agent']||'Mozilla/5.0').slice(0,200))
+     args.push('-i',(await secureSource(f)).toString())
+    }
+    if(kind==='mp3'){
+     if(!audio)throw new Error('No audio stream')
+     await input(audio)
+     args.push('-map','0:a:0','-vn','-c:a','libmp3lame','-b:a','320k','-f','mp3','pipe:1')
+    }else{
+     if(!video)throw new Error('No video stream')
+     await input(video)
+     if(audio&&audio.url!==video.url)await input(audio)
+     args.push('-map','0:v:0')
+     if(audio)args.push('-map',audio.url===video.url?'0:a:0?':'1:a:0?')
+     args.push('-c:v','copy','-c:a','aac','-b:a','160k','-movflags','frag_keyframe+empty_moov+default_base_moof','-f','mp4','pipe:1')
+    }
+    const results=await new Promise<{code:number;bytes:number;stderr:string}>(resolve=>{
+     const p=spawn(ffmpegStatic,args,{stdio:['ignore','pipe','pipe']});let count=0,err='',done=false
+     const finish=(code:number)=>{if(done)return;done=true;clearTimeout(timer);resolve({code,bytes:count,stderr:err.replace(/https?:\/\/[^\s]+/g,'[source media URL]').slice(-500)})}
+     const timer=setTimeout(()=>{p.kill('SIGKILL');finish(124)},20000)
+     p.stdout.on('data',(d:Buffer)=>{count+=d.length})
+     p.stderr.on('data',(d:Buffer)=>{err=(err+String(d)).slice(-1500)})
+     p.on('error',()=>finish(126))
+     p.on('close',(code)=>finish(code||0))
+    })
+    return res.status(200).json({kind,formatId:video?.format_id||audio?.format_id,result:results})
+   }catch(e){return res.status(200).json({kind,code:1,message:e instanceof Error?e.message:'unknown'})}
   }
   if(action==='health'&&req.method==='GET'){
    let cookieInstalled=false

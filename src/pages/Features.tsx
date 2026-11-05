@@ -19,7 +19,7 @@ const focusedTools=[
  {name:'Pitch Editor',url:'/tools/pitch',tag:'TONAL SHAPING',description:'Shift the tone and preview before exporting.',symbol:'♫'},
  {name:'Spatial Motion',url:'/tools/spatial-motion',tag:'STEREO ORBIT',description:'Move sound through headphone-focused space.',symbol:'◎'},
  {name:'Vocal Extractor',url:'/tools/vocals',tag:'STEM SEPARATION',description:'Inspect vocals, drums, bass and music layers.',symbol:'☷'},
- {name:'Mashup Editor',url:'/tools/mashup',tag:'ARRANGEMENT',description:'Arrange and layer audio clips.',symbol:'▤'},
+ {name:'Audio Recorder',url:'/tools/recorder',tag:'LOCAL RECORDING',description:'Capture a take and add it to Studio.',symbol:'◉'},
  {name:'Audio Recorder',url:'/tools/recorder',tag:'CAPTURE',description:'Record and refine a voice take.',symbol:'◉'},
  {name:'Local Library',url:'/library',tag:'SAVED SOUNDS',description:'Find and reuse finished audio.',symbol:'♫'},
 ] as const

@@ -25,9 +25,10 @@ export function isSelectableVideoTarget(value:string,available:AvailableVideoQua
 export function Mp3QualityRail({duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
  const [displayIndex,setDisplayIndex]=useState(4),progress=displayIndex*25
  return <section className="ax82-quality" aria-label="MP3 audio quality">
-  <header><div><small>MP3 AUDIO</small><h3>320 <span>kbps output</span></h3><p>Final MP3 always uses a 320 kbps encoding target; the movable scale is a visual preview only.</p></div><b>AUDIO</b></header>
+  <header><div><small>MP3 AUDIO</small><h3>{bitrateSteps[displayIndex]} <span>kbps preview</span></h3><p>Visual preview follows your selection. Actual MP3 download stays at 320 kbps.</p></div><b>AUDIO</b></header>
   <div className="ax82-rail" style={{'--ax82-progress':progress+'%'} as CSSProperties}>
    <input type="range" min="0" max="4" step="1" value={displayIndex} disabled={disabled} aria-label="Preview bitrate scale (output remains 320 kbps)" onChange={e=>setDisplayIndex(Number(e.target.value))}/>
+   <div className="ax83-follow-label" style={{left:progress+"%"}} aria-hidden="true">{bitrateSteps[displayIndex]} kbps</div>
    <div className="ax82-ticks" aria-hidden="true">{bitrateSteps.map((v,i)=><span key={v} className={i===displayIndex?'active':''}><i/><strong>{v}</strong></span>)}</div>
   </div>
   <footer>Maximum export quality: <strong>320 kbps</strong>{duration>0&&<span> · Approx. {(duration*320/8192).toFixed(1)} MB</span>}</footer>

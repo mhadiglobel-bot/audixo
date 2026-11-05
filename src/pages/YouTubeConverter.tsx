@@ -102,10 +102,10 @@ export default function YouTubeConverter(){
     if(!result.url||!result.url.startsWith('/api/media?action=file&token='))throw new MediaServiceError('This site did not provide a valid download link.','BAD_DOWNLOAD_LINK')
     setDownloadHref(result.url)
     downloadOnThisPage(result.url)
-    setProgress({stage:'AUDIXO is preparing your browser download…'})
+    setProgress({stage:'Download handed to your browser · transfer in progress'})
    }
 
-   if(!controller.signal.aborted){setCompleted(true);setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:'Download started in your browser. Keep AUDIXO open while it is prepared.')}
+   if(!controller.signal.aborted){setCompleted(true);setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:'Download initiated. Your browser Downloads panel displays the exact transfer progress.')}
   }catch(e){if(!aborted(e)){setCompleted(false);setNotice(explainMediaError(e))}}
   finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }
@@ -128,7 +128,7 @@ export default function YouTubeConverter(){
     <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare &amp; download</h2>
      <button type="button" className="ax39-create ax42-download" disabled={!canDownload||busy} onClick={()=>void start()}><span>{busy?'Preparing download…':cta}</span><b>↓</b></button>
      {cannotDownload&&<div className="ax59-limitation" role="status">{format==='mp3'?'No audio stream is available. Try a different video or a local file.':'No source resolution is available; try another video or a local MP4.'}</div>}
-     {busy&&progress&&<div className="ax39-progress ax59-progress" role="status"><div><strong>{progress.stage}</strong><button type="button" onClick={cancel}>Cancel</button></div>{typeof progress.percent==='number'?<progress max="100" value={progress.percent} aria-label="Media processing progress"/>:<span className="ax59-progress-indeterminate" aria-hidden="true"/>}<small>{typeof progress.percent==='number'?`${progress.percent}% · `:''}{typeof progress.bytes==='number'?`${(progress.bytes/1048576).toFixed(1)} MB processed · `:''}Preparing your media on AUDIXO.</small></div>}
+     {busy&&progress&&<div className="ax39-progress ax59-progress" role="status"><div><strong>{progress.stage}</strong><button type="button" onClick={cancel}>Cancel</button></div>{typeof progress.percent==='number'?<progress max="100" value={progress.percent} aria-label="Media processing progress"/>:<span className="ax59-progress-indeterminate" aria-hidden="true"/>}<small>{typeof progress.percent==='number'?`${progress.percent}% · `:''}{typeof progress.bytes==='number'?`${(progress.bytes/1048576).toFixed(1)} MB processed · `:''}{typeof progress.percent==='number'?'Processing media.':'Exact remote transfer progress appears in your browser Downloads panel.'}</small></div>}
      {completed&&!busy&&<div className="ax59-complete" role="status">✓ Download requested in this browser. AUDIXO stays open.</div>}
      
     </div></div>

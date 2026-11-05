@@ -14,6 +14,7 @@ import './styles/v77-journey.css'
 import './styles/v78-audio.css'
 import './styles/v81-social-downloader.css'
 import './styles/v82-production-refinements.css'
+import './styles/v83-ui-recovery.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

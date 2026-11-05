@@ -91,16 +91,17 @@ export default function Vocals(){
  return <><SiteShell><Seo title="AUDIXO Vocal Extractor — Five-Stem Audio Mixer" description="Extract vocals, instrumental music, drums, bass and other instruments into independent synchronized tracks with mute, solo, EQ, echo, selection controls and WAV export." path="/tools/vocals"/>
   <main className="page-shell ax25-vocals ax32-vocals ax78-vocals">
    <section className="ax25-page-hero"><div className="ax25-kicker"><i/> VOCALS / MUSIC / STEMS</div><h1 className="ax47-marketing-hero">AUDIXO Vocal Extractor.<br/><em>Hear every layer.</em></h1><p>Extract the lead voice and instrument parts. Remix five distinct layers in one synchronized control deck.</p></section>
-   {!stems.length&&<section className="ax25-stem-launch ax32-stem-launch ax75-stem-launch ax78-stem-launch">
+   {!stems.length&&<section className="ax25-stem-launch ax32-stem-launch ax75-stem-launch ax78-stem-launch ax83-stem-launch">
     <div className="ax78-stem-intro"><span className={'ax25-engine-badge '+(webGpu?'fast':'fallback')}><i/>{webGpu?'STUDIO AI · WEBGPU AVAILABLE':threaded?'STUDIO AI · MULTI-CORE WASM':'STUDIO AI · CPU MODE'}</span>
      <h2>Find the sound behind the sound.</h2><p>Upload a song to separate its singing voice, instrumental music, drums, bass and other sources. Processing uses the browser's AI engine; the first session may need to download a large model.</p>
      <div className="ax75-stem-mode-note"><span className="ax75-mode-dot"/><strong>Five-layer AI extraction</strong><small>True model separation — not a fake frequency-only split</small></div>
      <div className="ax25-upload-actions ax78-upload-actions"><button className="ax25-primary-button" disabled={busy} onClick={()=>input.current?.click()}>{file?'Replace audio':'Choose a song'} <span>↗</span></button><button disabled={busy} onClick={()=>setLibrary(true)}>Open Library</button></div>
      {file&&<div className="ax25-selected-audio ax75-selected-audio"><span className="ax75-mini-disc"><img src="/audixo-official-symbol.png" alt=""/></span><div><small>SELECTED AUDIO</small><strong>{file.name}</strong></div></div>}
+    <button className="ax25-primary-button ax83-stem-extract" disabled={!file||busy} onClick={()=>void analyze()}>{busy?"Processing…":"Extract five layers"} <span>↗</span></button>
     </div>
     <div className="ax25-stem-visual ax32-stem-visual ax78-stem-visual"><RotatingUploadLogo small label="AUDIXO · STEM ENGINE"/>
      {layerNames.map((name,i)=><i key={name} style={{'--i':i} as CSSProperties}><small>{name}</small><b>∿</b></i>)}
-     <button className="ax25-primary-button" disabled={!file||busy} onClick={()=>void analyze()}>{busy?'Processing…':'Extract five layers'} <span>↗</span></button>
+     
     </div>
    </section>}
    {busy&&<section className="ax25-stem-progress ax75-stem-progress" role="status"><header><div><small>{status?.phase?.toUpperCase()||'PREPARING'}</small><strong>{status?.message||'Preparing your audio…'}</strong></div><b>{fmt(elapsed)}</b></header>

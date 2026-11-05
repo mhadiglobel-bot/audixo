@@ -79,6 +79,20 @@ export default async function handler(req:Req,res:Res){
  res.setHeader('Cache-Control','private, no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Robots-Tag','noindex')
  try{
   const action=String(req.query?.action||'')
+  if(action==='probe'&&req.method==='GET'&&process.env.VERCEL_ENV==='preview'){
+   const args=['--ignore-config','--no-playlist','--no-warnings','--skip-download','--dump-single-json','--socket-timeout','8','--retries','0','--extractor-retries','0','--js-runtimes','node','--remote-components','ejs:github','--','https://www.youtube.com/watch?v=dQw4w9WgXcQ']
+   const result=await new Promise<{code:number;message:string;title?:string}>(resolve=>{
+    let output='',err='',done=false
+    const p=spawn(path.resolve(process.cwd(),'bin','yt-dlp'),args,{stdio:['ignore','pipe','pipe']})
+    const doneOnce=(code:number,message:string,title?:string)=>{if(done)return;done=true;clearTimeout(timer);resolve({code,message,title})}
+    const timer=setTimeout(()=>{p.kill('SIGKILL');doneOnce(124,'Probe timed out after 25s')},25000)
+    p.stdout.on('data',(d:Buffer)=>{output=(output+String(d)).slice(-100000)})
+    p.stderr.on('data',(d:Buffer)=>{err=(err+String(d)).slice(-2500)})
+    p.on('error',e=>doneOnce(126,e.message))
+    p.on('close',c=>{let title;try{title=JSON.parse(output).title}catch{}doneOnce(c||0,err.replace(/https?:\/\/[^\s]+/g,'[url]').slice(-550),title)})
+   })
+   return res.status(200).json(result)
+  }
   if(action==='health'&&req.method==='GET'){
    let cookieInstalled=false
    if(cookiesConfigured()){try{cookieInstalled=!!(await loadCookies())}catch{}}

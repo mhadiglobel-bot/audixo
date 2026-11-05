@@ -5,7 +5,14 @@ import { defaultClipFx,soundPresets } from './project'
 import type { AudioClip,AudioTrack,ClipFx,SoundPreset,TimelineSelection } from './types'
 import { clipTimelineDuration,formatTime } from './utils'
 
-function RangeControl({label,value,min,max,step,onChange,onStart,suffix='',format}:{label:string;value:number;min:number;max:number;step:number;onChange:(v:number)=>void;onStart:()=>void;suffix?:string;format?:(v:number)=>string}){const display=format?format(value):`${Number(value).toFixed(step<1?2:0)}${suffix}`,percent=((Number(value)-min)/(max-min))*100;return <label className="ax25-fx-control"><div><span>{label}</span><strong>{display}</strong></div><input style={{'--range':`${Math.max(0,Math.min(100,percent))}%`} as React.CSSProperties} type="range" min={min} max={max} step={step} value={value} onPointerDown={onStart} onChange={e=>onChange(Number(e.target.value))}/></label>}
+function RangeControl({label,value,min,max,step,onChange,onStart,suffix='',format}:{label:string;value:number;min:number;max:number;step:number;onChange:(v:number)=>void;onStart:()=>void;suffix?:string;format?:(v:number)=>string}){
+ const percent=((value-min)/(max-min))*100,display=format?format(value):' '+Number(value).toFixed(step<1?2:0)+suffix
+ const nudge=(direction:number)=>{onStart();const next=min+Math.round((value+direction*step-min)/step)*step;onChange(Number(Math.max(min,Math.min(max,next)).toFixed(4)))}
+ return <div className="ax25-fx-control ax82-fx-control" role="group" aria-label={label}><div><span>{label}</span><strong>{display}</strong></div>
+  <div className="ax82-control-row"><button type="button" className="ax82-nudge" aria-label={'Decrease '+label} disabled={value<=min} onClick={()=>nudge(-1)}>−</button>
+   <input aria-label={label} style={{'--range':Math.max(0,Math.min(100,percent))+'%'} as React.CSSProperties} type="range" min={min} max={max} step={step} value={value} onPointerDown={onStart} onChange={e=>onChange(Number(e.target.value))}/>
+   <button type="button" className="ax82-nudge" aria-label={'Increase '+label} disabled={value>=max} onClick={()=>nudge(1)}>+</button></div></div>
+}
 function Toggle({label,note,checked,onChange}:{label:string;note:string;checked:boolean;onChange:(v:boolean)=>void}){return <button type="button" className={`ax25-fx-toggle ${checked?'on':''}`} onClick={()=>onChange(!checked)}><span><strong>{label}</strong><small>{note}</small></span><i><b/></i></button>}
 
 type NumericKey=Exclude<keyof ClipFx,'compressor'|'limiter'|'reverse'|'preservePitch'|'motionMode'|'echoMode'|'echoBehavior'|'rumbleCut'>

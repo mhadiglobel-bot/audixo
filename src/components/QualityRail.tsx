@@ -6,7 +6,6 @@ export const bitrateSteps=[64,128,192,256,320] as const
 export type Mp3Bitrate=(typeof bitrateSteps)[number]
 export type AvailableVideoQuality={value:string;label:string}
 const validVideo=(value:string)=>/^\d{2,4}$/.test(value)&&Number(value)>=144&&Number(value)<=4320
-const descriptor=(value:number)=>value>=4320?'8K UHD':value>=2160?'4K UHD':value>=1440?'QHD':value>=1080?'Full HD':value>=720?'HD':'Standard'
 export function confirmedVideoOptions(available:AvailableVideoQuality[]):AvailableVideoQuality[]{
  if(!Array.isArray(available))return []
  const values=new Set<string>()
@@ -14,9 +13,6 @@ export function confirmedVideoOptions(available:AvailableVideoQuality[]):Availab
  return [...values].sort((a,b)=>Number(a)-Number(b)).map(value=>({value,label:`${value}p`}))
 }
 export function highestConfirmedQuality(available:AvailableVideoQuality[]){return confirmedVideoOptions(available).at(-1)?.value||''}
-const audioLabels:Record<Mp3Bitrate,{title:string;detail:string}>={
- 64:{title:'Compact',detail:'Voice / small file'},128:{title:'Standard',detail:'Everyday listening'},192:{title:'Balanced',detail:'Music / sharing'},256:{title:'High',detail:'Detailed listening'},320:{title:'Maximum',detail:'Highest output target'}
-}
 
 /** AUDIXO quality controls: one elegant stepped rail for audio and video.
  * MP3 is a fixed 320 kbps output target, not a changeable slider.

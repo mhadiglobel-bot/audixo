@@ -10,29 +10,7 @@ export class MediaServiceError extends Error{constructor(message:string,public c
 
 /** Client-side fast validation; the Vercel handler repeats the check before calling yt-dlp. */
 const socialSources:ReadonlyArray<[string,readonly string[]]>=[
- ['YouTube',['youtube.com','youtu.be']],
- ['Instagram',['instagram.com']],
- ['TikTok',['tiktok.com','tiktokv.com']],
- ['Facebook',['facebook.com','fb.watch','fb.com']],
- ['X / Twitter',['x.com','twitter.com']],
- ['Reddit',['reddit.com','redd.it','v.redd.it']],
- ['Vimeo',['vimeo.com']],
- ['Dailymotion',['dailymotion.com','dai.ly']],
- ['Twitch',['twitch.tv']],
- ['Threads',['threads.net','threads.com']],
- ['Pinterest',['pinterest.com','pin.it']],
- ['Snapchat',['snapchat.com']],
- ['LinkedIn',['linkedin.com']],
- ['Bilibili',['bilibili.com','b23.tv']],
- ['Bluesky',['bsky.app']],
- ['Tumblr',['tumblr.com']],
- ['Streamable',['streamable.com']],
- ['Rumble',['rumble.com']],
- ['Odysee',['odysee.com']],
- ['SoundCloud',['soundcloud.com']],
- ['Bandcamp',['bandcamp.com']],
- ['Mixcloud',['mixcloud.com']],
- ['Douyin',['douyin.com']]
+ ['YouTube',['youtube.com','youtu.be']],['Instagram',['instagram.com']]
 ]
 export function supportedSocialPlatform(raw:string):string|null{
  try{

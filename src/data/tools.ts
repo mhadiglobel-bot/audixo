@@ -26,10 +26,10 @@ export const productTools: ProductTool[] = [
     id: 'youtube-mp3',
     name: 'Social Video Downloader',
     route: '/tools/social-video-downloader',
-    short: 'Download authorized public videos or audio from Instagram, TikTok, Facebook, YouTube, X and more.',
+    short: 'Convert permitted public YouTube videos and Instagram Reels into MP3 audio or MP4 video.',
     group: 'Convert',
     icon: '↓',
-    bullets: ['Multiple public social video platforms', '64–320 kbps MP3 encoding', 'Source-confirmed MP4 resolution'],
+    bullets: ['YouTube videos and Instagram Reels', '64–320 kbps MP3 encoding', 'Source-confirmed MP4 resolution'],
   },
   {
     id: 'mashup',

@@ -1,13 +1,13 @@
 import {useEffect,useRef,useState} from 'react'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
-import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,confirmedVideoOptions,type Mp3Bitrate} from '../components/QualityRail'
+import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,isSelectableVideoTarget,type Mp3Bitrate} from '../components/QualityRail'
 import {mediaRequest,supportedSocialPlatform,explainMediaError,MediaServiceError,outputName,type MediaJob,type MediaPreview,type MediaKind} from '../services/media'
 import {inspectLocalFile,downloadOriginalMp4,encodeMp3Local,triggerBlobDownload,type LocalInfo,type Progress} from '../services/browserMedia'
 
 function shortTime(seconds:number){if(!Number.isFinite(seconds)||seconds<=0)return 'Duration unavailable';const hours=Math.floor(seconds/3600),mins=Math.floor(seconds/60)%60,secs=Math.floor(seconds%60);return hours?`${hours}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`:`${mins}:${String(secs).padStart(2,'0')}`}
 const aborted=(error:unknown)=>error instanceof DOMException&&error.name==='AbortError'
-const STATUS_START='Vercel-native · social media MP3 / MP4'
+const STATUS_START='YouTube + Instagram · MP3 / MP4'
 
 export default function YouTubeConverter(){
  const [url,setUrl]=useState(''),[preview,setPreview]=useState<MediaPreview|null>(null),[workerState,setWorkerState]=useState<'checking'|'online'|'offline'>('checking')
@@ -50,7 +50,7 @@ export default function YouTubeConverter(){
  useEffect(()=>{const controller=new AbortController();void mediaRequest<{ready:boolean}>('health',{},controller.signal).then(v=>setWorkerState(v.ready?'online':'offline')).catch(()=>{if(!controller.signal.aborted)setWorkerState('offline')});return()=>{controller.abort();running.current?.abort();downloadFrame.current?.remove();downloadFrame.current=null}},[])
  const available=local?local.qualities:(preview?.qualities||[])
  const active=!!(local||preview)
- const selectedQuality=confirmedVideoOptions(available).some(item=>item.value===quality)
+ const selectedQuality=isSelectableVideoTarget(quality,available)
  const audioReady=local?.audioAvailable||preview?.audioAvailable||false
  const mp4Ready=!!selectedQuality
  const canDownload=active&&(format==='mp3'?audioReady:mp4Ready)
@@ -59,7 +59,7 @@ export default function YouTubeConverter(){
  const updateUrl=(value:string)=>{clearDownloadFrame();version.current++;setUrl(value);setPreview(null);setLocal(null);setQuality('');setNotice('');setProgress(null);setCompleted(false);setDownloadHref('');if(picker.current)picker.current.value=''}
  const analyze=async()=>{
   if(busy)return
-  if(!supportedSocialPlatform(url)){setNotice('Paste a public video link from Instagram, TikTok, Facebook, YouTube, X, Reddit or another supported platform.');return}
+  if(!supportedSocialPlatform(url)){setNotice('Paste a public YouTube video or Instagram Reel link.');return}
   const op=++version.current,controller=new AbortController();running.current?.abort();running.current=controller
   setBusy(true);setProgress({stage:'Checking public media formats…'});setNotice('');setPreview(null);setLocal(null);setQuality('');setCompleted(false);setDownloadHref('')
   try{const info=await mediaRequest<MediaPreview>('meta',{url:url.trim()},controller.signal)
@@ -109,23 +109,22 @@ export default function YouTubeConverter(){
   finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }
  const cancel=()=>{clearDownloadFrame();running.current?.abort();running.current=null;setBusy(false);setProgress(null);setNotice('The current browser operation was cancelled. The pending in-page download will also be stopped.')}
- const formats=[{id:'mp3' as const,title:'MP3 Audio',copy:'Convert with FFmpeg at your chosen bitrate',glyph:'♫'},{id:'mp4' as const,title:'MP4 Video',copy:'Download source-verified video resolution',glyph:'▶'}]
+ const formats=[{id:'mp3' as const,title:'MP3',glyph:'♫'},{id:'mp4' as const,title:'MP4',glyph:'▶'}]
  const cta=format==='mp3'?`Download MP3 · ${mp3Bitrate} kbps`:`Download MP4${quality?` · ${quality}p`:''}`
  const cannotDownload=active&&!canDownload
- return <SiteShell><Seo title="Social Video Downloader — MP3 & MP4 | AUDIXO" description="Download permitted public videos from Instagram, TikTok, Facebook, YouTube, X, Reddit and other supported platforms. Convert to MP3 or MP4 without leaving AUDIXO." path="/tools/social-video-downloader"/>
+ return <SiteShell><Seo title="YouTube & Instagram MP3 / MP4 Downloader | AUDIXO" description="Convert authorized public YouTube and Instagram videos into MP3 audio or MP4 video, using source-verified quality." path="/tools/social-video-downloader"/>
  <main className="page-shell ax39-converter ax59-converter">
-  <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / SOCIAL VIDEO DOWNLOADER</div><h1>One link.<br/><em>Social media.</em></h1><p>Paste a public post, Reel, Short or video link. AUDIXO checks its actual formats and prepares MP3 audio or MP4 video without leaving this page.</p><div className="ax80-social-sites" aria-label="Popular social media sources">{['Instagram','TikTok','Facebook','YouTube','X / Twitter','Reddit','Vimeo','More'].map(site=><span key={site}>{site}</span>)}</div><div className={`ax39-server ${workerState==='offline'?'':'ready'}`}><i/>{workerState==='offline'?'Media function unavailable · local files still available':workerState==='checking'?'Checking Vercel media function…':STATUS_START}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · server converted</div><div className="ax39-art-chip two">MP4 · source quality</div></div></div>
+  <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / SOCIAL VIDEO DOWNLOADER</div><h1>One link.<br/><em>Sound or video.</em></h1><p>Paste a public YouTube video or Instagram Reel. Choose MP3 audio or MP4 video without leaving AUDIXO.</p><div className="ax80-social-sites" aria-label="Popular social media sources">{['Instagram','YouTube'].map(site=><span key={site}>{site}</span>)}</div><div className={`ax39-server ${workerState==='offline'?'':'ready'}`}><i/>{workerState==='offline'?'Media function unavailable · local files still available':workerState==='checking'?'Checking Vercel media function…':STATUS_START}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · server converted</div><div className="ax39-art-chip two">MP4 · source quality</div></div></div>
   <section className="ax39-converter-panel" aria-label="AUDIXO media converter">
    <div className="ax39-converter-top"><div><small>FORMAT</small><strong>What would you like to save?</strong></div><span>01 / 03</span></div>
-   <div className="ax39-format-toggle" role="group" aria-label="Output format">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={busy} onClick={()=>{setFormat(item.id);setNotice('');setCompleted(false);if(item.id==='mp4')setQuality(highestConfirmedQuality(available))}}><span className="ax39-format-icon">{item.glyph}</span><span><strong>{item.title}</strong><small>{item.copy}</small></span><span className="ax46-format-switch" aria-hidden="true"><i/></span></button>)}</div>
+   <div className="ax81-format-control" role="group" aria-label="Choose MP3 audio or MP4 video">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={busy} onClick={()=>{setFormat(item.id);setNotice('');setCompleted(false);if(item.id==='mp4')setQuality(highestConfirmedQuality(available))}}><span aria-hidden="true">{item.glyph}</span><strong>{item.title}</strong></button>)}</div>
    <div className="ax39-steps">
-    <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste a social video link</h2><p>Instagram Reels, TikTok, Facebook videos, YouTube Shorts, X posts and more. Public, single-media links work best.</p>
-     <div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="Social media video URL" type="url" inputMode="url" placeholder="Paste an Instagram, TikTok, Facebook or other video URL…" value={url} disabled={busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={busy||!url.trim()} className="ax39-analyze" onClick={()=>void analyze()}>{busy?'Checking…':'Analyze'} <span>↗</span></button></div>
-     <div className="ax59-local-row"><span>Or work entirely offline with media you own</span><input ref={picker} type="file" accept="audio/*,video/mp4,video/webm,.m4a,.wav,.flac,.mp3,.mp4,.webm" aria-label="Choose a local audio or MP4 video" hidden onChange={e=>void chooseLocal(e.currentTarget.files?.[0])}/><button type="button" disabled={busy} onClick={()=>picker.current?.click()}>+ Choose local file</button></div>
+    <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste a social video link</h2><p>Public Instagram Reels or YouTube videos and Shorts. Paste one media link at a time.</p>
+     <div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="Social media video URL" type="url" inputMode="url" placeholder="Paste a YouTube video or Instagram Reel link…" value={url} disabled={busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={busy||!url.trim()} className="ax39-analyze" onClick={()=>void analyze()}>{busy?'Checking…':'Analyze'} <span>↗</span></button></div>
      {active&&<div className="ax39-preview">{preview?.thumbnail?<img src={preview.thumbnail} alt="Video thumbnail" loading="lazy" referrerPolicy="no-referrer"/>:<div className="ax59-local-icon" aria-hidden="true">♫</div>}<div><small>{local?'LOCAL FILE':(preview?.platform||'SOCIAL VIDEO')+' / VERCEL'} · {shortTime(local?.duration||preview?.duration||0)}</small><strong title={target}>{target}</strong><span>{local?'Stored on this device':preview?.author||preview?.platform||'Public social video'}</span></div><b>✓</b></div>}
     </div></div>
-    <div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Choose audio quality':'Choose video resolution'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={mp3Bitrate} duration={local?.duration||preview?.duration||0} disabled={busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={available} analyzed={active} disabled={busy}/>}</div></div>
-    <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare &amp; download</h2><p>Social media downloads keep the original post title. Local exports add <b>(Audixo {format.toUpperCase()})</b>.</p><p className="ax52-usage-note">Only download media you own or are permitted to save. Private, login-only and DRM-protected posts may be unavailable; platform restrictions still apply.</p>
+    {(format==='mp3'||active)&&<div className="ax39-step"><span className="ax39-step-num">02</span><div className="ax39-step-content"><h2>{format==='mp3'?'Audio quality':'Video quality'}</h2>{format==='mp3'?<Mp3QualityRail bitrate={320} duration={local?.duration||preview?.duration||0} disabled={busy} onChange={setMp3Bitrate}/>:<VideoQualityRail quality={quality} onChange={setQuality} available={available} analyzed={active} disabled={busy}/>}</div></div>}
+    <div className="ax39-step"><span className="ax39-step-num">03</span><div className="ax39-step-content"><h2>Prepare &amp; download</h2><p>Original video title is preserved in your saved file.</p><p className="ax52-usage-note">Download media you own or are authorized to save. Private and protected content may not be accessible.</p>
      <button type="button" className="ax39-create ax42-download" disabled={!canDownload||busy} onClick={()=>void start()}><span>{busy?'Preparing download…':cta}</span><b>↓</b></button>
      {cannotDownload&&<div className="ax59-limitation" role="status">{format==='mp3'?'No audio stream is available. Try a different video or a local file.':'No source resolution is available; try another video or a local MP4.'}</div>}
      {busy&&progress&&<div className="ax39-progress ax59-progress" role="status"><div><strong>{progress.stage}</strong><button type="button" onClick={cancel}>Cancel</button></div>{typeof progress.percent==='number'?<progress max="100" value={progress.percent} aria-label="Media processing progress"/>:<span className="ax59-progress-indeterminate" aria-hidden="true"/>}<small>{typeof progress.percent==='number'?`${progress.percent}% · `:''}{typeof progress.bytes==='number'?`${(progress.bytes/1048576).toFixed(1)} MB processed · `:''}Direct media preparation on Vercel.</small></div>}
@@ -136,6 +135,6 @@ export default function YouTubeConverter(){
    <div className="ax39-converter-bottom"><span>Social sources</span><span>MP3 / MP4</span><span>Same-page download · Vercel</span></div>
   </section>
   {notice&&<div className="ax39-alert ax59-alert" role="status" data-type={completed?'success':'info'}>{notice}</div>}
-  <p className="ax59-source-note">Social platforms sometimes block server-side downloads or require authorization. Availability depends on each site and its public source formats; audio transcoding cannot restore lost source quality.</p>
+  <p className="ax59-source-note">Some platforms restrict requests from cloud servers. If access is refused, AUDIXO will explain the source restriction rather than show a false download success.</p>
  </main></SiteShell>
 }

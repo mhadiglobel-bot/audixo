@@ -11,28 +11,7 @@ import { cookieArgs } from './cookies.js'
 const videoId=/^[A-Za-z0-9_-]{11}$/
 const sources:ReadonlyArray<{name:string;hosts:string[]}>= [
  {name:'YouTube',hosts:['youtube.com','youtu.be']},
- {name:'Instagram',hosts:['instagram.com']},
- {name:'TikTok',hosts:['tiktok.com','tiktokv.com']},
- {name:'Facebook',hosts:['facebook.com','fb.watch','fb.com']},
- {name:'X / Twitter',hosts:['x.com','twitter.com']},
- {name:'Reddit',hosts:['reddit.com','redd.it','v.redd.it']},
- {name:'Vimeo',hosts:['vimeo.com']},
- {name:'Dailymotion',hosts:['dailymotion.com','dai.ly']},
- {name:'Twitch',hosts:['twitch.tv']},
- {name:'Threads',hosts:['threads.net','threads.com']},
- {name:'Pinterest',hosts:['pinterest.com','pin.it']},
- {name:'Snapchat',hosts:['snapchat.com']},
- {name:'LinkedIn',hosts:['linkedin.com']},
- {name:'Bilibili',hosts:['bilibili.com','b23.tv']},
- {name:'Bluesky',hosts:['bsky.app']},
- {name:'Tumblr',hosts:['tumblr.com']},
- {name:'Streamable',hosts:['streamable.com']},
- {name:'Rumble',hosts:['rumble.com']},
- {name:'Odysee',hosts:['odysee.com']},
- {name:'SoundCloud',hosts:['soundcloud.com']},
- {name:'Bandcamp',hosts:['bandcamp.com']},
- {name:'Mixcloud',hosts:['mixcloud.com']},
- {name:'Douyin',hosts:['douyin.com']}
+ {name:'Instagram',hosts:['instagram.com']}
 ]
 const matchesHost=(host:string,domain:string)=>host===domain||host.endsWith('.'+domain)
 const getSource=(host:string)=>sources.find(s=>s.hosts.some(d=>matchesHost(host,d)))
@@ -42,16 +21,16 @@ export function sourceName(url:string):string{
 }
 /** Only recognized public media platforms; never accept arbitrary URLs as a server-side proxy. */
 export function parseVideoUrl(input:unknown):string{
- if(typeof input!=='string'||input.length>2048||input.length<10)throw new Error('Enter a supported public social-video HTTPS link.')
- let u:URL;try{u=new URL(input.trim())}catch{throw new Error('Enter a valid HTTPS social media link.')}
+ if(typeof input!=='string'||input.length>2048||input.length<10)throw new Error('Enter a public YouTube video or Instagram Reel HTTPS link.')
+ let u:URL;try{u=new URL(input.trim())}catch{throw new Error('Enter a valid HTTPS YouTube or Instagram link.')}
  const host=u.hostname.toLowerCase().replace(/\.$/,'')
- if(u.protocol!=='https:'||u.port||u.username||u.password||!getSource(host))throw new Error('This link must use HTTPS and come from a supported social media platform.')
+ if(u.protocol!=='https:'||u.port||u.username||u.password||!getSource(host))throw new Error('This downloader currently supports HTTPS links from YouTube and Instagram.')
  if(matchesHost(host,'youtube.com')||matchesHost(host,'youtu.be')){
   const id=matchesHost(host,'youtu.be')?u.pathname.split('/')[1]:u.pathname==='/watch'?u.searchParams.get('v'):u.pathname.match(/^\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})\/?$/)?.[1]
   if(!id||!videoId.test(id))throw new Error('Use a single YouTube video or Shorts link, not a channel or playlist.')
   return 'https://www.youtube.com/watch?v='+id
  }
- if(!u.pathname||u.pathname==='/')throw new Error('Paste a single video or post link, not a profile or homepage.')
+ if(!u.pathname||u.pathname==='/')throw new Error('Paste a single Instagram Reel or video link, not a profile or homepage.')
  u.hash=''
  return u.toString()
 }
@@ -60,31 +39,51 @@ const BIN=process.env.YTDLP_BIN||path.resolve(process.cwd(),'bin','yt-dlp')
 export const extractorInstalled=()=>fs.existsSync(BIN)
 export function extractorPath(){if(!extractorInstalled())throw new Error('yt-dlp binary not installed. Check Vercel build logs (prepare-ytdlp).');return BIN}
 export class ExtractorError extends Error {constructor(message:string,public status=502){super(message)}}
-function tidyError(text:string){
- const lines=String(text||'').split(/\r?\n/).filter(Boolean),message=lines.filter(x=>/ERROR:|WARNING:.*sign in|HTTP Error|timed out|403|not a bot|unavailable/i.test(x)).at(-1)||lines.at(-1)||'The media extractor failed.'
- if(/sign in to confirm|not a bot|LOGIN_REQUIRED|403 Forbidden|HTTP Error 403/i.test(message))return 'The source rejected this server request. Public media can require a login or block Vercel IP addresses; YouTube cookies are managed at /bhai-cookie-dalde.'
- if(/Private video|members-only|paid content/i.test(message))return 'This content is private, restricted or requires an authorized session.'
- return message.replace(/https?:\/\/[^\s]+/g,'[media URL hidden]').slice(0,430)
+
+function tidyError(raw:string,source:string){
+ const lines=String(raw||'').split(/\r?\n/).filter(Boolean)
+ const important=lines.filter(line=>/ERROR:|HTTP Error|403|bot|login|rate.limit|timeout|unavailable|private|challenge/i.test(line)).at(-1)||lines.at(-1)||''
+ if(/sign in to confirm|not a bot|LOGIN_REQUIRED|403 Forbidden|HTTP Error 403|challenge|blocked/i.test(important)){
+  return source==='Instagram'?'Instagram refused this server request. The Reel may require authentication or Instagram may be blocking the Vercel IP address.':'YouTube refused this server request. Public videos may require source-side verification; saved cookies or a new request alone may not resolve a blocked Vercel IP.'
+ }
+ if(/private|members.only|paid content|login required/i.test(important))return 'The video is private, restricted or requires an authorized account.'
+ if(/unsupported url/i.test(important))return 'The source platform cannot provide this media at present.'
+ return important.replace(/https?:\/\/[^\s]+/g,'[source URL removed]').slice(0,400)||'The source did not return playable media.'
+}
+export async function extract(source:string,selector?:string):Promise<any>{
+ const url=parseVideoUrl(source),platform=sourceName(url),isYoutube=platform==='YouTube'
+ const defaultFlags=['--ignore-config','--no-playlist','--no-warnings','--default-search','error','--skip-download','--dump-single-json','--socket-timeout','15','--retries','1','--extractor-retries','1',...(isYoutube?['--js-runtimes','node','--remote-components','ejs:github']:[])]
+ const run=async(cookieFlags:string[]):Promise<any>=>new Promise((resolve,reject)=>{
+  const args=[...defaultFlags,...cookieFlags]
+  if(selector)args.push('--format',selector)
+  args.push('--',url)
+  let done=false,stdout='',stderr=''
+  const p=spawn(extractorPath(),args,{stdio:['ignore','pipe','pipe'],env:{...process.env,NO_COLOR:'1'}})
+  const finish=(error?:Error,value?:any)=>{
+   if(done)return;done=true;clearTimeout(timer)
+   if(error)reject(error);else resolve(value)
+  }
+  const timer=setTimeout(()=>{p.kill('SIGKILL');finish(new ExtractorError('The platform did not respond in time. Try another authorized public video.',504))},55000)
+  p.stdout.on('data',v=>{stdout+=String(v);if(stdout.length>18000000){p.kill('SIGKILL');finish(new ExtractorError('Media metadata exceeded the safe response size.',413))}})
+  p.stderr.on('data',v=>{stderr=(stderr+String(v)).slice(-14000)})
+  p.on('error',e=>finish(new ExtractorError('The media analyzer could not start: '+e.message,503)))
+  p.on('close',code=>{
+   if(done)return
+   if(code!==0)return finish(new ExtractorError(tidyError(stderr,platform),502))
+   try{finish(undefined,JSON.parse(stdout))}catch{finish(new ExtractorError('Media analyzer returned an invalid response.',502))}
+  })
+ })
+ // Public first: sending old YouTube cookies to every public video can itself break extraction.
+ try{return await run([])}catch(error){
+  if(!isYoutube||!(error instanceof ExtractorError)||error.status!==502||!/refused this server request|requires an authorized account|private|restricted/i.test(error.message))throw error
+  // Private authorized session fallback, loaded only on a relevant YouTube failure.
+  let saved:{args:string[];cleanup:()=>Promise<void>}|undefined
+  try{saved=await cookieArgs()}catch{throw error}
+  if(!saved.args.length){await saved.cleanup();throw error}
+  try{return await run(saved.args)}finally{await saved.cleanup()}
+ }
 }
 
-export async function extract(source:string,selector?:string):Promise<any>{
- const url=parseVideoUrl(source),isYoutube=sourceName(url)==='YouTube'
- const cookieSession=isYoutube?await cookieArgs():{args:[],cleanup:async()=>{}}
- const flags=['--no-playlist','--no-warnings','--default-search','error','--skip-download','--dump-single-json','--socket-timeout','20','--retries','2','--extractor-retries','2',...(isYoutube?['--js-runtimes','node','--remote-components','ejs:github']:[]),...cookieSession.args]
- if(selector)flags.push('--format',selector)
- flags.push('--',url)
- try{
-  return await new Promise((resolve,reject)=>{
-   let done=false,stdout='',stderr=''
-   const p=spawn(extractorPath(),flags,{stdio:['ignore','pipe','pipe'],env:{...process.env,NO_COLOR:'1'}})
-   const timer=setTimeout(()=>{p.kill('SIGKILL');if(!done){done=true;reject(new ExtractorError('Media analysis timed out. Try again with a public video URL.',504))}},85000)
-   p.stdout.on('data',v=>{stdout+=String(v);if(stdout.length>18000000)p.kill('SIGKILL')})
-   p.stderr.on('data',v=>{stderr=(stderr+String(v)).slice(-18000)})
-   p.on('error',e=>{if(done)return;done=true;clearTimeout(timer);reject(new ExtractorError('yt-dlp could not start: '+e.message,503))})
-   p.on('close',code=>{if(done)return;done=true;clearTimeout(timer);if(code!==0)return reject(new ExtractorError(tidyError(stderr),502));try{resolve(JSON.parse(stdout))}catch{reject(new ExtractorError('Invalid response from the media extractor.',502))}})
-  })
- }finally{await cookieSession.cleanup()}
-}
 export type MediaFormat={url:string;ext:string;vcodec:string;acodec:string;height:number;http_headers?:Record<string,string>;format_id?:string}
 export function mediaFormats(meta:any):MediaFormat[]{return Array.isArray(meta?.formats)&&meta.formats.length?meta.formats:meta?.url?[meta]:[]}
 export function formatQualities(meta:any):{value:string;label:string}[]{

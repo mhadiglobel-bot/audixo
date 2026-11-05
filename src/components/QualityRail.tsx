@@ -23,48 +23,33 @@ const audioLabels:Record<Mp3Bitrate,{title:string;detail:string}>={
  * MP4 shows standard resolution milestones; the range ends at the source maximum.
  * A selected resolution is an upper target: the extractor may use a lower available format.
  */
-const standardResolutions=[144,240,360,480,720,1080,1440,2160] as const
-export function isSelectableVideoTarget(value:string,available:AvailableVideoQuality[]):boolean{
- const n=Number(value),formats=confirmedVideoOptions(available).map(q=>Number(q.value))
- return Number.isFinite(n)&&formats.length>0&&n<=Math.max(...formats)&&formats.some(h=>h<=n)
-}
-export function Mp3QualityRail({duration}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
- const bitrate=320
- const approx=duration>0?(duration*bitrate/(8*1024)).toFixed(1):''
- return <section className="ax81-quality-shell" aria-label="MP3 audio quality fixed to 320 kbps">
-  <header className="ax81-quality-head"><div><span className="ax81-quality-eyebrow">AUDIO BITRATE</span><h3>320 <small>kbps target</small></h3><p>Maximum MP3 output setting. Encoding at 320 kbps cannot improve low-quality source audio.</p></div><span className="ax81-quality-pill">MP3 AUDIO</span></header>
-  <div className="ax81-quality-note"><span>Maximum quality</span><span>{approx?'Approx. '+approx+' MB':'Fixed output · 320 kbps'}</span></div>
-  <div className="ax81-slider-shell"><div className="ax81-track" style={{'--ax81-progress':'100%','--ax81-limit':'100%'} as CSSProperties}><span className="ax81-thumb" style={{left:'100%'}}/></div></div>
-  <div className="ax81-bitrate-grid" aria-label="Supported MP3 bitrate scale">{bitrateSteps.map(step=><div className={'ax81-choice '+(step===320?'selected':'inactive')} key={step}><strong>{step} <small>kbps</small></strong><span>{audioLabels[step].title}</span></div>)}</div>
+export function isSelectableVideoTarget(value:string,available:AvailableVideoQuality[]):boolean{return confirmedVideoOptions(available).some(o=>o.value===value)}
+
+/* V82: truthful output bitrate, source-verified video quality. */
+export function Mp3QualityRail({duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
+ const [displayIndex,setDisplayIndex]=useState(4),progress=displayIndex*25
+ return <section className="ax82-quality" aria-label="MP3 audio quality">
+  <header><div><small>MP3 AUDIO</small><h3>320 <span>kbps output</span></h3><p>Final MP3 always uses a 320 kbps encoding target; the movable scale is a visual preview only.</p></div><b>AUDIO</b></header>
+  <div className="ax82-rail" style={{'--ax82-progress':progress+'%'} as CSSProperties}>
+   <input type="range" min="0" max="4" step="1" value={displayIndex} disabled={disabled} aria-label="Preview bitrate scale (output remains 320 kbps)" onChange={e=>setDisplayIndex(Number(e.target.value))}/>
+   <div className="ax82-ticks" aria-hidden="true">{bitrateSteps.map((v,i)=><span key={v} className={i===displayIndex?'active':''}><i/><strong>{v}</strong></span>)}</div>
+  </div>
+  <footer>Maximum export quality: <strong>320 kbps</strong>{duration>0&&<span> · Approx. {(duration*320/8192).toFixed(1)} MB</span>}</footer>
  </section>
 }
 export function VideoQualityRail({quality,onChange,available,analyzed,disabled=false}:{quality:string;onChange:(v:string)=>void;available:AvailableVideoQuality[];analyzed:boolean;disabled?:boolean}){
- const found=confirmedVideoOptions(available).map(item=>Number(item.value))
- const maxHeight=found.length?Math.max(...found):0
- const ticks=[...new Set<number>([...standardResolutions,...(maxHeight&&!standardResolutions.includes(maxHeight as typeof standardResolutions[number])?[maxHeight]:[])])].sort((a,b)=>a-b)
- const maxIndex=ticks.findIndex(t=>t===maxHeight)
- const index=ticks.findIndex(t=>t===Number(quality))
- const limit=maxIndex>=0?maxIndex/(ticks.length-1)*100:0
- const progress=index>=0?index/(ticks.length-1)*100:0
- const actual=found.filter(h=>h<=Number(quality)).at(-1)
- const accessibleMax=found.length>0&&maxIndex>=0
- return <section className="ax81-quality-shell" aria-label="Source-confirmed MP4 video quality">
-  <header className="ax81-quality-head"><div><span className="ax81-quality-eyebrow">VIDEO RESOLUTION</span><h3>{quality?quality+'p':'Select resolution'} <small>{quality?'quality target':'source quality'}</small></h3><p>Choose up to the source’s available quality. Lower source formats are used when the exact target is unavailable.</p></div><span className="ax81-quality-pill">MP4 VIDEO</span></header>
-  <div className="ax81-quality-note"><span>Source-verified resolutions</span><span>{maxHeight?'Maximum video quality: '+maxHeight+'p':'Analyze a link first'}</span></div>
-  {accessibleMax&&<div className="ax81-slider-shell">
-   <div className="ax81-track" style={{'--ax81-progress':progress+'%','--ax81-limit':limit+'%'} as CSSProperties}>
-    <span className="ax81-thumb" style={{left:progress+'%'}}/>
-    <input type="range" aria-label="MP4 video resolution" aria-valuetext={quality+'p target; maximum '+maxHeight+'p'} min={0} max={maxIndex} step={1} value={index>=0?Math.min(index,maxIndex):maxIndex} disabled={disabled||maxIndex===0}
-     style={{width:(limit||0)+'%'}} onChange={e=>onChange(String(ticks[Number(e.currentTarget.value)]))}/>
+ const options=confirmedVideoOptions(available),max=options.length-1
+ const selected=Math.max(0,options.findIndex(o=>o.value===quality)),pct=max>0?selected/max*100:100
+ return <section className="ax82-quality" aria-label="MP4 quality selector">
+  <header><div><small>MP4 VIDEO</small><h3>{quality?quality+'p':'Analyze first'} <span>{quality?'exact resolution':'video quality'}</span></h3><p>Select an actual resolution verified in the available source formats.</p></div><b>VIDEO</b></header>
+  {options.length>0&&<>
+   <div className="ax82-rail" style={{'--ax82-progress':pct+'%'} as CSSProperties}>
+    <input type="range" min="0" max={Math.max(0,max)} step="1" value={selected} disabled={disabled||max===0} aria-label="MP4 resolution" aria-valuetext={quality+'p selected; '+options[max]?.value+'p maximum'} onChange={e=>onChange(options[Number(e.target.value)].value)}/>
+    <div className="ax82-ticks" aria-hidden="true">{options.map((o,i)=><span key={o.value} className={i===selected?'active':''}><i/><strong>{o.value}p</strong></span>)}</div>
    </div>
-  </div>}
-  {accessibleMax&&<div className="ax81-resolution-grid" role="group" aria-label="Available quality targets">{ticks.map(h=>{
-    const allowed=h<=maxHeight&&found.some(a=>a<=h)
-    const chosen=h===Number(quality)
-    return <button type="button" key={h} className={'ax81-choice '+(chosen?'selected':'')+(allowed?'':' unavailable')} aria-pressed={chosen} disabled={disabled||!allowed} onClick={()=>onChange(String(h))}><strong>{h}p</strong><span>{h===maxHeight?'Source max':descriptor(h)}</span></button>
-   })}</div>}
-  {accessibleMax&&<div className="ax81-quality-foot">{actual&&actual<Number(quality)?'Selected target: '+quality+'p · available stream: '+actual+'p':'Maximum video quality available: '+maxHeight+'p'}</div>}
-  {!accessibleMax&&analyzed&&<p className="ax81-quality-empty">This source did not return a playable MP4 resolution.</p>}
+   <footer>Maximum source resolution: <strong>{options[max]?.value}p</strong></footer>
+  </>}
+  {analyzed&&!options.length&&<p>This source provided no usable MP4 resolution.</p>}
  </section>
 }
 

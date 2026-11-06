@@ -1,13 +1,14 @@
 import {NavLink} from 'react-router-dom'
 import {useEffect,useState} from 'react'
+import Icon from '../editor/Icons'
 
 type InstallEvent=Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>}
 const links=[
- {url:'/',label:'Home',icon:'⌂'},
- {url:'/tools/social-video-downloader',label:'Download',icon:'↓'},
- {url:'/editor',label:'Studio',icon:'◈'},
- {url:'/tools/vocals',label:'Stems',icon:'♫'},
- {url:'/library',label:'Library',icon:'▤'},
+ {url:'/',label:'Home',icon:'home'},
+ {url:'/tools/social-video-downloader',label:'Download',icon:'download'},
+ {url:'/editor',label:'Studio',icon:'waveform'},
+ {url:'/tools/vocals',label:'Stems',icon:'headphones'},
+ {url:'/library',label:'Library',icon:'library'},
 ]
 export function MobileDock(){
  const [install,setInstall]=useState<InstallEvent|null>(null)
@@ -38,11 +39,11 @@ export function MobileDock(){
   setShowGuide(true)
  }
  return <>
-  <nav className="ax40-mobile-dock" aria-label="Mobile quick navigation">{links.map(link=><NavLink key={link.url} end={link.url==='/'} to={link.url} className={({isActive})=>isActive?'active':''}><i aria-hidden="true">{link.icon}</i><span>{link.label}</span></NavLink>)}</nav>
-  {!installed&&!guideDismissed&&<div className="ax44-mobile-install"><button type="button" className="ax44-install-action" onClick={()=>void requestInstall()} aria-label="Install AUDIXO app or get installation instructions">↧ Install app</button><button type="button" className="ax44-install-dismiss" aria-label="Dismiss installation tip" onClick={()=>{setGuideDismissed(true);try{sessionStorage.setItem('audixo-install-tip-dismissed','1')}catch{}}}>×</button></div>}
+  <nav className="ax40-mobile-dock" aria-label="Mobile quick navigation">{links.map(link=><NavLink key={link.url} end={link.url==='/'} to={link.url} className={({isActive})=>isActive?'active':''}><i aria-hidden="true"><Icon name={link.icon} size={20}/></i><span>{link.label}</span></NavLink>)}</nav>
+  {!installed&&!guideDismissed&&<div className="ax44-mobile-install"><button type="button" className="ax44-install-action" onClick={()=>void requestInstall()} aria-label="Install AUDIXO app or get installation instructions"><Icon name="download" size={16}/> Install app</button><button type="button" className="ax44-install-dismiss" aria-label="Dismiss installation tip" onClick={()=>{setGuideDismissed(true);try{sessionStorage.setItem('audixo-install-tip-dismissed','1')}catch{}}}><Icon name="close" size={16}/></button></div>}
   {showGuide&&<div className="ax44-install-modal" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setShowGuide(false)}}>
    <section role="dialog" aria-modal="true" aria-label="Install AUDIXO on your phone">
-    <button className="ax44-install-close" type="button" onClick={()=>setShowGuide(false)} aria-label="Close installation help">×</button>
+    <button className="ax44-install-close" type="button" onClick={()=>setShowGuide(false)} aria-label="Close installation help"><Icon name="close" size={19}/></button>
     <span className="ax44-install-kicker">AUDIXO / MOBILE APP</span><h2>Install AUDIXO</h2>
     {ios?<p>On iPhone, open this site in <strong>Safari</strong>, tap <strong>Share</strong> and select <strong>Add to Home Screen</strong>. The browser may not display a separate Install button.</p>
     :<p>In <strong>Chrome or Edge on Android</strong>, open the browser menu <strong>⋮</strong> and select <strong>Install app</strong> or <strong>Add to Home screen</strong>. If the native prompt is available, AUDIXO will offer it directly.</p>}

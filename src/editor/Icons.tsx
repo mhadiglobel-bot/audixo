@@ -12,6 +12,7 @@ const paths: Record<string,string> = {
   magic:'<path d="m4 20 10-10M13 4l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3ZM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"/>',
   arrowUpRight:'<path d="M6 18 18 6M8 6h10v10"/>',
   chevronRight:'<path d="m9 5 7 7-7 7"/>',
+  video:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
   mic:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/>',
   close:'<path d="M6 6l12 12M18 6 6 18"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',

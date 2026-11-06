@@ -2,6 +2,7 @@ import {Link} from 'react-router-dom'
 import {useEffect,useRef,useState,type CSSProperties} from 'react'
 import Seo from '../components/Seo'
 import ToolGlyph from '../components/ToolGlyph'
+import Icon from '../editor/Icons'
 import SiteShell from '../components/SiteShell'
 import {useNeonJourney} from '../hooks/useNeonJourney'
 
@@ -77,7 +78,7 @@ export default function Features(){
   <section className="page-shell ax25-page-hero ax44-features-hero"><div className="ax25-kicker"><i/> FEATURES / PURPOSEFUL TOOLS</div><h1>Power where it matters.<br/><em>Clarity everywhere else.</em></h1><p>Four clear workflows in one browser studio. No cluttered control panels.</p></section>
   <section className="page-shell ax44-feature-showcase">
    {featureGroups.map((f,index)=><article key={f.n} className={`ax44-feature-row ${index%2?'reverse':''}`}>
-    <div className="ax44-feature-copy"><span>{f.n} / {f.tag}</span><h2>{f.title}</h2><p>{f.body}</p><ul>{f.points.map(point=><li key={point}>{point}</li>)}</ul><Link to={f.link}>{f.cta} <span aria-hidden="true">↗</span></Link></div>
+    <div className="ax44-feature-copy"><span>{f.n} / {f.tag}</span><h2>{f.title}</h2><p>{f.body}</p><ul>{f.points.map(point=><li key={point}>{point}</li>)}</ul><Link to={f.link}>{f.cta} <span aria-hidden="true"><Icon name="arrowUpRight" size={16}/></span></Link></div>
     <FeatureVisual kind={f.tag}/>
    </article>)}
   </section>

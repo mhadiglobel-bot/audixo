@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react'
+import Icon from '../editor/Icons'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import {VideoQualityRail,Mp3QualityRail,highestConfirmedQuality,isSelectableVideoTarget,type Mp3Bitrate} from '../components/QualityRail'
@@ -110,7 +111,7 @@ export default function YouTubeConverter(){
   finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }
  const cancel=()=>{clearDownloadFrame();running.current?.abort();running.current=null;setBusy(false);setProgress(null);setNotice('The current browser operation was cancelled. The pending in-page download will also be stopped.')}
- const formats=[{id:'mp3' as const,title:'MP3',glyph:'♫'},{id:'mp4' as const,title:'MP4',glyph:'▶'}]
+ const formats=[{id:'mp3' as const,title:'MP3'},{id:'mp4' as const,title:'MP4'}]
  const cta=format==='mp3'?`Download MP3 · 320 kbps`:`Download MP4${quality?` · ${quality}p`:''}`
  const cannotDownload=active&&!canDownload
  return <SiteShell><Seo title="YouTube & Instagram MP3 / MP4 Downloader | AUDIXO" description="Convert authorized public YouTube and Instagram videos into MP3 audio or MP4 video, using source-verified quality." path="/tools/social-video-downloader"/>
@@ -118,7 +119,7 @@ export default function YouTubeConverter(){
   <div className="ax39-converter-hero"><div><div className="ax25-kicker"><i/> AUDIXO / SOCIAL VIDEO DOWNLOADER</div><h1>One link.<br/><em>Sound or video.</em></h1><p>Paste a public YouTube video or Instagram Reel. Choose MP3 audio or MP4 video without leaving AUDIXO.</p><div className="ax80-social-sites" aria-label="Popular social media sources">{['Instagram','YouTube'].map(site=><span key={site}>{site}</span>)}</div><div className={`ax39-server ${workerState==='offline'?'':'ready'}`}><i/>{workerState==='offline'?'Media service unavailable':workerState==='checking'?'Checking media service…':STATUS_START}</div></div><div className="ax39-hero-art" aria-hidden="true"><span className="ax39-art-orbit a"/><span className="ax39-art-orbit b"/><div className="ax39-art-disc"><span>♫</span></div><div className="ax39-art-chip one">MP3 · server converted</div><div className="ax39-art-chip two">MP4 · source quality</div></div></div>
   <section className="ax39-converter-panel" aria-label="AUDIXO media converter">
    <div className="ax82-converter-actions"><span>CHOOSE YOUR FORMAT</span><button className="ax82-reset" type="button" onClick={clear} disabled={busy} aria-label="Reset downloader" title="Start over">×</button></div>
-   <div className="ax81-format-control" role="group" aria-label="Choose MP3 audio or MP4 video">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={busy} onClick={()=>{clearDownloadFrame();setDownloadHref('');setFormat(item.id);setNotice('');setCompleted(false);if(item.id==='mp4')setQuality(highestConfirmedQuality(available))}}><span aria-hidden="true">{item.glyph}</span><strong>{item.title}</strong></button>)}</div>
+   <div className="ax81-format-control" role="group" aria-label="Choose MP3 audio or MP4 video">{formats.map(item=><button type="button" key={item.id} className={format===item.id?'active':''} aria-pressed={format===item.id} disabled={busy} onClick={()=>{clearDownloadFrame();setDownloadHref('');setFormat(item.id);setNotice('');setCompleted(false);if(item.id==='mp4')setQuality(highestConfirmedQuality(available))}}><span aria-hidden="true"><Icon name={item.id==='mp3'?'headphones':'video'} size={23}/></span><strong>{item.title}</strong></button>)}</div>
    <div className="ax39-steps">
     <div className="ax39-step"><span className="ax39-step-num">01</span><div className="ax39-step-content"><h2>Paste a social video link</h2><p>Public Instagram Reels or YouTube videos and Shorts. Paste one media link at a time.</p>
      <div className="ax39-urlbar"><div className="ax42-url-input"><span aria-hidden="true">↗</span><input aria-label="Social media video URL" type="url" inputMode="url" placeholder="Paste a YouTube video or Instagram Reel link…" value={url} disabled={busy} onChange={e=>updateUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void analyze()}}/>{url&&<button className="ax39-clear" aria-label="Clear URL" title="Clear URL" type="button" onClick={clear}>×</button>}</div><button type="button" disabled={busy||!url.trim()} className="ax39-analyze" onClick={()=>void analyze()}>{busy?'Checking…':'Analyze'} <span>↗</span></button></div>

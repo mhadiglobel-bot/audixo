@@ -1,0 +1,75 @@
+/* AUDIXO V85 — independent timeline stack, professional recording and real stem controls */
+.ax-studio-body .ax85-timeline-stack{min-width:0;display:flex;flex-direction:column;gap:12px;align-self:start}
+.ax-studio-body .ax85-timeline-stack>div:first-child{min-width:0}
+.ax-studio-body .ax85-timeline-stack .ax25-timeline{width:100%;box-sizing:border-box}
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied{width:100%;box-sizing:border-box;min-width:0;margin:0!important;padding:13px 16px!important;max-height:235px!important;overflow:hidden!important;border-radius:19px!important}
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied .ax25-edit-list{max-height:145px!important;overflow:auto!important;scrollbar-width:thin}
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied header{margin-bottom:5px}
+.ax-studio-body>.ax25-inspector{min-width:0;align-self:start}
+@media(min-width:1024px){.ax-studio-body.with-controls{grid-template-columns:minmax(0,1.13fr) minmax(365px,.87fr)!important;gap:15px!important;align-items:start!important}}
+@media(min-width:861px) and (max-width:1023px){.ax-studio-body.with-controls{grid-template-columns:minmax(0,1.06fr) minmax(310px,.94fr)!important;gap:12px!important}}
+@media(max-width:860px){.ax-studio-body.with-controls,.ax-studio-body{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}}
+.ax-studio .ax25-transport-bar{border-radius:20px!important;min-height:68px!important;padding:9px 13px!important;background:linear-gradient(112deg,#fff,#f7fbff)!important;border:1px solid #dce9f6!important;box-shadow:0 9px 26px #2d568a0b!important}
+.ax-studio .ax25-play-group button.icon{width:41px!important;height:41px!important;padding:0!important;border-radius:13px!important;background:#fff!important;border:1px solid #dbe5f3!important;box-shadow:0 3px 10px #374b7710!important}
+.ax-studio .ax25-play-group button.icon:disabled{opacity:.48}
+.ax-studio .ax25-play-group button.play{width:48px!important;height:48px!important;border-radius:16px!important;border:1px solid #28d3d2!important;background:linear-gradient(135deg,#12e1ad,#1cbde6 55%,#7774f9)!important;color:#fff!important;box-shadow:0 8px 20px #26bed43c!important;display:grid!important;place-items:center}
+.ax-studio .ax25-play-group button.play svg{stroke:#fff!important}
+.ax-studio .ax25-view-tools button{display:inline-flex;gap:5px;align-items:center;justify-content:center;min-height:38px;border-radius:13px!important;border:1px solid #dbe5f4!important;background:#fff!important;font-size:11px!important;font-weight:800!important}
+.ax-studio .ax25-view-tools button:hover:not(:disabled),.ax-studio .ax25-play-group button.icon:hover:not(:disabled){border-color:#9d80ed!important;background:#f7f5ff!important}
+.ax-studio .ax25-edit-toolbar{border-radius:19px!important;padding:10px 13px!important;box-shadow:0 9px 25px #334ca30b!important}
+.ax-studio .ax25-edit-mode button{border-radius:14px!important;border:1px solid #e0e8f7!important;background:#fff!important;padding:11px 12px!important;min-height:52px!important}
+.ax-studio .ax25-edit-mode button.active{border-color:#ae89f2!important;background:linear-gradient(120deg,#f3fffb,#f7f0ff)!important;box-shadow:inset 0 0 0 1px #b68afd34!important}
+.ax-studio .ax25-edit-mode button>span{border-radius:10px!important;background:linear-gradient(145deg,#f0fffa,#f2ebff)!important}
+.ax-studio .ax25-edit-mode button b{font-size:12px!important}
+.ax-studio .ax25-edit-mode button small{font-size:10px!important}
+@media(max-width:650px){.ax-studio .ax25-transport-bar{padding:9px!important;flex-wrap:wrap}.ax-studio .ax25-play-group button.play{width:43px!important;height:43px!important}}
+/* Compact audio recorder */
+.ax-studio .ax85-recorder{box-sizing:border-box;width:min(760px,100%)!important;max-width:760px!important;max-height:none!important;overflow:visible!important;margin:12px 0 15px!important;padding:19px 22px 20px!important;border-radius:22px!important;border:1px solid #dce8f6!important;background:#fff!important;box-shadow:0 14px 36px #344e8911!important}
+.ax85-recorder .ax85-recorder-header{display:flex!important;align-items:start;justify-content:space-between;gap:20px;padding:0 0 16px!important}
+.ax85-recorder .ax85-recorder-heading small{display:inline-flex;align-items:center;gap:7px;color:#7461bd;font-size:10px;font-weight:900;letter-spacing:.12em}
+.ax85-recorder .ax85-recorder-heading h2{font-size:clamp(23px,2.7vw,30px)!important;color:#1e3653!important;letter-spacing:-.04em;line-height:1.15;margin:7px 0 5px}
+.ax85-recorder .ax85-recorder-heading p{font-size:12px!important;color:#6d8299;line-height:1.5!important;margin:0}
+.ax85-recorder button.ax85-close{display:grid!important;place-items:center!important;flex:none;width:37px!important;height:37px!important;border-radius:12px!important;background:#f9faff!important}
+.ax85-recorder .ax85-recorder-panel{display:grid;grid-template-columns:minmax(200px,.8fr) minmax(0,1.2fr);gap:22px;align-items:center;padding:19px 21px;border:1px solid #dce9f5;border-radius:18px;background:linear-gradient(110deg,#f1fcfa,#f6f7ff 60%,#fff5fd)}
+.ax85-recorder .ax85-recorder-clock{display:flex;flex-direction:column;align-items:start;gap:8px}
+.ax85-recorder .ax85-recorder-state{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#607c93}
+.ax85-recorder .ax85-recorder-state.is-live{color:#ef438e}
+.ax85-recorder .ax85-recorder-clock output{font-size:clamp(25px,3.2vw,38px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.045em;color:#1b3553;line-height:1}
+.ax85-recorder .ax85-recorder-clock small{font-size:9px;font-weight:850;letter-spacing:.08em;color:#91a0b6}
+.ax85-recorder .ax85-recorder-wave{height:78px;display:flex;align-items:center;gap:3px;justify-content:center;min-width:0;overflow:hidden;padding:5px}
+.ax85-recorder .ax85-recorder-wave i{flex:1 1 3px;max-width:6px;min-width:2px;display:block;border-radius:6px;background:linear-gradient(180deg,#18dcac,#25c8ec 45%,#a26bee);opacity:.46}
+.ax85-recorder.is-recording .ax85-recorder-wave i{opacity:.95;animation:ax85-rec-pulse .65s ease-in-out infinite alternate;animation-delay:var(--ax85-bar-delay)}
+@keyframes ax85-rec-pulse{from{transform:scaleY(.6)}to{transform:scaleY(1.2)}}
+.ax85-recorder .ax85-recorder-bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-top:14px}
+.ax85-recorder .ax85-recorder-bottom>p{display:flex;align-items:center;gap:8px;flex:1 1 240px;color:#6c8199;font-size:11px!important;line-height:1.55!important;margin:0}
+.ax85-recorder .nx-record-actions.ax85-recorder-actions{display:flex!important;flex:0 0 auto;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0!important}
+.ax85-recorder .nx-record-actions.ax85-recorder-actions button{display:inline-flex;gap:9px;align-items:center;justify-content:center;min-height:43px!important;padding:10px 16px!important;border-radius:13px!important;font-size:11px!important;font-weight:900}
+.ax85-recorder .ax85-record-primary,.ax85-recorder .ax85-add-take{background:linear-gradient(120deg,#15e6af,#31d6ef)!important;border-color:#1bd8c7!important;color:#12354e!important}
+.ax85-recorder .ax85-stop{background:linear-gradient(120deg,#f65aa3,#9265f3)!important;color:#fff!important;border-color:#c06ddd!important}
+.ax85-recorder .ax85-recorder-preview{margin-top:16px;border-radius:16px;border:1px solid #e4eaf6;background:#fbfcff;padding:13px!important}
+.ax85-recorder .ax85-recorder-preview .ax82-player-label small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax85-recorder .ax85-recorder-alert{margin-top:12px!important;padding:11px 14px;border-radius:11px;background:#fff5f7;color:#a33854;font-size:12px}
+@media(max-width:660px){.ax-studio .ax85-recorder{width:100%!important;padding:16px!important}.ax85-recorder .ax85-recorder-panel{grid-template-columns:1fr;gap:10px;padding:15px}.ax85-recorder .ax85-recorder-wave{height:49px}.ax85-recorder .ax85-recorder-bottom{align-items:stretch}.ax85-recorder .nx-record-actions.ax85-recorder-actions{justify-content:flex-start;width:100%}}
+/* Vocal track specific sliders: single field + subtle circular nudge controls. */
+.ax78-inspector .ax85-selected-track{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:11px 14px;margin:15px 0 0;border:1px solid #d5eaf1;border-radius:13px;background:linear-gradient(100deg,#f0fffa,#f6f3ff)}
+.ax85-selected-track .ax85-selected-dot{width:8px;height:8px;border-radius:100%;background:#16d6aa;box-shadow:0 0 0 5px #16d6aa16}
+.ax85-selected-track strong{font-size:12px;font-weight:900;color:#2a4661}
+.ax85-selected-track small{margin-left:auto;font-size:10px;text-transform:uppercase;color:#8c6bdd;letter-spacing:.08em;font-weight:800}
+.ax78-inspector .ax78-fx-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:12px}
+.ax78-inspector .ax78-fx-slider.ax85-fx-slider{min-width:0;box-sizing:border-box;padding:13px 14px!important;border-radius:15px!important;border:1px solid #e4ebf6!important;background:#fff!important;box-shadow:none!important}
+.ax78-inspector .ax85-fx-head{display:flex;justify-content:space-between;gap:9px;align-items:center;margin-bottom:11px}
+.ax78-inspector .ax85-fx-head strong{font-size:11px;font-weight:900;color:#344b68}
+.ax78-inspector .ax85-fx-head output{font-size:11px;color:#805ce4;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ax78-inspector .ax85-fx-controls{display:flex;align-items:center;gap:10px}
+.ax78-inspector .ax85-fx-controls input{flex:1 1 auto;width:100%!important;min-width:0;accent-color:#9165e1;height:20px;margin:0!important}
+.ax78-inspector .ax85-fx-controls button{display:grid;place-items:center;flex:none;border-radius:50%!important;width:29px;height:29px;min-width:29px;border:1px solid #dfdef7!important;background:#f4f2fe!important;color:#8060dd!important;box-shadow:0 2px 6px #6547a515!important;font:850 16px/1 system-ui;cursor:pointer}
+.ax78-inspector .ax85-fx-controls button:hover:not(:disabled){background:#e9e4fd!important;border-color:#b4a6ef!important}
+.ax78-inspector .ax85-fx-controls button:disabled{opacity:.36;cursor:not-allowed}
+.ax78-inspector .ax85-fx-controls button:focus-visible{outline:2px solid #8a68ef;outline-offset:2px}
+.ax78-inspector .ax78-scope{width:fit-content}
+.ax78-inspector .ax78-range{padding:12px!important;border:1px solid #dce5f4;border-radius:14px;background:#fff}
+.ax78-stem-lanes .ax78-stem-lane.is-selected{outline:2px solid #ac79f5!important;outline-offset:0!important;box-shadow:0 7px 20px #7356d41c!important}
+@media(max-width:1050px){.ax78-inspector .ax78-fx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.ax78-inspector .ax78-fx-grid{grid-template-columns:minmax(0,1fr)}.ax78-inspector .ax78-fx-slider.ax85-fx-slider{padding:12px!important}}
+@media(prefers-reduced-motion:reduce){.ax85-recorder.is-recording .ax85-recorder-wave i{animation:none!important}}
+

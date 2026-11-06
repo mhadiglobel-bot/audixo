@@ -25,6 +25,14 @@ export default function Seo({title,description=site.description,path='/',schema}
   let canonical=document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement|null
   if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.append(canonical)}
   canonical.href=url
+  const identity=document.getElementById('site-identity-schema')
+  if(path==='/'){
+   const website={'@context':'https://schema.org','@type':'WebSite','@id':site.url+'/#website',name:'AUDIXO',alternateName:['Audixo Studio','audixo.tiers.rest'],url:site.url+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.'}
+   const script=(identity as HTMLScriptElement|null)||document.createElement('script')
+   script.id='site-identity-schema';script.type='application/ld+json'
+   script.textContent=JSON.stringify(website)
+   if(!identity)document.head.append(script)
+  }else identity?.remove()
   document.getElementById('page-schema')?.remove()
   if(path!=='/library'){
    const generic={'@context':'https://schema.org','@type':path.startsWith('/tools/')?'SoftwareApplication':'WebPage',name:full,url,description,isPartOf:{'@type':'WebSite',name:site.name,url:site.url}}

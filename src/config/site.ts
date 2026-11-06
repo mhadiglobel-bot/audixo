@@ -20,7 +20,7 @@ const normalizeMp4Quality=(value:unknown)=>{
 // Resolutions are supplied by /api/preview after each Analyze, never this UI configuration.
 
 export const site = {
- name:'Audixo',shortName:'Audixo',
+ name:'AUDIXO',shortName:'AUDIXO',
  url:configured,
  email:(manualSupportEmail||envEmail).trim(),
  company:'Nexivo',

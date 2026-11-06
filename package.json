@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/prepare-ytdlp.mjs && node scripts/prepare-ffmpeg.mjs && node scripts/prepare-ort-runtime.mjs && npm run test:media && tsc --noEmit && vite build && node scripts/seo-build.mjs",
+    "build": "node scripts/prepare-favicon.mjs && node scripts/prepare-ytdlp.mjs && node scripts/prepare-ffmpeg.mjs && node scripts/prepare-ort-runtime.mjs && npm run test:media && tsc --noEmit && vite build && node scripts/seo-build.mjs && node scripts/v85-release-check.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:ssr": "node scripts/seo-build.mjs --check",

@@ -3,10 +3,10 @@ import type {LocalStem} from '../services/localStems'
 import {encodeWav,downloadBlob} from '../editor/encoder'
 import {saveMixToLibrary} from '../editor/library'
 
-type Channel={enabled:boolean;gain:number;pan:number;bass:number;mid:number;treble:number;echo:number;delay:number;scope:'all'|'range';from:number;to:number}
-type Graph={low:BiquadFilterNode;mid:BiquadFilterNode;high:BiquadFilterNode;pan:StereoPannerNode;gain:GainNode;wet:GainNode;delay:DelayNode}
+type Channel={enabled:boolean;gain:number;pan:number;bass:number;mid:number;presence:number;treble:number;echo:number;feedback:number;delay:number;scope:'all'|'range';from:number;to:number}
+type Graph={low:BiquadFilterNode;mid:BiquadFilterNode;presence:BiquadFilterNode;high:BiquadFilterNode;pan:StereoPannerNode;gain:GainNode;wet:GainNode;delay:DelayNode;feedback:GainNode}
 const names=['Lyrics / Vocals','Music','Drums','Bass','Other instruments']
-const blank=(i:number):Channel=>({enabled:i<2||i>=5,gain:0,pan:0,bass:0,mid:0,treble:0,echo:0,delay:250,scope:'all',from:0,to:0})
+const blank=(i:number):Channel=>({enabled:i<2||i>=5,gain:0,pan:0,bass:0,mid:0,presence:0,treble:0,echo:0,feedback:17,delay:250,scope:'all',from:0,to:0})
 const clamp=(n:number,a:number,b:number)=>Math.min(b,Math.max(a,n))
 const hh=(seconds:number)=>{const n=Math.floor(seconds||0);return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
 const db=(n:number)=>Math.pow(10,n/20)
@@ -17,9 +17,15 @@ function weights(channels:Channel[],i:number){
 }
 
 function FxSlider({name,value,min,max,step,unit='',onChange}:{name:string;value:number;min:number;max:number;step:number;unit?:string;onChange:(n:number)=>void}){
- return <label className="ax78-fx-slider"><span><strong>{name}</strong><b>{step<1?value.toFixed(2):Math.round(value)}{unit}</b></span>
-  <input aria-label={name} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>
- </label>
+ const nudged=(delta:number)=>onChange(Math.min(max,Math.max(min,Number((value+delta).toFixed(2)))))
+ return <div className="ax78-fx-slider ax85-fx-slider">
+  <div className="ax85-fx-head"><strong>{name}</strong><output>{step<1?Number(value.toFixed(2)):Math.round(value)}{unit}</output></div>
+  <div className="ax85-fx-controls">
+   <button type="button" disabled={value<=min} aria-label={'Decrease '+name} onClick={()=>nudged(-step)}>−</button>
+   <input aria-label={name} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>
+   <button type="button" disabled={value>=max} aria-label={'Increase '+name} onClick={()=>nudged(step)}>+</button>
+  </div>
+ </div>
 }
 
 export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalStem[];sourceName:string;onSave:(name:string)=>void}){
@@ -36,6 +42,8 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
  const graph=useRef<(Graph|undefined)[]>([])
  const currentChannels=useRef(channels)
  const selectedStem=stems[selected]
+ const previousStemCount=useRef(stems.length)
+ useEffect(()=>{if(stems.length>previousStemCount.current)setSelected(stems.length-1);previousStemCount.current=stems.length},[stems.length])
  useEffect(()=>{setChannels(v=>stems.map((_,i)=>v[i]??blank(i)))},[stems.length])
  useEffect(()=>{
   const next=stems.map(stem=>URL.createObjectURL(stem.blob))
@@ -49,13 +57,15 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
    const g=graph.current[i];if(!g)return
    const active=c.scope==='all'||(time>=c.from&&time<=Math.max(c.from+.01,c.to))
    const multiplier=weights(list,i)
-   const volume=(c.enabled?clamp(db(c.gain)*multiplier,0,1.8):0)
+   const volume=(c.enabled?clamp(db(active?c.gain:0)*multiplier,0,1.8):0)
    g.gain.gain.setTargetAtTime(volume,ctx.currentTime,.018)
-   g.pan.pan.setTargetAtTime(clamp(c.pan,-1,1),ctx.currentTime,.025)
+   g.pan.pan.setTargetAtTime(active?clamp(c.pan,-1,1):0,ctx.currentTime,.025)
    g.low.gain.setTargetAtTime(active?c.bass:0,ctx.currentTime,.03)
    g.mid.gain.setTargetAtTime(active?c.mid:0,ctx.currentTime,.03)
+   g.presence.gain.setTargetAtTime(active?c.presence:0,ctx.currentTime,.03)
    g.high.gain.setTargetAtTime(active?c.treble:0,ctx.currentTime,.03)
    g.delay.delayTime.setTargetAtTime(clamp(c.delay/1000,.05,.85),ctx.currentTime,.02)
+   g.feedback.gain.setTargetAtTime(clamp(c.feedback/100,0,.6),ctx.currentTime,.04)
    g.wet.gain.setTargetAtTime(active?c.echo/100*volume:0,ctx.currentTime,.04)
   })
  },[])
@@ -68,13 +78,14 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
    const src=ctx!.createMediaElementSource(el)
    const low=ctx!.createBiquadFilter();low.type='lowshelf';low.frequency.value=170
    const mid=ctx!.createBiquadFilter();mid.type='peaking';mid.frequency.value=1150;mid.Q.value=.85
+   const presence=ctx!.createBiquadFilter();presence.type='peaking';presence.frequency.value=3400;presence.Q.value=.9
    const high=ctx!.createBiquadFilter();high.type='highshelf';high.frequency.value=4800
    const pan=ctx!.createStereoPanner(),gain=ctx!.createGain(),delay=ctx!.createDelay(1),wet=ctx!.createGain()
    const feedback=ctx!.createGain();feedback.gain.value=.17
-   src.connect(low).connect(mid).connect(high).connect(pan)
+   src.connect(low).connect(mid).connect(presence).connect(high).connect(pan)
    pan.connect(gain).connect(ctx!.destination)
    pan.connect(delay);delay.connect(wet).connect(ctx!.destination);delay.connect(feedback).connect(delay)
-   graph.current[i]={low,mid,high,pan,gain,wet,delay}
+   graph.current[i]={low,mid,presence,high,pan,gain,wet,delay,feedback}
   })
   await ctx.resume()
   applyGraph(currentChannels.current,position)
@@ -128,24 +139,26 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
     const c=channels[index],source=offline.createBufferSource();source.buffer=buffer
     const low=offline.createBiquadFilter();low.type='lowshelf';low.frequency.value=170
     const mid=offline.createBiquadFilter();mid.type='peaking';mid.frequency.value=1150;mid.Q.value=.85
+    const presence=offline.createBiquadFilter();presence.type='peaking';presence.frequency.value=3400;presence.Q.value=.9
     const high=offline.createBiquadFilter();high.type='highshelf';high.frequency.value=4800
-    const pan=offline.createStereoPanner();pan.pan.value=c.pan
-    const gain=offline.createGain();gain.gain.value=clamp(db(c.gain)*weights(channels,index),0,1.8)
-    const automate=(param:AudioParam,value:number)=>{
+    const pan=offline.createStereoPanner();pan.pan.value=0
+    const gain=offline.createGain();gain.gain.value=weights(channels,index)
+    const automate=(param:AudioParam,value:number,neutral=0)=>{
      if(c.scope==='all'){param.value=value;return}
      const start=clamp(c.from,0,len),end=clamp(Math.max(c.from+.01,c.to),start,len)
-     param.setValueAtTime(0,0)
-     param.setValueAtTime(0,start)
+     param.setValueAtTime(neutral,0)
+     param.setValueAtTime(neutral,start)
      param.linearRampToValueAtTime(value,Math.min(len,start+.015))
      param.setValueAtTime(value,Math.max(start+.015,end-.015))
-     param.linearRampToValueAtTime(0,end)
+     param.linearRampToValueAtTime(neutral,end)
     }
-    automate(low.gain,c.bass);automate(mid.gain,c.mid);automate(high.gain,c.treble)
-    source.connect(low).connect(mid).connect(high).connect(pan).connect(gain).connect(offline.destination)
+    automate(low.gain,c.bass);automate(mid.gain,c.mid);automate(presence.gain,c.presence);automate(high.gain,c.treble)
+    automate(pan.pan,clamp(c.pan,-1,1));automate(gain.gain,clamp(db(c.gain)*weights(channels,index),0,1.8),weights(channels,index))
+    source.connect(low).connect(mid).connect(presence).connect(high).connect(pan).connect(gain).connect(offline.destination)
     if(c.echo>0){
      const delay=offline.createDelay(1),wet=offline.createGain(),feedback=offline.createGain()
-     delay.delayTime.value=c.delay/1000;feedback.gain.value=.17
-     automate(wet.gain,c.echo/100*gain.gain.value)
+     delay.delayTime.value=c.delay/1000;feedback.gain.value=clamp(c.feedback/100,0,.6)
+     automate(wet.gain,c.echo/100*clamp(db(c.gain)*weights(channels,index),0,1.8))
      pan.connect(delay);delay.connect(wet).connect(offline.destination);delay.connect(feedback).connect(delay)
     }
     source.start(0)
@@ -160,7 +173,7 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
   finally{setBusy(false)}
  }
  const edits=useMemo(()=>channels.flatMap((c,i)=>{
-  const updates=[c.gain!==0?'Level '+c.gain+' dB':'',c.pan!==0?'Pan '+c.pan:'',c.bass!==0?'Bass '+c.bass:'',c.mid!==0?'Mid '+c.mid:'',c.treble!==0?'Treble '+c.treble:'',c.echo>0?'Echo '+c.echo+'%':'',c.scope==='range'?'Range '+hh(c.from)+'–'+hh(c.to):''].filter(Boolean)
+  const updates=[c.gain!==0?'Level '+c.gain+' dB':'',c.pan!==0?'Pan '+c.pan:'',c.bass!==0?'Bass '+c.bass:'',c.mid!==0?'Mid '+c.mid:'',c.presence!==0?'Presence '+c.presence:'',c.treble!==0?'Treble '+c.treble:'',c.echo>0?'Echo '+c.echo+'%':'',c.echo>0&&c.feedback!==17?'Feedback '+c.feedback+'%':'',c.scope==='range'?'Range '+hh(c.from)+'–'+hh(c.to):''].filter(Boolean)
   return updates.length?[{name:stems[i]?.name||'Track',items:updates}]:[]
  }),[channels,stems])
  const c=channels[selected]||blank(selected)
@@ -193,7 +206,8 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
     </article>})}
   </div>
   <div className="ax78-inspector">
-   <header><div><small>TRACK-SPECIFIC CONTROLS</small><h3>{selectedStem?.name||'Select a layer'}</h3><p>These changes affect this track only. Multiple enabled tracks play simultaneously.</p></div><button onClick={()=>patch(selected,blank(selected))}>Reset this track</button></header>
+   <header><div><small>TRACK-SPECIFIC CONTROLS</small><h3>{selectedStem?.name||'Select a layer'}</h3><p>Only this layer is being edited. Select a different waveform above to switch controls.</p></div><button onClick={()=>patch(selected,blank(selected))}>Reset this track</button></header>
+   <div className="ax85-selected-track"><span className="ax85-selected-dot"/><strong>Editing: {selectedStem?.name||'No layer selected'}</strong><small>{c.scope==='range'?'Selected section':'Entire track'}</small></div>
    <div className="ax78-scope"><button className={c.scope==='all'?'active':''} onClick={()=>patch(selected,{scope:'all'})}>Entire track</button><button className={c.scope==='range'?'active':''} onClick={()=>patch(selected,{scope:'range',to:c.to||duration})}>Selected section</button></div>
    {c.scope==='range'&&<div className="ax78-range">
     <label>From (seconds)<input type="number" min="0" max={duration} step=".1" value={c.from} onChange={e=>patch(selected,{from:clamp(Number(e.target.value)||0,0,duration)})}/></label>
@@ -205,9 +219,11 @@ export default function StemMixerStudio({stems,sourceName,onSave}:{stems:LocalSt
     <FxSlider name="Pan" min={-1} max={1} step={.05} value={c.pan} onChange={v=>patch(selected,{pan:v})}/>
     <FxSlider name="Bass" min={-12} max={12} step={.5} unit=" dB" value={c.bass} onChange={v=>patch(selected,{bass:v})}/>
     <FxSlider name="Mid" min={-12} max={12} step={.5} unit=" dB" value={c.mid} onChange={v=>patch(selected,{mid:v})}/>
+    <FxSlider name="Presence" min={-12} max={12} step={.5} unit=" dB" value={c.presence} onChange={v=>patch(selected,{presence:v})}/>
     <FxSlider name="Treble" min={-12} max={12} step={.5} unit=" dB" value={c.treble} onChange={v=>patch(selected,{treble:v})}/>
     <FxSlider name="Echo amount" min={0} max={55} step={1} unit="%" value={c.echo} onChange={v=>patch(selected,{echo:v})}/>
     <FxSlider name="Echo delay" min={80} max={850} step={5} unit=" ms" value={c.delay} onChange={v=>patch(selected,{delay:v})}/>
+    <FxSlider name="Echo feedback" min={0} max={60} step={1} unit="%" value={c.feedback} onChange={v=>patch(selected,{feedback:v})}/>
    </div>
   </div>
   <div className="ax78-applied"><header><div><small>APPLIED EDITS</small><h3>{edits.length} track{edits.length===1?'':'s'} customized</h3></div><button type="button" onClick={()=>setChannels(stems.map((_,i)=>blank(i)))}>Clear edits</button></header>

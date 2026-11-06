@@ -4,6 +4,7 @@ import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 
 export const faqs=[
+ ['Is AUDIXO free?','Yes. AUDIXO is a free browser-based audio studio. No subscription is required to record, trim, preview effects or edit audio. Downloads of third-party media must be authorized and supported by the source service.'],
  ['Do I need an account?','No. Audixo editing, recording and the browser Library work without an Audixo account.'],
  ['How do I trim or remove middle seconds?','Drag either waveform edge for a direct trim. For a middle section, choose Select range, mark the start and end, then Remove & join. Keep selected seconds retains only the highlighted part.'],
  ['How does vocal separation work?','Audixo first checks for the accelerated browser path and falls back when the device cannot use it. The separation model estimates Vocals, Drums, Bass and Music/Other; every returned stem opens as its own track.'],

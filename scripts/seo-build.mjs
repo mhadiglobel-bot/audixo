@@ -130,7 +130,7 @@ const base=await readFile('dist/index.html','utf8'),escape=s=>String(s).replace(
 const pages={
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
  '/tools/recorder':['Audixo Audio Recorder — Record and Edit Audio Online','Record microphone audio in your browser, pause and resume, preview the recording and open it in Audixo Studio.'],
- '/':['Free Online Audio Studio & Sound Playground','Try AUDIXO’s interactive sound playground with Echo, Reverb, Pitch and Slowed audio previews, then trim, mix, separate vocals and export your sound online.'],
+ '/':['AUDIXO — Free Online Audio Studio & Audio Editor','Free online audio editor for recording, trimming, vocal separation, effects and WAV/MP3 export. No subscription required. Download authorized videos in MP3 or MP4.'],
  '/features':['Audixo Features — Trim, Record, Stems, Effects & Export','Explore direct audio trimming, AI stem separation, vocal effects, creative presets and MP3 export.'],
  '/how-it-works':['How Audixo Works — From Audio Import to Final Export','Follow the Audixo workflow from importing audio through trimming, vocal separation, effects and download.'],
  '/about':['About Audixo','Meet Audixo: a creative audio studio with focused tools, a full waveform editor and vocal stem workflows.'],
@@ -157,21 +157,23 @@ const originalError=console.error;console.error=(...args)=>{if(String(args[0]).i
 for(const route of paths){
  const article=blogs.find(b=>route==='/blog/'+b.slug),[title,description]=article?[article.title,article.excerpt]:pages[route],url=origin+route
  const publisher={'@type':'Organization',name:'Audixo Studio',url:origin,parentOrganization:{'@type':'Organization',name:'Nexivo'}}
- const website={'@type':'WebSite',name:'AUDIXO',url:origin}
+ const website={'@type':'WebSite',name:'AUDIXO',url:origin+'/'}
  const schema=route==='/nexivo'?{'@context':'https://schema.org','@type':'Organization',name:'Nexivo',url,description}
  :article?{'@context':'https://schema.org','@type':'BlogPosting',headline:title,description,url,datePublished:article.date||undefined,publisher,mainEntityOfPage:url}
  :route==='/faq'?{'@context':'https://schema.org','@type':'FAQPage',url,mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}
  :route==='/'||route==='/editor'||route.startsWith('/tools/')||route.startsWith('/tool/')?{'@context':'https://schema.org','@type':'SoftwareApplication',name:'AUDIXO',applicationCategory:'MultimediaApplication',operatingSystem:'Web browser',url,description,publisher}
  :{'@context':'https://schema.org','@type':'WebPage',name:title,description,url,isPartOf:website,publisher}
- const tags=`<title>${escape(title)} | Audixo</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(title)} | Audixo"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="Audixo"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:locale" content="en_US"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)} | Audixo"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
+ const tags=`<title>${escape(title)} | AUDIXO</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(title)} | AUDIXO"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="AUDIXO"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:locale" content="en_US"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)} | AUDIXO"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
  // Strip generic home-only metadata from the Vite shell first. Every pre-rendered
  // route gets one canonical, one OG set and one Twitter set rather than duplicates.
+ const websiteIdentity={'@context':'https://schema.org','@type':'WebSite','@id':origin+'/#website',name:'AUDIXO',alternateName:['Audixo Studio','audixo.tiers.rest'],url:origin+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.'}
+ const tagsWithIdentity=route==='/'?tags.replace('<script id="page-schema"','<script id="site-identity-schema" type="application/ld+json">'+JSON.stringify(websiteIdentity).replace(/</g,'\\u003c')+'</script><script id="page-schema"'):tags
  const head=base
   .replace(/<title>[\s\S]*?<\/title>/,'')
   .replace(/<meta name="(?:description|robots|twitter:[^"]+)"[^>]*>/g,'')
   .replace(/<meta property="og:[^"]+"[^>]*>/g,'')
   .replace(/<link rel="canonical"[^>]*>/g,'')
-  .replace('</head>',tags+'</head>')
+  .replace('</head>',tagsWithIdentity+'</head>')
  const html=head.replace('<div id="root"></div>',`<div id="root">${renderPage(route)}</div>`)
  const target=route==='/'?'dist/index.html':`dist${route}/index.html`;await mkdir(path.dirname(target),{recursive:true});await writeFile(target,html)
 }

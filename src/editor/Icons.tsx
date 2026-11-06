@@ -1,3 +1,4 @@
+import {useId} from 'react'
 const paths: Record<string,string> = {
   play:'<path d="M8 5v14l11-7z"/>', pause:'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>', stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
   upload:'<path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 20h14"/>', download:'<path d="M12 4v12m0 0 4.5-4.5M12 16l-4.5-4.5M5 20h14"/>',
@@ -17,4 +18,12 @@ const paths: Record<string,string> = {
   spark:'<path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Zm6 11 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"/>',
 }
 
-export default function Icon({name,size=18,strokeWidth=1.8,className=''}:{name:string;size?:number;strokeWidth?:number;className?:string}){const markup=paths[name]||paths.waveform;return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{__html:markup}}/>}
+export default function Icon({name,size=18,strokeWidth=2,className=''}:{name:string;size?:number;strokeWidth?:number;className?:string}){
+ const gradient='ax84-editor-'+useId().replace(/:/g,'')
+ const markup=paths[name]||paths.waveform
+ const neon=name==='undo'?['#12dcb8','#32c6ef']:name==='redo'?['#ab6aff','#f46fd6']:name==='trash'?['#fc67b3','#ff9b8b']:['#14dcb8','#9864f8']
+ return <svg className={'ax84-action-icon '+className} width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <defs><linearGradient id={gradient} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={neon[0]}/><stop offset="100%" stopColor={neon[1]}/></linearGradient></defs>
+  <g stroke={`url(#${gradient})`} dangerouslySetInnerHTML={{__html:markup}}/>
+ </svg>
+}

@@ -1,6 +1,7 @@
 import {Link} from 'react-router-dom'
 import {useEffect,useRef,useState,type CSSProperties} from 'react'
 import Seo from '../components/Seo'
+import ToolGlyph from '../components/ToolGlyph'
 import SiteShell from '../components/SiteShell'
 import {useNeonJourney} from '../hooks/useNeonJourney'
 
@@ -20,12 +21,13 @@ const focusedTools=[
  {name:'Spatial Motion',url:'/tools/spatial-motion',tag:'STEREO ORBIT',description:'Move sound through headphone-focused space.',symbol:'◎'},
  {name:'Vocal Extractor',url:'/tools/vocals',tag:'STEM SEPARATION',description:'Inspect vocals, drums, bass and music layers.',symbol:'☷'},
  {name:'Audio Recorder',url:'/tools/recorder',tag:'LOCAL RECORDING',description:'Capture a take and add it to Studio.',symbol:'◉'},
- {name:'Audio Recorder',url:'/tools/recorder',tag:'CAPTURE',description:'Record and refine a voice take.',symbol:'◉'},
+ {name:'Sound Playground',url:'/#audixo-playground',tag:'LIVE DEMOS',description:'Explore the rotating sound gallery and test live effects.',symbol:'∿'},
  {name:'Local Library',url:'/library',tag:'SAVED SOUNDS',description:'Find and reuse finished audio.',symbol:'♫'},
 ] as const
 
 
 // Three rows of three. Every connector is a single consistent neon tone.
+const TOOL_ICON_IDS=['quick-trim','echo','slowed-reverb','pitch','spatial','vocals','recorder','playground','library'] as const
 const TOOL_COLORS=['#13e2a7','#16d9ed','#9855fa','#f23acd'] as const
 const TOOL_POINTS=focusedTools.map((_,i)=>({x:150+(i%3)*300,y:150+Math.floor(i/3)*300}))
 const TOOL_LINKS=TOOL_POINTS.slice(0,-1).map((from,index)=>{
@@ -94,7 +96,7 @@ export default function Features(){
      style={{left:(TOOL_POINTS[i].x/9)+'%',top:(TOOL_POINTS[i].y/9)+'%'} as CSSProperties}
      onMouseEnter={()=>selectTool(i)} onFocus={()=>selectTool(i)}>
       <span className="ax77-tool-number">{String(i+1).padStart(2,'0')}</span>
-      <span className="ax77-tool-icon" aria-hidden="true">{tool.symbol}</span>
+      <span className="ax77-tool-icon" aria-hidden="true"><ToolGlyph id={TOOL_ICON_IDS[i]}/></span>
       <strong>{tool.name}</strong>
      </Link>)}
    </div>

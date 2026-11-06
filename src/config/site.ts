@@ -1,4 +1,4 @@
-const configured = import.meta.env.VITE_SITE_URL?.replace(/\/$/,'') || ''
+const configured = 'https://audixo.tiers.rest' // Verified production canonical; never use a preview hostname for SEO.
 
 // OFFICIAL SUPPORT EMAIL — EDIT HERE WHEN READY, THEN COMMIT TO GITHUB:
 // const manualSupportEmail='support@your-domain.example'
@@ -21,7 +21,7 @@ const normalizeMp4Quality=(value:unknown)=>{
 
 export const site = {
  name:'Audixo',shortName:'Audixo',
- url:configured || (typeof window!=='undefined'?window.location.origin:''),
+ url:configured,
  email:(manualSupportEmail||envEmail).trim(),
  company:'Nexivo',
  description:'AUDIXO is a free online audio studio with a hands-on sound playground, real-time echo and reverb previews, precision trimming, vocal separation, mixing and permitted public social-video MP3 or MP4 downloads.'

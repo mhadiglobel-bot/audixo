@@ -21,7 +21,6 @@ const Contact = lazy(() => import('./pages/Contact'))
 const Privacy = lazy(() => import('./pages/Terms').then(m => ({default:m.Privacy})))
 const Terms = lazy(() => import('./pages/Terms'))
 const Copyright = lazy(() => import('./pages/Terms').then(m => ({default:m.Copyright})))
-const MashupTool = lazy(() => import('./pages/MashupTool'))
 const YouTubeConverter = lazy(() => import('./pages/YouTubeConverter'))
 const QuickTrim = lazy(() => import('./pages/QuickTrim'))
 const EchoTool = lazy(() => import('./pages/QuickTrim').then(m => ({default:m.EchoTool})))
@@ -36,7 +35,6 @@ export default function App(){return <SoundExperienceProvider><Suspense fallback
   <Route path="/" element={<Home/>}/>
   <Route path="/tools/vocals" element={<Vocals/>}/>
   <Route path="/editor" element={<Editor/>}/>
-  <Route path="/tools/mashup" element={<MashupTool/>}/>
   <Route path="/tools/social-video-downloader" element={<YouTubeConverter/>}/>
   <Route path="/tools/youtube-to-mp3" element={<YouTubeConverter/>}/>
   <Route path="/tools/trim-audio" element={<QuickTrim/>}/>

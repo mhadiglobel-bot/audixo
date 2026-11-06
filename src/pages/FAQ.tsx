@@ -13,7 +13,6 @@ export const faqs=[
  ['Can I duplicate audio or a selected phrase?','Yes. Duplicate the selected track, or switch to range mode and duplicate only the highlighted seconds.'],
  ['Can I record and pause my microphone?','Yes. Record in Studio, pause and resume the same take, preview it and then add it as a new layer. Microphone access requires HTTPS and browser permission.'],
  ['How many mixes can I save?','The local Library keeps up to 21 finished exports in this browser profile. You can preview, reopen, download again or remove them.'],
- ['How does Mashup Songs work?','Add two or more audio files or Library exports, trim each layer, place it on the arrangement, set gain and fades, preview the combined result, then export one MP3 or WAV. Mashup is a separate focused tool, not a Full Studio session.'],
  ['Does 320 kbps restore missing detail?','No. It controls the output bitrate. It cannot recreate detail that is already missing from the source. Choose WAV when you want to avoid another lossy encoding step.'],
  ['What about long recordings?','Long files use a streaming-oriented editor path instead of forcing the full recording through memory-heavy creative processing. Trim a shorter section before using heavier local AI features.'],
  ['Can I install AUDIXO on my phone?','On Android Chrome and Edge, choose Install app when it is offered. On iPhone Safari, tap Share and Add to Home Screen. The installed web app uses a touch-optimized layout; conversion still needs the network.'],

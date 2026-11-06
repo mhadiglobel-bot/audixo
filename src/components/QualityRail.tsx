@@ -5,7 +5,9 @@ import type {CSSProperties, KeyboardEvent as ReactKeyboardEvent} from 'react'
 export const bitrateSteps=[64,128,192,256,320] as const
 export type Mp3Bitrate=(typeof bitrateSteps)[number]
 export type AvailableVideoQuality={value:string;label:string}
-const validVideo=(value:string)=>/^\d{2,4}$/.test(value)&&Number(value)>=144&&Number(value)<=4320
+const officialVideoResolutions=['144','240','360','480','720','1080','1440','2160','4320'] as const
+const standardResolutions=new Set<string>(officialVideoResolutions)
+const validVideo=(value:string)=>standardResolutions.has(value)
 export function confirmedVideoOptions(available:AvailableVideoQuality[]):AvailableVideoQuality[]{
  if(!Array.isArray(available))return []
  const values=new Set<string>()
@@ -24,32 +26,40 @@ export function isSelectableVideoTarget(value:string,available:AvailableVideoQua
 /* V82: truthful output bitrate, source-verified video quality. */
 export function Mp3QualityRail({duration,disabled=false}:{bitrate:Mp3Bitrate;onChange:(v:Mp3Bitrate)=>void;duration:number;disabled?:boolean}){
  const [displayIndex,setDisplayIndex]=useState(4),progress=displayIndex*25
- return <section className="ax82-quality" aria-label="MP3 audio quality">
-  <header><div><small>MP3 AUDIO</small><h3>{bitrateSteps[displayIndex]} <span>kbps preview</span></h3><p>Visual preview follows your selection. Actual MP3 download stays at 320 kbps.</p></div><b>AUDIO</b></header>
-  <div className="ax82-rail" style={{'--ax82-progress':progress+'%'} as CSSProperties}>
-   <input type="range" min="0" max="4" step="1" value={displayIndex} disabled={disabled} aria-label="Preview bitrate scale (output remains 320 kbps)" onChange={e=>setDisplayIndex(Number(e.target.value))}/>
-   <div className="ax83-follow-label" style={{left:progress+"%"}} aria-hidden="true">{bitrateSteps[displayIndex]} kbps</div>
-   <div className="ax82-ticks" aria-hidden="true">{bitrateSteps.map((v,i)=><span key={v} className={i===displayIndex?'active':''}><i/><strong>{v}</strong></span>)}</div>
+ return <section className="ax82-quality ax84-quality" aria-label="MP3 audio quality">
+  <header><div><small>MP3 AUDIO</small><h3>Audio quality <span>· 320 kbps export</span></h3><p>Move the selector to preview a bitrate position. The actual downloaded MP3 always encodes at 320 kbps.</p></div><b>MP3</b></header>
+  <div className="ax84-quality-scroll">
+   <div className="ax84-quality-inner" style={{'--ax84-steps':bitrateSteps.length} as CSSProperties}>
+    <div className="ax84-quality-markers" role="group" aria-label="MP3 preview bitrate points">
+     {bitrateSteps.map((bitrate,i)=><button key={bitrate} type="button" className={'ax84-quality-pill '+(i===displayIndex?'selected':'')} aria-pressed={i===displayIndex} disabled={disabled} onClick={()=>setDisplayIndex(i)}><strong>{bitrate}</strong><small>kbps</small></button>)}
+    </div>
+    <div className="ax82-rail ax84-quality-track" style={{'--ax82-progress':progress+'%'} as CSSProperties}>
+     <input type="range" min="0" max={bitrateSteps.length-1} step="1" value={displayIndex} disabled={disabled} aria-label="MP3 bitrate preview position; export remains 320 kbps" aria-valuetext={bitrateSteps[displayIndex]+' kbps preview, 320 kbps export'} onChange={e=>setDisplayIndex(Number(e.target.value))}/>
+    </div>
+   </div>
   </div>
-  <footer>Maximum export quality: <strong>320 kbps</strong>{duration>0&&<span> · Approx. {(duration*320/8192).toFixed(1)} MB</span>}</footer>
+  <footer><strong>Selected preview:</strong> {bitrateSteps[displayIndex]} kbps <span> · Actual MP3 export: <strong>320 kbps</strong></span>{duration>0&&<span> · Approx. {(duration*320/8192).toFixed(1)} MB</span>}</footer>
  </section>
 }
 export function VideoQualityRail({quality,onChange,available,analyzed,disabled=false}:{quality:string;onChange:(v:string)=>void;available:AvailableVideoQuality[];analyzed:boolean;disabled?:boolean}){
- const options=confirmedVideoOptions(available),max=options.length-1
- const selected=Math.max(0,options.findIndex(o=>o.value===quality)),pct=max>0?selected/max*100:100
- return <section className="ax82-quality" aria-label="MP4 quality selector">
-  <header><div><small>MP4 VIDEO</small><h3>{quality?quality+'p':'Analyze first'} <span>{quality?'exact resolution':'video quality'}</span></h3><p>Select an actual resolution verified in the available source formats.</p></div><b>VIDEO</b></header>
-  {options.length>0&&<>
-   <div className="ax82-rail" style={{'--ax82-progress':pct+'%'} as CSSProperties}>
-    <input type="range" min="0" max={Math.max(0,max)} step="1" value={selected} disabled={disabled||max===0} aria-label="MP4 resolution" aria-valuetext={quality+'p selected; '+options[max]?.value+'p maximum'} onChange={e=>onChange(options[Number(e.target.value)].value)}/>
-    <div className="ax82-ticks" aria-hidden="true">{options.map((o,i)=><span key={o.value} className={i===selected?'active':''}><i/><strong>{o.value}p</strong></span>)}</div>
+ const options=confirmedVideoOptions(available),visible=options.length?options:officialVideoResolutions.map(value=>({value,label:value+'p'}))
+ const max=options.length-1,selected=options.findIndex(o=>o.value===quality),pct=max>0?Math.max(0,selected)/max*100:0
+ return <section className="ax82-quality ax84-quality" aria-label="MP4 quality selector">
+  <header><div><small>MP4 VIDEO</small><h3>Video resolution <span>· {quality?quality+'p':'source-verified'}</span></h3><p>{analyzed?'Only resolutions actually confirmed for this source can be selected.':'Analyze a video to unlock its available official resolutions.'}</p></div><b>MP4</b></header>
+  <div className="ax84-quality-scroll">
+   <div className="ax84-quality-inner" style={{'--ax84-steps':visible.length} as CSSProperties}>
+    <div className="ax84-quality-markers" role="group" aria-label="MP4 resolution points">
+     {visible.map((o,i)=><button key={o.value} type="button" className={'ax84-quality-pill '+(o.value===quality?'selected':'')} aria-pressed={o.value===quality} disabled={disabled||!options.length} onClick={()=>onChange(o.value)}><strong>{o.value}p</strong></button>)}
+    </div>
+    <div className="ax82-rail ax84-quality-track" style={{'--ax82-progress':pct+'%'} as CSSProperties}>
+     <input type="range" min="0" max={Math.max(0,max)} step="1" value={Math.max(0,selected)} disabled={disabled||max<=0} aria-label="MP4 resolution" aria-valuetext={quality?quality+'p selected': 'Analyze video to select resolution'} onChange={e=>onChange(options[Number(e.target.value)].value)}/>
+    </div>
    </div>
-   <footer>Maximum source resolution: <strong>{options[max]?.value}p</strong></footer>
-  </>}
-  {analyzed&&!options.length&&<p>This source provided no usable MP4 resolution.</p>}
+  </div>
+  <footer>{options.length?<><strong>Source maximum:</strong> {options[max]?.value}p · Quality labels represent confirmed formats.</>:<span>144p · 240p · 360p · 480p · 720p · 1080p · 1440p · 2160p · 4320p</span>}</footer>
+  {analyzed&&!options.length&&<p role="status">No standard MP4 resolution was confirmed for this source.</p>}
  </section>
 }
-
 /** AUDIXO V70 branded, accessible select menu. No operating-system blue menu. */
 import {useEffect,useId,useRef,useState} from 'react'
 import {createPortal} from 'react-dom'

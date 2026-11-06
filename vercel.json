@@ -66,5 +66,17 @@
     "api/bhai-cookie-dalde.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/tools/mashup",
+      "destination": "/editor",
+      "permanent": true
+    },
+    {
+      "source": "/tools/mashup/",
+      "destination": "/editor",
+      "permanent": true
+    }
+  ]
 }

@@ -14,7 +14,6 @@ const help:HelpItem[]=[
  {tag:'LEVEL',title:'Export is too loud',body:'Lower the selected section or track level, preview once more, then export again.'},
  {tag:'STEREO',title:'Only one ear has sound',body:'Check pan and stereo repair. Intentional 8D / 16D motion can move energy strongly between left and right.'},
  {tag:'STUDIO',title:'Need more controls',body:'Open the Full Studio when a focused tool no longer gives enough control. Presets remain removable after they are applied.'},
- {tag:'MASHUP',title:'Mashup preview is silent',body:'Make sure every retained section has audible gain, valid trim points and a start position inside the arrangement.'},
  {tag:'TOOLS',title:'Focused tool looks empty',body:'Upload audio first. The cinematic upload state then opens the waveform and only the controls for that task.'},
  {tag:'LIBRARY',title:'Library download missing',body:'Open Library and choose Download to save a finished local mix to the device again.'},
  {tag:'SOURCE',title:'Trimmed audio disappeared',body:'The Full Studio keeps the original source waveform visible behind the bright active trim range.'},

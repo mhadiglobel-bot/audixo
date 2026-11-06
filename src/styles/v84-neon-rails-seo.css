@@ -1,0 +1,53 @@
+/* AUDIXO V84 · verified visual recovery. Scoped overrides; audio DSP remains untouched. */
+:root{--ax84-mint:#13e7ae;--ax84-cyan:#22d2f8;--ax84-purple:#9a60f4;--ax84-pink:#f34bc8}
+.ax84-neon-svg,.ax84-action-icon{display:inline-block;vertical-align:middle;overflow:visible;flex:none;filter:drop-shadow(0 1px 3px rgba(107,85,216,.15));transition:transform .22s ease,filter .22s ease}
+button:hover:not(:disabled)>.ax84-action-icon,.ax25-tools-grid a:hover .ax84-neon-svg,.ax77-tool-circle:hover .ax84-neon-svg{transform:scale(1.11);filter:drop-shadow(0 2px 5px rgba(112,87,235,.29))}
+.ax25-tools-grid.ax68-tools-grid>a{border-radius:19px!important;min-height:72px!important;border-color:#e6eaf8!important}
+.ax25-tools-grid .ax25-tool-icon{width:47px!important;height:47px!important;border-radius:15px!important;display:grid;place-items:center;background:linear-gradient(125deg,#f2fffc,#f4efff)!important;box-shadow:inset 0 0 0 1px #e9e5fa,0 6px 14px #4663ad13!important}
+.ax25-tools-grid .ax25-tool-icon svg{width:25px!important;height:25px!important}
+.ax25-tools-grid a:nth-child(4n+1) .ax25-tool-icon{background:linear-gradient(120deg,#e6fffa,#eaf8ff)!important}
+.ax25-tools-grid a:nth-child(4n+2) .ax25-tool-icon{background:linear-gradient(120deg,#fff0fb,#f3eaff)!important}
+.ax25-tools-grid a:nth-child(4n+3) .ax25-tool-icon{background:linear-gradient(120deg,#f5efff,#e9fbff)!important}
+.ax25-tools-grid a:nth-child(4n+4) .ax25-tool-icon{background:linear-gradient(120deg,#ecfaff,#e8fff2)!important}
+.ax25-tools-grid a strong{font-size:13px!important;letter-spacing:-.01em;font-weight:800!important}
+.ax25-mobile-tool-links svg{width:22px;height:22px}
+.ax77-tool-circle .ax77-tool-icon{background:linear-gradient(140deg,#effffa,#f7f0ff)!important;border:1px solid #e2daf6!important;box-shadow:0 6px 18px #5f65b71b!important}
+.ax77-tool-circle .ax77-tool-icon svg{width:25px!important;height:25px!important}
+.ax77-tool-circle.is-active .ax77-tool-icon{border-color:#45dcd6!important;box-shadow:0 0 0 4px #25d2bd15,0 8px 20px #6e65bc28!important}
+.ax25-transport-bar .ax25-play-group .icon,.ax25-transport-bar .ax25-play-group .play{display:inline-grid!important;place-items:center!important}
+.ax25-transport-bar .ax25-view-tools button svg{margin-right:5px}
+.ax25-edit-mode button>span:has(svg){display:inline-flex!important;align-items:center;justify-content:center;width:26px;height:26px}
+.ax25-studio button:has(>.ax84-action-icon):focus-visible,.ax25-tools a:focus-visible,.ax77-tool-circle:focus-visible{outline:2px solid #a660ed;outline-offset:3px}
+/* Quality values are always above their rail, inside clear rounded pills. No detached floating tooltip. */
+.ax39-converter .ax84-quality{min-width:0;overflow:hidden}
+.ax39-converter .ax84-quality-scroll{overflow-x:auto;max-width:100%;scrollbar-width:thin;scrollbar-color:#bbb1e9 #f4f6ff;padding:4px 0 13px}
+.ax39-converter .ax84-quality-inner{box-sizing:border-box;width:100%;min-width:max(100%,calc(var(--ax84-steps) * 68px));padding:4px 12px 0}
+.ax39-converter .ax84-quality-markers{display:grid;grid-template-columns:repeat(var(--ax84-steps),minmax(0,1fr));gap:7px;align-items:center;margin-bottom:24px}
+.ax39-converter .ax84-quality-pill{box-sizing:border-box;display:flex!important;justify-content:center;align-items:center;gap:3px;flex-direction:column;min-height:47px!important;min-width:0!important;width:100%;padding:7px 4px!important;border:1px solid #e0e4f3!important;border-radius:13px!important;background:#fff!important;color:#63718f!important;box-shadow:0 4px 13px #435b8c0d!important;cursor:pointer;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s}
+.ax39-converter .ax84-quality-pill strong{font-size:clamp(11px,1.3vw,15px);font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.ax39-converter .ax84-quality-pill small{font-size:9px;line-height:1.1;opacity:.83;letter-spacing:.03em}
+.ax39-converter .ax84-quality-pill.selected{background:linear-gradient(120deg,#ebfffa,#f3efff)!important;border-color:#8e63ed!important;color:#6843d6!important;box-shadow:inset 0 0 0 1px #a87ff833,0 7px 19px #8454bb22!important;transform:translateY(-2px)}
+.ax39-converter .ax84-quality-pill:focus-visible{outline:2px solid #9e7cff;outline-offset:2px}
+.ax39-converter .ax84-quality-pill:disabled{cursor:not-allowed;opacity:.54}
+.ax39-converter .ax84-quality-pill:nth-child(4n+1).selected{border-color:#1ce4b4!important;color:#078b8d!important}
+.ax39-converter .ax84-quality-pill:nth-child(4n+2).selected{border-color:#32c6fa!important;color:#2179b1!important}
+.ax39-converter .ax84-quality-pill:nth-child(4n+3).selected{border-color:#ac77f3!important;color:#7d4dda!important}
+.ax39-converter .ax84-quality-pill:nth-child(4n).selected{border-color:#f579c8!important;color:#b63ea3!important}
+.ax39-converter .ax82-rail.ax84-quality-track{margin:3px 9px 12px!important;position:relative!important;width:calc(100% - 18px)!important;height:12px!important}
+.ax39-converter .ax82-rail.ax84-quality-track>input[type=range]{height:9px!important;border-radius:99px!important;min-width:0!important;width:100%!important;margin:0!important}
+.ax39-converter .ax82-rail.ax84-quality-track>input[type=range]::-webkit-slider-thumb{width:24px;height:24px;border:3px solid #9963ec;box-shadow:0 4px 14px #7651d05e}
+.ax39-converter .ax84-quality footer{margin-top:12px!important;font-size:12px!important;line-height:1.6!important}
+.ax39-converter .ax84-quality h3{font-size:clamp(20px,2.8vw,26px)!important}
+.ax39-converter .ax84-quality h3 span{font-size:clamp(12px,1.8vw,15px)!important}
+.ax83-follow-label{display:none!important}
+/* How it works: Recorder replaces the retired Mashup scene. */
+.ax84-scene-record{position:relative!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:250px;padding:24px}
+.ax84-recorder-orb{width:94px;height:94px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 35% 25%,#eafffc,#f1eafa);border:2px solid #6be7d6;box-shadow:0 0 0 8px #bdeef51e,0 15px 32px #5555b528;animation:ax84-record-glow 2.2s ease-in-out infinite}
+.ax84-recorder-orb svg{width:44px;height:44px;fill:none;stroke:#8156e6;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ax84-scene-record .ax46-wave{width:min(100%,360px);height:52px!important;display:flex;justify-content:center;align-items:center}
+.ax84-record-timer{font-size:22px;font-weight:900;letter-spacing:-.03em;color:#274460;font-variant-numeric:tabular-nums}
+.ax84-record-timer i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:10px;background:#ff4e9c;box-shadow:0 0 12px #fc55a6}
+.ax84-record-timer span{font-size:10px;letter-spacing:.15em;color:#9872cc;margin-left:9px}
+@keyframes ax84-record-glow{50%{box-shadow:0 0 0 14px #bdeef529,0 16px 35px #5958c33d}}
+@media(max-width:560px){.ax39-converter .ax84-quality-inner{min-width:max(100%,calc(var(--ax84-steps)*64px));padding-inline:8px}.ax39-converter .ax84-quality-pill{min-height:44px!important}.ax77-tool-circle .ax77-tool-icon svg{width:19px!important;height:19px!important}}
+@media(prefers-reduced-motion:reduce){.ax84-recorder-orb{animation:none!important}.ax84-action-icon,.ax84-neon-svg{transition:none!important}}

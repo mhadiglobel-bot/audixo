@@ -2,7 +2,7 @@ import {type CSSProperties} from 'react'
 import {useNeonJourney} from '../hooks/useNeonJourney'
 import {Link} from 'react-router-dom'
 
-type SceneKind='import'|'trim'|'select'|'stems'|'pitch'|'speed'|'echo'|'motion'|'mashup'|'presets'|'library'|'export'
+type SceneKind='import'|'trim'|'select'|'stems'|'pitch'|'speed'|'echo'|'motion'|'record'|'presets'|'library'|'export'
 type Scene={id:SceneKind;name:string;label:string;description:string;link:string;action:string}
 const scenes:Scene[]=[
  {id:'import',name:'Import',label:'Bring in the original',description:'Your source lands in the workspace ready to edit.',link:'/editor',action:'Open Studio'},
@@ -13,14 +13,13 @@ const scenes:Scene[]=[
  {id:'speed',name:'Speed',label:'Find the perfect pace',description:'Adjust the playback rate smoothly without losing control of the edit.',link:'/tools/slowed-reverb',action:'Speed & Reverb'},
  {id:'echo',name:'Echo',label:'Build repeating depth',description:'Set delay, reflection and feedback independently of reverb.',link:'/tools/echo',action:'Echo Editor'},
  {id:'motion',name:'Motion',label:'Move sound in space',description:'Orbit the stereo field with depth and controlled motion.',link:'/tools/spatial-motion',action:'Spatial Audio'},
- {id:'mashup',name:'Mashup',label:'Arrange your mix',description:'Move sections and layer multiple clips on a single timeline.',link:'/tools/mashup',action:'Mashup Editor'},
+ {id:'record',name:'Record',label:'Capture your own take',description:'Record a microphone take, pause, preview and continue editing in Studio.',link:'/tools/recorder',action:'Open Recorder'},
  {id:'presets',name:'Presets',label:'Shape your sound',description:'Preview a curated effect, then keep or remove it.',link:'/editor',action:'Browse Presets'},
  {id:'library',name:'Library',label:'Keep your takes close',description:'Save locally and reopen the tracks you want to revisit.',link:'/library',action:'Open Library'},
  {id:'export',name:'Export',label:'Take your sound with you',description:'Preview and render your final MP3 or WAV file.',link:'/editor',action:'Open Studio'},
 ]
 const waves=Array.from({length:51},(_,i)=>({height:`${20+((i*31+i*i*9)%72)}%`,delay:`${(i%8)*-.13}s`}))
 const stems=['VOCALS','MUSIC','DRUMS','BASS','OTHER']
-const tools=['CLIP A','CLIP B','BEAT BED']
 
 function Waveform({className=''}:{className?:string}){return <div className={`ax46-wave ${className}`} aria-hidden="true">{waves.map((bar,i)=><i key={i} style={{'--bar-height':bar.height,'--bar-delay':bar.delay} as CSSProperties}/>)}</div>}
 
@@ -34,7 +33,7 @@ function SceneDemo({id}:{id:SceneKind}){
   case 'speed':return <div className="ax46-scene ax46-scene-speed"><span className="ax46-scene-overline">SPEED CONTROL</span><div className="ax46-speed-readout">1.00<small>×</small></div><div className="ax46-speed-line"><i/></div><div className="ax46-speed-options"><span>0.75×</span><span>1.00×</span><span>1.25×</span><span>1.50×</span></div></div>
   case 'echo':return <div className="ax46-scene ax46-scene-echo"><div className="ax46-echo-orb"><i/><i/><i/><b>♫</b></div><div className="ax46-echo-sliders"><span><b>DELAY</b><i/></span><span><b>FEEDBACK</b><i/></span><span><b>WET</b><i/></span></div></div>
   case 'motion':return <div className="ax46-scene ax46-scene-motion"><div className="ax46-motion-orbit"><i/><i/><b>♫</b><span/></div><div className="ax46-demo-caption">STEREO ORBIT · 8D / 16D</div></div>
-  case 'mashup':return <div className="ax46-scene ax46-scene-mashup">{tools.map((tool,i)=><div className="ax46-mashup-track" key={tool}><span>{tool}</span><div><i style={{'--track-index':i} as CSSProperties}/><i/></div></div>)}</div>
+  case 'record':return <div className="ax46-scene ax84-scene-record"><span className="ax46-scene-overline">MICROPHONE / TAKE RECORDER</span><div className="ax84-recorder-orb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg></div><Waveform className="ax84-record-wave"/><div className="ax84-record-timer"><i/> 00:12.480 <span>LIVE TAKE</span></div></div>
   case 'presets':return <div className="ax46-scene ax46-scene-presets"><div className="ax46-preset-title"><span>✦</span><div><b>NEON AIR</b><small>PRESET PREVIEW</small></div><i>✓</i></div>{['SPACE','TONE','ECHO'].map((label,i)=><div className="ax46-preset-control" key={label}><span>{label}</span><div><i style={{'--preset-index':i} as CSSProperties}/></div></div>)}</div>
   case 'library':return <div className="ax46-scene ax46-scene-library">{['Source.wav','Verse Edit.mp3','Final Mix.wav'].map((name,i)=><div key={name}><span>♫</span><strong>{name}</strong><small>{i===0?'ORIGINAL':i===1?'WORKING':'EXPORTED'}</small><b>↗</b></div>)}</div>
   case 'export':return <div className="ax46-scene ax46-scene-export"><div className="ax46-export-disc">↓</div><div className="ax46-export-header"><b>Final Mix.mp3</b><small>MP3 / WAV</small></div><div className="ax46-export-bar"><i/></div><span>PREPARING YOUR SOUND</span></div>

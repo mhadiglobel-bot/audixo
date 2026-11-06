@@ -93,11 +93,8 @@ if(process.argv.includes('--self-test')){runTrackRegression();runUiRegression();
 const {build}=await import('esbuild')
 const {loadEnv}=await import('vite')
 Object.assign(process.env,loadEnv('production',process.cwd(),''))
-// A new Vercel project does not know its final production domain on its first build.
-// Prefer Vercel's real system URL; otherwise let the FIRST build succeed and ask
-// the owner to set VITE_SITE_URL for correct SEO before launch.
-const configured=process.env.VITE_SITE_URL|| (process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:process.env.VERCEL?'https://audixo.invalid':'http://localhost:4173')
-if(process.env.VERCEL&&configured==='https://audixo.invalid')console.warn('AUDIXO: Set VITE_SITE_URL to the real production domain after first deployment and redeploy for correct SEO URLs.')
+// One verified production identity for canonical tags, Open Graph, robots and sitemap.
+const configured='https://audixo.tiers.rest'
 const origin=new URL(configured).origin
 if(!['http:','https:'].includes(new URL(origin).protocol))throw new Error('VITE_SITE_URL must be HTTP or HTTPS.')
 if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SITE_URL to your production HTTPS domain.')
@@ -134,22 +131,21 @@ const pages={
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
  '/tools/recorder':['Audixo Audio Recorder — Record and Edit Audio Online','Record microphone audio in your browser, pause and resume, preview the recording and open it in Audixo Studio.'],
  '/':['Free Online Audio Studio & Sound Playground','Try AUDIXO’s interactive sound playground with Echo, Reverb, Pitch and Slowed audio previews, then trim, mix, separate vocals and export your sound online.'],
- '/features':['Audixo Features — Trim, Mashup, Stems, Effects & Export','Explore direct audio trimming, AI stem separation, vocal effects, creative presets and MP3 export.'],
+ '/features':['Audixo Features — Trim, Record, Stems, Effects & Export','Explore direct audio trimming, AI stem separation, vocal effects, creative presets and MP3 export.'],
  '/how-it-works':['How Audixo Works — From Audio Import to Final Export','Follow the Audixo workflow from importing audio through trimming, vocal separation, effects and download.'],
  '/about':['About Audixo','Meet Audixo: a creative audio studio with focused tools, a full waveform editor and vocal stem workflows.'],
  '/contact':['Official Support Email Coming Soon','The official AUDIXO contact email is coming soon. Explore audio tools and help resources in the meantime.'],
  '/blog':['Audio Editing Guides','Practical guides to audio trimming, vocal separation, echo, reverb, MP3 quality and creative mixing.'],
- '/faq':['Audio Editing FAQ','Answers about direct trimming, middle cuts, AI vocal stems, mashups, export quality and long audio.'],
- '/help':['Audio Editor Help Center','Solve common audio import, preview, export, mashup and local AI problems.'],
+ '/faq':['Audio Editing FAQ','Answers about direct trimming, middle cuts, AI vocal stems, recording, export quality and long audio.'],
+ '/help':['Audio Editor Help Center','Solve common audio import, preview, export, recording and local AI problems.'],
  '/privacy':['Privacy Policy','How Audixo handles browser-local audio editing, AI model delivery and local Library storage.'],
  '/copyright':['Copyright & Media Rights','Copyright and permitted media use guidance for AUDIXO downloads, editing, conversion and intellectual property.'],
- '/terms':['Terms of Use','Terms for Audixo audio editing, mashups, AI separation, export and local Library.'],
+ '/terms':['Terms of Use','Terms for Audixo audio editing, microphone recording, AI separation, export and local Library.'],
  '/editor':['Audixo Studio — Full Audio Editor, Mixer & Export','Trim with integrated clip handles, remove middle sections, mix tracks and export your audio.'],
  '/library':['Your Audio Library','Your saved Audixo exports in this browser profile.'],
  '/tools/social-video-downloader':['Social Video Downloader — YouTube & Instagram MP3/MP4','Convert authorized public YouTube videos and Instagram Reels to 320 kbps MP3 or source-quality MP4. Save without leaving AUDIXO.'],
  '/tools/youtube-to-mp3':['Social Video Downloader — MP3 & MP4','Convert authorized YouTube videos and Instagram Reels to MP3 or MP4 without leaving AUDIXO.'],
  '/tools/vocals':['Audixo Vocal Extractor — Voice, Music, Drums & Bass','Separate vocals, drums, bass and other instruments into individual audio tracks. Mix, mute, trim and apply vocal effects.'],
- '/tools/mashup':['Audixo Mashup Studio — Multitrack Song & Verse Editor','Layer multiple audio files, trim each section, create crossfades and export one finished mashup.'],
  '/tools/trim-audio':['Audixo Trim Audio — Free Online Audio Cutter','Trim MP3 or WAV using drag handles and exact timestamps, add fades and export audio in your browser.'],
  '/tools/echo':['Audixo Echo — Add Echo and Delay to Audio Online','Add echo to voice and music online with delay time, feedback and wet mix. Preview and export your edited audio.'],
  '/tools/slowed-reverb':['Audixo Slowed + Reverb — Slow Audio Online','Slow music or vocal recordings online, preserve pitch when needed and add a controlled reverb tail.'],
@@ -161,8 +157,14 @@ const paths=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audi
 const originalError=console.error;console.error=(...args)=>{if(String(args[0]).includes('useLayoutEffect does nothing on the server'))return;originalError(...args)}
 for(const route of paths){
  const article=blogs.find(b=>route==='/blog/'+b.slug),[title,description]=article?[article.title,article.excerpt]:pages[route],url=origin+route
- let schema=route==='/nexivo'?{'@context':'https://schema.org','@type':'Organization',name:'Nexivo',url,description}:article?{'@context':'https://schema.org','@type':'Article',headline:title,description,publisher:{'@type':'Organization',name:'Audixo Studio',parentOrganization:{'@type':'Organization',name:'Nexivo'}},mainEntityOfPage:url}:route==='/faq'?{'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}:{'@context':'https://schema.org','@type':'SoftwareApplication',name:'Audixo',applicationCategory:'MultimediaApplication',operatingSystem:'Web browser',url,description}
- const tags=`<title>${escape(title)} | Audixo</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(title)} | Audixo"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="Audixo"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)} | Audixo"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
+ const publisher={'@type':'Organization',name:'Audixo Studio',url:origin,parentOrganization:{'@type':'Organization',name:'Nexivo'}}
+ const website={'@type':'WebSite',name:'AUDIXO',url:origin}
+ const schema=route==='/nexivo'?{'@context':'https://schema.org','@type':'Organization',name:'Nexivo',url,description}
+ :article?{'@context':'https://schema.org','@type':'BlogPosting',headline:title,description,url,datePublished:article.date||undefined,publisher,mainEntityOfPage:url}
+ :route==='/faq'?{'@context':'https://schema.org','@type':'FAQPage',url,mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}
+ :route==='/'||route==='/editor'||route.startsWith('/tools/')||route.startsWith('/tool/')?{'@context':'https://schema.org','@type':'SoftwareApplication',name:'AUDIXO',applicationCategory:'MultimediaApplication',operatingSystem:'Web browser',url,description,publisher}
+ :{'@context':'https://schema.org','@type':'WebPage',name:title,description,url,isPartOf:website,publisher}
+ const tags=`<title>${escape(title)} | Audixo</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(title)} | Audixo"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="Audixo"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:locale" content="en_US"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)} | Audixo"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
  // Strip generic home-only metadata from the Vite shell first. Every pre-rendered
  // route gets one canonical, one OG set and one Twitter set rather than duplicates.
  const head=base

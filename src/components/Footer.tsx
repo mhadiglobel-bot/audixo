@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
 const cols=[
- {name:'Audio tools',links:[['Full Audio Studio','/editor'],['Trim Audio','/tools/trim-audio'],['Vocal Extractor','/tools/vocals'],['Echo & Delay','/tools/echo'],['Slowed + Reverb','/tools/slowed-reverb'],['Mashup Editor','/tools/mashup']]},
+ {name:'Audio tools',links:[['Full Audio Studio','/editor'],['Trim Audio','/tools/trim-audio'],['Vocal Extractor','/tools/vocals'],['Echo & Delay','/tools/echo'],['Slowed + Reverb','/tools/slowed-reverb']]},
  {name:'More tools',links:[['Social Video Downloader','/tools/social-video-downloader'],['Pitch Editor','/tools/pitch'],['Spatial 8D / 16D','/tools/spatial-motion'],['Audio Recorder','/tools/recorder'],['Local Library','/library']]},
  {name:'Explore',links:[['All Features','/features'],['How it Works','/how-it-works'],['Sound Journal','/blog'],['About AUDIXO','/about'],['Nexivo','/nexivo']]},
  {name:'Help & support',links:[['Help Center','/help'],['Frequently Asked Questions','/faq'],['Contact','/contact']]},

@@ -94,7 +94,8 @@ const {build}=await import('esbuild')
 const {loadEnv}=await import('vite')
 Object.assign(process.env,loadEnv('production',process.cwd(),''))
 // One verified production identity for canonical tags, Open Graph, robots and sitemap.
-const configured='https://audixo.tiers.rest'
+const domain=JSON.parse(await readFile('config/audixo-domain.json','utf8'))
+const configured=domain.canonicalOrigin
 const origin=new URL(configured).origin
 if(!['http:','https:'].includes(new URL(origin).protocol))throw new Error('VITE_SITE_URL must be HTTP or HTTPS.')
 if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SITE_URL to your production HTTPS domain.')
@@ -167,7 +168,7 @@ for(const route of paths){
  const tags=`<title>${escape(fullTitle)}</title><meta name="description" content="${escape(description)}"><meta name="robots" content="${route==='/library'?'noindex,follow':'index,follow'}"><link rel="canonical" href="${escape(url)}"><meta property="og:title" content="${escape(fullTitle)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${escape(url)}"><meta property="og:type" content="${article?'article':'website'}"><meta property="og:site_name" content="AUDIXO"><meta property="og:image" content="${origin}/og-image.png"><meta property="og:locale" content="en_US"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(fullTitle)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${origin}/og-image.png"><script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>`
  // Strip generic home-only metadata from the Vite shell first. Every pre-rendered
  // route gets one canonical, one OG set and one Twitter set rather than duplicates.
- const websiteIdentity={'@context':'https://schema.org','@type':'WebSite','@id':origin+'/#website',name:'AUDIXO',alternateName:['Audixo Studio','audixo.tiers.rest'],url:origin+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.'}
+ const websiteIdentity={'@context':'https://schema.org','@type':'WebSite','@id':origin+'/#website',name:domain.siteName,alternateName:[domain.alternateName,domain.hostname],url:origin+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.'}
  const tagsWithIdentity=route==='/'?tags.replace('<script id="page-schema"','<script id="site-identity-schema" type="application/ld+json">'+JSON.stringify(websiteIdentity).replace(/</g,'\\u003c')+'</script><script id="page-schema"'):tags
  const head=base
   .replace(/<title>[\s\S]*?<\/title>/,'')

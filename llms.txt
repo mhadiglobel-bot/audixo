@@ -1,7 +1,12 @@
 # AUDIXO — Online Audio Studio
 
-Website: https://audixo.vercel.app/
+Website: https://audixo.tiers.rest/
 Brand: AUDIXO, a creator-focused, free browser-based audio editor.
+
+## Interactive Sound Playground
+- Play an original synthesized AUDIXO demo after clicking Play; background audio never auto-plays.
+- Hear real-time Echo, Reverb, Pitch and Slowed effects and compare original versus processed audio via a Before/After slider.
+- Optionally preview your own short uploaded audio locally and browse the studio preset gallery.
 
 ## What AUDIXO does
 - Trim, split, fade and mix audio in the browser.
@@ -12,17 +17,17 @@ Brand: AUDIXO, a creator-focused, free browser-based audio editor.
 - Install the web app on compatible Android or desktop browsers using PWA support; mobile audio performance depends on available memory.
 
 ## Official pages
-- https://audixo.vercel.app/features
-- https://audixo.vercel.app/how-it-works
-- https://audixo.vercel.app/tools/trim-audio
-- https://audixo.vercel.app/tools/echo
-- https://audixo.vercel.app/tools/vocals
-- https://audixo.vercel.app/tools/youtube-to-mp3
-- https://audixo.vercel.app/faq
-- https://audixo.vercel.app/help
-- https://audixo.vercel.app/privacy
-- https://audixo.vercel.app/terms
-- https://audixo.vercel.app/copyright
+- https://audixo.tiers.rest/features
+- https://audixo.tiers.rest/how-it-works
+- https://audixo.tiers.rest/tools/trim-audio
+- https://audixo.tiers.rest/tools/echo
+- https://audixo.tiers.rest/tools/vocals
+- https://audixo.tiers.rest/tools/social-video-downloader
+- https://audixo.tiers.rest/faq
+- https://audixo.tiers.rest/help
+- https://audixo.tiers.rest/privacy
+- https://audixo.tiers.rest/terms
+- https://audixo.tiers.rest/copyright
 
 ## Accuracy notes
 - MP3 encoding target is not evidence of the quality of the original recording.

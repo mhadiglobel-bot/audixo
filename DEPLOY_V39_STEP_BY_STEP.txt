@@ -1,3 +1,5 @@
+ARCHIVED V39 NOTE: current production domain is https://audixo.tiers.rest. Consult current site config.
+
 AUDIXO V39 -- NEW GITHUB REPO + VERCEL DEPLOYMENT GUIDE
 =========================================================
 
@@ -32,7 +34,7 @@ AUDIXO V39 -- NEW GITHUB REPO + VERCEL DEPLOYMENT GUIDE
 
    VARIABLE 3 -- OPTIONAL AFTER FIRST DEPLOY
    Key:   VITE_SITE_URL
-   Value: https://YOUR-ACTUAL-NEW-DOMAIN.vercel.app
+   Value: https://audixo.tiers.rest
    Replace placeholder with Vercel's ACTUAL assigned production domain.
    If you don't know that URL, OMIT this variable on first deploy. Add it after the first
    deployment and redeploy. The build can finish without it, but canonical and sitemap

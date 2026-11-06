@@ -20,7 +20,7 @@ function withMock(scenario){const calls=[];globalThis.fetch=async(input,init={})
  const target=String(input),method=init.method||'GET';calls.push({target,method,headers:init.headers||{},init})
  if(target.includes('/oembed?'))return new Response(JSON.stringify(scenario.embed||{title:'Title from YouTube',author_name:'Artist'}),{status:scenario.oembedStatus||200,headers:{'content-type':'application/json'}})
  if(target.startsWith('https://www.youtube.com/watch'))return new Response(scenario.html||play(scenario.formats||[]),{status:200})
- if(target.includes('googlevideo.com')&&method==='HEAD')return new Response(null,{status:200,headers:{'access-control-allow-origin':scenario.corsOrigin??'https://audixo.vercel.app'}})
+ if(target.includes('googlevideo.com')&&method==='HEAD')return new Response(null,{status:200,headers:{'access-control-allow-origin':scenario.corsOrigin??'https://audixo.tiers.rest'}})
  throw Error('Unexpected request '+target)
  };return {calls,restore(){globalThis.fetch=originalFetch}}
 }

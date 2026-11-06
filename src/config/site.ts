@@ -1,4 +1,5 @@
-const configured = 'https://audixo.tiers.rest' // Verified production canonical; never use a preview hostname for SEO.
+import domain from '../../config/audixo-domain.json'
+const configured=domain.canonicalOrigin // Never publish a Vercel preview host as the canonical URL.
 
 // OFFICIAL SUPPORT EMAIL — EDIT HERE WHEN READY, THEN COMMIT TO GITHUB:
 // const manualSupportEmail='support@your-domain.example'
@@ -20,7 +21,7 @@ const normalizeMp4Quality=(value:unknown)=>{
 // Resolutions are supplied by /api/preview after each Analyze, never this UI configuration.
 
 export const site = {
- name:'AUDIXO',shortName:'AUDIXO',
+ name:domain.siteName,shortName:domain.siteName,
  url:configured,
  email:(manualSupportEmail||envEmail).trim(),
  company:'Nexivo',

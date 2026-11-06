@@ -1,3 +1,5 @@
+ARCHIVED V39 NOTE: current production domain is https://audixo.tiers.rest. Consult current site config.
+
 AUDIXO V39.1 MP4 QUALITY HOTFIX
 
 What happened:
@@ -12,7 +14,7 @@ Existing Vercel environment variables (no new variables required):
 Key 1: AUDIXO_YTDL_BASE_URL
 Value: https://ytdl.tiers.rest
 Key 2: VITE_SITE_URL
-Value: https://audixo.vercel.app
+Value: https://audixo.tiers.rest
 Optional: AUDIXO_YTDL_AUTH_TOKEN, only if your REST YTDL backend requires a token.
 
 Steps: Extract this ZIP, replace GitHub repository files, commit, wait for Vercel deployment. Refresh with Ctrl+Shift+R. Analyze the video, choose 720p or 1080p, tick the rights checkbox and try downloading. If the backend rejects the resolution, the UI displays its error.

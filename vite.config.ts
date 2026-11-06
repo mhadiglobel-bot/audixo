@@ -1,9 +1,11 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import domain from './config/audixo-domain.json'
 
 export default defineConfig(({mode}) => {
  const env=loadEnv(mode,process.cwd(),'')
- const origin=env.VITE_SITE_URL||(env.VERCEL_PROJECT_PRODUCTION_URL?`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`:env.VERCEL_URL?`https://${env.VERCEL_URL}`:'')
+ // Canonical identity must not change with VERCEL_URL, preview host, or stale VITE_SITE_URL.
+ const origin=domain.canonicalOrigin
  return {
   define:{'import.meta.env.VITE_SITE_URL':JSON.stringify(origin)},
   plugins:[react()],

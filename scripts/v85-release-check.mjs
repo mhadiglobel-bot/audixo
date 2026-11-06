@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import {readFileSync,existsSync} from 'node:fs'
 const txt=p=>readFileSync(p,'utf8')
 const home=txt('dist/index.html')
+const pageTitle=home.match(/<title>(.*?)<\/title>/)?.[1]||''
+assert.ok(pageTitle.startsWith('AUDIXO'),'Homepage title needs AUDIXO branding')
+assert.equal((pageTitle.match(/AUDIXO/g)||[]).length,1,'Avoid duplicate AUDIXO in homepage title')
 const site=home.match(/<script id="site-identity-schema" type="application\/ld\+json">([\s\S]*?)<\/script>/)
 assert.ok(site,'Homepage requires crawler-readable WebSite identity')
 const identity=JSON.parse(site[1])

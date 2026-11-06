@@ -152,6 +152,17 @@ tests/     Media-service tests
 </details>
 
 <details>
+<summary><b>Editable SVG artwork and motion compatibility</b></summary>
+
+<br />
+
+The animated banners above are **real looping GIF files**, rather than SVG animations that GitHub may display as static.
+
+Editable vector sources are also retained in this repository: [Hero SVG](docs/assets/audixo-hero.svg) and [Creative workflow SVG](docs/assets/audixo-workflow.svg). The README uses GIFs for reliable playback on GitHub. For original brand identity, the artwork uses the official AUDIXO app logo.
+
+</details>
+
+<details>
 <summary><b>Responsible use, limitations and search visibility</b></summary>
 
 <br />

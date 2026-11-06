@@ -12,9 +12,9 @@ const manualSupportEmail=''
 const envEmailEnabled=import.meta.env.VITE_SUPPORT_EMAIL_ENABLED==='true'
 const envEmail=envEmailEnabled?(import.meta.env.VITE_SUPPORT_EMAIL||''):''
 
-const MP4_QUALITIES=['240','360','480','720','1080','1440','2160'] as const
+const MP4_QUALITIES=['144','240','360','480','720','1080','1440','2160','4320'] as const
 const normalizeMp4Quality=(value:unknown)=>{
- const match=String(value??'').trim().match(/^(240|360|480|720|1080|1440|2160)(?:p)?$/i)
+ const match=String(value??'').trim().match(/^(144|240|360|480|720|1080|1440|2160|4320)(?:p)?$/i)
  return match?match[1]:''
 }
 // Resolutions are supplied by /api/preview after each Analyze, never this UI configuration.

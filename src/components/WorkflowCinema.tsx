@@ -1,6 +1,7 @@
 import {type CSSProperties} from 'react'
 import {useNeonJourney} from '../hooks/useNeonJourney'
 import {Link} from 'react-router-dom'
+import Icon from '../editor/Icons'
 
 type SceneKind='import'|'trim'|'select'|'stems'|'pitch'|'speed'|'echo'|'motion'|'record'|'presets'|'library'|'export'
 type Scene={id:SceneKind;name:string;label:string;description:string;link:string;action:string}
@@ -86,7 +87,7 @@ export default function WorkflowCinema(){
     <div className="ax46-screen-top"><div><span/><span/><span/></div><strong>{current.name.toUpperCase()} / STUDIO VIEW</strong><small>LIVE PREVIEW</small></div>
     <SceneDemo key={current.id} id={current.id}/>
    </div>
-   <div className="ax46-stage-info" key={'info-'+current.id}><span>STAGE {String(step+1).padStart(2,'0')}</span><h3>{current.label}</h3><p>{current.description}</p><Link to={current.link}>{current.action} ↗</Link></div>
+   <div className="ax46-stage-info" key={'info-'+current.id}><span>STAGE {String(step+1).padStart(2,'0')}</span><h3>{current.label}</h3><p>{current.description}</p><Link to={current.link}>{current.action} <Icon name="arrowUpRight" size={17}/></Link></div>
    <div className="ax46-workflow-progress" aria-hidden="true"><span key={current.id}/></div>
    <footer><small>Import</small><small>Edit</small><small>Preview</small><small>Export</small></footer>
   </div>

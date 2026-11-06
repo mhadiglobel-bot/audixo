@@ -69,6 +69,11 @@
   },
   "redirects": [
     {
+      "source": "/tools/youtube-to-mp3",
+      "destination": "/tools/social-video-downloader",
+      "permanent": true
+    },
+    {
       "source": "/tools/mashup",
       "destination": "/editor",
       "permanent": true

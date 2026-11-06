@@ -144,7 +144,6 @@ const pages={
  '/editor':['Audixo Studio — Full Audio Editor, Mixer & Export','Trim with integrated clip handles, remove middle sections, mix tracks and export your audio.'],
  '/library':['Your Audio Library','Your saved Audixo exports in this browser profile.'],
  '/tools/social-video-downloader':['Social Video Downloader — YouTube & Instagram MP3/MP4','Convert authorized public YouTube videos and Instagram Reels to 320 kbps MP3 or source-quality MP4. Save without leaving AUDIXO.'],
- '/tools/youtube-to-mp3':['Social Video Downloader — MP3 & MP4','Convert authorized YouTube videos and Instagram Reels to MP3 or MP4 without leaving AUDIXO.'],
  '/tools/vocals':['Audixo Vocal Extractor — Voice, Music, Drums & Bass','Separate vocals, drums, bass and other instruments into individual audio tracks. Mix, mute, trim and apply vocal effects.'],
  '/tools/trim-audio':['Audixo Trim Audio — Free Online Audio Cutter','Trim MP3 or WAV using drag handles and exact timestamps, add fades and export audio in your browser.'],
  '/tools/echo':['Audixo Echo — Add Echo and Delay to Audio Online','Add echo to voice and music online with delay time, feedback and wet mix. Preview and export your edited audio.'],

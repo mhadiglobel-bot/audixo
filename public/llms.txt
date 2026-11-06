@@ -22,7 +22,7 @@ Brand: AUDIXO, a creator-focused, free browser-based audio editor.
 - https://audixo.tiers.rest/tools/trim-audio
 - https://audixo.tiers.rest/tools/echo
 - https://audixo.tiers.rest/tools/vocals
-- https://audixo.tiers.rest/tools/youtube-to-mp3
+- https://audixo.tiers.rest/tools/social-video-downloader
 - https://audixo.tiers.rest/faq
 - https://audixo.tiers.rest/help
 - https://audixo.tiers.rest/privacy

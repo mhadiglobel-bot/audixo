@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="235" viewBox="0 0 1200 235" role="img" aria-labelledby="title desc">
+<title id="title">AUDIXO creative workflow</title><desc id="desc">Import audio, edit in the studio, separate vocals and instruments, then export the result.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0c1329"/><stop offset="1" stop-color="#171837"/></linearGradient></defs>
+<style>.flowline{stroke-dasharray:8 10;animation:drift 4s linear infinite}@keyframes drift{to{stroke-dashoffset:-72}}@media(prefers-reduced-motion:reduce){.flowline{animation:none!important}}</style>
+<rect x="1" y="1" width="1198" height="233" rx="23" fill="url(#bg)" stroke="#314268"/>
+<text x="41" y="41" font-family="DejaVu Sans,Arial" font-size="14" letter-spacing="2.8" font-weight="700" fill="#aec3e2">THE CREATIVE SIGNAL PATH</text>
+<path class="flowline" d="M282 131H335M578 131H631M874 131H927" stroke="#7ca6ee" stroke-width="3" opacity=".9"/>
+<g font-family="DejaVu Sans,Arial" text-anchor="start">
+<rect x="39" y="67" width="243" height="125" rx="15" fill="#142540" stroke="#2a6f77"/>
+<rect x="335" y="67" width="243" height="125" rx="15" fill="#172340" stroke="#38598b"/>
+<rect x="631" y="67" width="243" height="125" rx="15" fill="#20213f" stroke="#6753a2"/>
+<rect x="927" y="67" width="234" height="125" rx="15" fill="#27203e" stroke="#a44b85"/>
+<g fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="75" cy="106" r="20" fill="#133c3d" stroke="#26e6ba" stroke-opacity=".6"/>
+<path d="M75 115V97M68 104L75 97L82 104M68 116H82" stroke="#52f5d2"/>
+<circle cx="372" cy="106" r="20" fill="#17364d" stroke="#30d9f5" stroke-opacity=".65"/>
+<path d="M363 115V102M372 115V92M381 115V107M358 103H368M367 96H377M376 108H386" stroke="#65dfff"/>
+<circle cx="668" cy="106" r="20" fill="#2c2853" stroke="#a87fff" stroke-opacity=".6"/>
+<path d="M655 107h4l3-8 5 16 4-11 3 3h7" stroke="#c1a2ff"/>
+<circle cx="964" cy="106" r="20" fill="#452645" stroke="#f76ebd" stroke-opacity=".6"/>
+<path d="M964 95V112M957 105L964 112L971 105M957 117H971" stroke="#fda5d8"/>
+</g>
+<g font-size="13" font-weight="700" fill="#f5f8ff"><text x="107" y="104">01  IMPORT</text><text x="404" y="104">02  EDIT</text><text x="700" y="104">03  SEPARATE</text><text x="996" y="104">04  EXPORT</text></g>
+<g font-size="12" fill="#a8bad5"><text x="57" y="151">Add a track or record</text><text x="352" y="151">Trim, layer and shape</text><text x="649" y="151">Isolate 5 sound layers</text><text x="944" y="151">Download your mix</text></g>
+<g font-size="11" font-weight="600" fill="#768dac"><text x="57" y="173">SOURCE</text><text x="352" y="173">WORKSPACE</text><text x="649" y="173">VOCAL FX</text><text x="944" y="173">OUTPUT</text></g>
+</g>
+<text x="43" y="218" font-family="DejaVu Sans,Arial" font-size="10" letter-spacing="2" fill="#667e9d">LOCAL-FIRST EDITING</text>
+<text x="950" y="218" font-family="DejaVu Sans,Arial" font-size="10" letter-spacing="1.2" fill="#8d96c6">AUDIXO / BROWSER STUDIO</text>
+</svg>

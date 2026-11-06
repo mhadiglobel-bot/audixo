@@ -69,6 +69,18 @@
   },
   "redirects": [
     {
+      "source": "/",
+      "destination": "https://audixo.tiers.rest/",
+      "permanent": true,
+      "has": [
+        {
+          "type": "header",
+          "key": "host",
+          "value": "audixo.vercel.app"
+        }
+      ]
+    },
+    {
       "source": "/:path*",
       "destination": "https://audixo.tiers.rest/:path*",
       "permanent": true,

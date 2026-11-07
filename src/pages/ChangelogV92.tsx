@@ -4,34 +4,47 @@ import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import Icon from '../editor/Icons'
 
-const releases=[
- {version:'V72',date:'04 NOV 2026',title:'A better Studio foundation',detail:'A Studio interface update focused on clearer audio controls and more dependable stem workflows.',tags:['Studio UI','Stem reliability'],commit:'a519c59'},
- {version:'V83',date:'05 NOV 2026',title:'Control and workspace recovery',detail:'Restored the core editing controls, local Library, vocal tools and recorder alongside motion-based homepage metrics.',tags:['Editor controls','Library','Recorder'],commit:'5bc05b5'},
- {version:'V85',date:'06 NOV 2026',title:'Precision meets identity',detail:'Refined the Studio layout, recording flow and local stem processing, with additional brand consistency and regression checks.',tags:['Studio layout','Brand QA'],commit:'bc7b1984'},
- {version:'V87',date:'06 NOV 2026',title:'One home for AUDIXO',detail:'Aligned the canonical production domain across website metadata, site indexing, social previews and PWA behavior.',tags:['Production domain','SEO & PWA'],commit:'8647690'},
- {version:'V91',date:'07 NOV 2026',title:'A more considered interface',detail:'Improved sequential homepage metrics and the visual finish of the Studio, Library, About page and live sound lab.',tags:['UX polish','Sound Lab'],commit:'9225b10'},
- {version:'V92',date:'07 NOV 2026',title:'Brand, controls and completely free',detail:'Brought the Nexivo family into focus, clarified the About experience, polished audio controls and introduced the completely free pricing reveal.',tags:['Nexivo','Free pricing','Live controls'],commit:'706a86d'}
+type Milestone={id:string,date:string,title:string,detail:string,tags:string[],commit?:string}
+const milestones:Milestone[]=[
+ {id:'V22',date:'EARLY PHASE',title:'The early AUDIXO journey',detail:'A starting marker requested for the historical timeline. Detailed V22 release notes are not available in the present repository archive.',tags:['Early beginnings','Archive note']},
+ {id:'V72',date:'04 NOV 2026',title:'A stronger Studio foundation',detail:'A focused Studio interface update with more dependable stem processing and editing controls.',tags:['Studio layout','Audio workflow'],commit:'a519c59'},
+ {id:'V83',date:'05 NOV 2026',title:'The workspace comes together',detail:'Recovered Studio controls, the local Library, recording and vocal workflows with improved visual metrics.',tags:['Controls','Library','Recorder'],commit:'5bc05b5'},
+ {id:'V85',date:'06 NOV 2026',title:'Precision and reliability',detail:'Refined the editing layout, recording experience and stem processing with additional regression checks.',tags:['Accuracy','Audio engine'],commit:'bc7b1984'},
+ {id:'V91',date:'07 NOV 2026',title:'A calmer interface',detail:'A more cohesive experience across Studio, Library, About and the live sound lab.',tags:['Design system','Live sound'],commit:'9225b10'},
+ {id:'V92',date:'07 NOV 2026',title:'A clearer, completely free experience',detail:'Nexivo branding, live controls, the Studio workflow and a transparent free-pricing reveal came together.',tags:['Brand clarity','Free access'],commit:'706a86d'}
 ]
 export default function ChangelogV92(){
- const root=useRef<HTMLElement|null>(null)
+ const path=useRef<HTMLElement|null>(null)
  useEffect(()=>{
-  const host=root.current;if(!host)return
-  const nodes=Array.from(host.querySelectorAll<HTMLElement>('.ax92-change-entry'))
-  if(!('IntersectionObserver' in window)){nodes.forEach(n=>n.classList.add('is-visible'));return}
-  const obs=new IntersectionObserver(items=>items.forEach(i=>{if(i.isIntersecting){i.target.classList.add('is-visible');obs.unobserve(i.target)}}),{threshold:.15,rootMargin:'0px 0px -5% 0px'})
-  nodes.forEach(n=>obs.observe(n));return()=>obs.disconnect()
+  const host=path.current;if(!host)return
+  const milestones=Array.from(host.querySelectorAll<HTMLElement>('.ax94-release'))
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if(!('IntersectionObserver' in window)||reduced)milestones.forEach(m=>m.classList.add('is-visible'))
+  let observer:IntersectionObserver|null=null
+  if('IntersectionObserver' in window&&!reduced){
+   observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');observer?.unobserve(entry.target)}}),{threshold:.15,rootMargin:'0px 0px -7% 0px'})
+   milestones.forEach(item=>observer?.observe(item))
+  }
+  let frame=0
+  const update=()=>{
+   frame=0
+   const r=host.getBoundingClientRect()
+   const p=Math.max(0,Math.min(1,(window.innerHeight*.56-r.top)/Math.max(1,r.height)))
+   host.style.setProperty('--ax94-progress',String(p))
+  }
+  const onScroll=()=>{if(!frame)frame=requestAnimationFrame(update)}
+  onScroll();window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll)
+  return()=>{observer?.disconnect();window.removeEventListener('scroll',onScroll);window.removeEventListener('resize',onScroll);if(frame)cancelAnimationFrame(frame)}
  },[])
- return <SiteShell><Seo title="AUDIXO Changelog — Every Step in the Studio's Evolution" description="Explore six verified AUDIXO release milestones from V72 to V92, including Studio improvements, brand updates, sound lab changes and free access." path="/changelog"/>
-  <main className="page-shell ax92-page ax92-changelog" ref={root}>
-   <header className="ax92-changelog-head"><span className="ax92-eyebrow">AUDIXO / RELEASE HISTORY</span><h1>Every version.<br/><span>A sharper sound.</span></h1><p>Follow the meaningful steps behind the Studio. These milestones come from the AUDIXO project release history—not invented features or fictional versions.</p><div className="ax92-changelog-head-actions"><Link to="/editor" className="ax92-primary-link">Open the latest Studio <Icon name="arrowUpRight" size={17}/></Link><span className="ax92-version-tag">CURRENT · V92</span></div></header>
-   <section className="ax92-changelog-list" aria-label="AUDIXO chronological release milestones">
-    {releases.map((r,i)=><article className={`ax92-change-entry ${i===releases.length-1?'is-latest':''}`} key={r.version} style={{'--ax92-step':i} as React.CSSProperties}>
-     <div className="ax92-change-pin" aria-hidden="true"><span/><i/></div>
-     <div className="ax92-change-version"><strong>{r.version}</strong><small>{r.date}</small></div>
-     <div className="ax92-change-card"><div className="ax92-change-card-head"><span>{r.version==='V92'?'CURRENT RELEASE':'RELEASE MILESTONE'}</span><a href={`https://github.com/mhadiglobel-bot/audixo/commit/${r.commit}`} target="_blank" rel="noopener noreferrer" aria-label={`View ${r.version} source commit`}>Source ↗</a></div><h2>{r.title}</h2><p>{r.detail}</p><div className="ax92-change-tags">{r.tags.map(t=><span key={t}>{t}</span>)}</div></div>
-    </article>)}
-   </section>
-   <section className="ax92-changelog-next ax92-animated-rim"><div><span className="ax92-eyebrow">WHAT'S NEXT?</span><h2>The next useful update starts with real feedback.</h2><p>AUDIXO keeps improving the workflow rather than hiding essential features behind a paid tier.</p></div><Link className="ax92-secondary-link" to="/contact">Send feedback <Icon name="arrowUpRight" size={16}/></Link></section>
-  </main>
- </SiteShell>
+ return <SiteShell><Seo title="AUDIXO Changelog — From Early Builds to V92" description="Explore the AUDIXO timeline from the early V22 marker through documented Studio updates, audio reliability improvements and free browser tools." path="/changelog"/>
+ <main className="page-shell ax92-page ax94-page ax94-changelog">
+  <header className="ax94-changelog-hero"><span className="ax92-eyebrow">AUDIXO · THE BUILD JOURNEY</span><h1>From first ideas.<br/><span>To better sound.</span></h1><p>Follow the Studio's milestones along a connected, evolving timeline. Each stop highlights a meaningful stage—not a wall of release cards.</p><div className="ax94-inline-tags"><span>6 milestones</span><span>Historical starting point: V22</span><span>Latest recorded: V92</span></div></header>
+  <section className="ax94-release-path" ref={path} aria-label="AUDIXO release timeline from V22 to V92">
+   {milestones.map((milestone,index)=><article key={milestone.id} className={'ax94-release '+(index%2===0?'is-left':'is-right')+(index===milestones.length-1?' is-current':'')}>
+    <span className="ax94-release-dot" aria-hidden="true"><i/></span>
+    <div className="ax94-release-card"><div className="ax94-release-head"><strong>{milestone.id}</strong><small>{milestone.date}</small></div><h2>{milestone.title}</h2><p>{milestone.detail}</p><div className="ax94-release-bottom"><div className="ax94-release-tags">{milestone.tags.map(t=><span key={t}>{t}</span>)}</div>{milestone.commit&&<a href={'https://github.com/mhadiglobel-bot/audixo/commit/'+milestone.commit} target="_blank" rel="noopener noreferrer" aria-label={'View '+milestone.id+' commit'}>Commit ↗</a>}</div></div>
+   </article>)}
+  </section>
+  <section className="ax94-changelog-end"><div><span className="ax92-eyebrow">KEEP CREATING</span><h2>The best next change starts with the way you work.</h2></div><Link className="ax92-primary-link" to="/editor">Open Studio <Icon name="arrowUpRight" size={16}/></Link></section>
+ </main></SiteShell>
 }

@@ -2,49 +2,35 @@ import {Link} from 'react-router-dom'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import Icon from '../editor/Icons'
-import {NexivoMark} from '../components/BrandMarks'
+import NexivoOriginal from '../components/NexivoOriginal'
 
-const steps=[
- {number:'01',name:'Import',detail:'Bring in your own audio',icon:'upload',note:'Start with the original file intact.'},
- {number:'02',name:'Shape',detail:'Edit exactly what matters',icon:'waveform',note:'Trim, split, arrange and refine.'},
- {number:'03',name:'Listen',detail:'Preview before committing',icon:'play',note:'Hear each change as you work.'},
- {number:'04',name:'Finish',detail:'Export the sound you want',icon:'download',note:'Save MP3 or WAV locally.'}
-] as const
+const journey=[
+ {n:'01',title:'Import',copy:'Bring your audio in without losing the original source.'},
+ {n:'02',title:'Shape',copy:'Trim, layer and apply the changes you actually want.'},
+ {n:'03',title:'Listen',copy:'Hear the result before making the final decision.'},
+ {n:'04',title:'Export',copy:'Save your finished audio in a supported format.'}
+]
 const principles=[
- {n:'01',name:'Creator-first workflow',detail:'Reach the tools you need without hunting through dense menus. A clear starting point keeps your creative decisions moving.'},
- {n:'02',name:'Original-aware editing',detail:'Waveforms make the source and selected ranges visible together, so you understand what remains in the final export.'},
- {n:'03',name:'Controls with context',detail:'Change voice tone, bass, space or echo on the chosen material. Each applied edit stays understandable and removable.'},
- {n:'04',name:'Built for real browsers',detail:'Record, arrange, preview and export from a responsive workspace without installing a desktop audio application.'}
+ {n:'01',title:'A clearer workspace',copy:'Your source, timeline and control dock stay easy to find.'},
+ {n:'02',title:'Changes in context',copy:'Applied edits can be reviewed and removed individually.'},
+ {n:'03',title:'Real-time experimentation',copy:'Preview a change and decide what belongs in your sound.'},
+ {n:'04',title:'Built for the browser',copy:'Work without a desktop installation or paid account.'}
 ]
 export default function AboutV92(){
- return <SiteShell>
-  <Seo title="About AUDIXO — A Simpler, More Creative Audio Studio" description="Discover how free AUDIXO browser audio tools make recording, waveform editing, vocal separation, previewing and MP3/WAV export clearer for creators." path="/about"/>
-  <main className="page-shell ax92-page ax92-about">
-   <section className="ax92-about-hero ax92-animated-rim">
-    <div className="ax92-about-hero-copy">
-     <span className="ax92-eyebrow">ABOUT THE AUDIXO EXPERIENCE</span>
-     <h1>Audio tools that stay<br/><span>clear while you create.</span></h1>
-     <p>Not another wall of switches. AUDIXO keeps the source, your edits and the result in view—so you can record, shape and export at your own pace.</p>
-     <div className="ax92-actions"><Link className="ax92-primary-link" to="/editor">Open the Studio <Icon name="arrowUpRight" size={17}/></Link><Link className="ax92-secondary-link" to="/how-it-works">See how it works <Icon name="chevronRight" size={15}/></Link></div>
+ return <SiteShell><Seo title="About AUDIXO — A Simpler, More Creative Audio Studio" description="See why AUDIXO offers a focused, free browser audio workspace with trimming, live effects, previewing and MP3/WAV export." path="/about"/>
+  <main className="page-shell ax92-page ax94-page ax94-about">
+   <header className="ax94-about-hero">
+    <div className="ax94-about-copy"><span className="ax92-eyebrow">ABOUT AUDIXO STUDIO</span><h1>Shape your sound.<br/><span>Keep your flow.</span></h1><p>AUDIO editing should feel clear, not crowded. Keep the source in view, adjust what matters and hear every change before you finish.</p>
+      <div className="ax94-actions"><Link to="/editor" className="ax92-primary-link">Open Studio <Icon name="arrowUpRight" size={16}/></Link><Link to="/how-it-works" className="ax94-text-link">How it works <Icon name="arrowUpRight" size={15}/></Link></div>
+      <div className="ax94-inline-tags"><span>Free to use</span><span>No login needed</span><span>Original-aware editing</span></div>
     </div>
-    <div className="ax92-about-visual" aria-label="AUDIXO editing workflow illustration">
-     <div className="ax92-audio-orb"><img src="/audixo-official-symbol.png" alt="AUDIXO official symbol"/></div>
-     <div className="ax92-visual-wave" aria-hidden="true">{Array.from({length:31},(_,i)=><i key={i} style={{height:(16+Math.abs(Math.sin(i*1.39)*66))+'%'}}/>)}</div>
-     <span className="ax92-floating-chip is-first"><Icon name="waveform" size={14}/> Visual editing</span>
-     <span className="ax92-floating-chip is-second"><Icon name="magic" size={14}/> Live effects</span>
-     <span className="ax92-floating-chip is-third"><Icon name="download" size={14}/> MP3 · WAV</span>
-    </div>
-   </section>
-   <section className="ax92-story">
-    <div className="ax92-story-copy"><span className="ax92-eyebrow">WHY AUDIXO</span><h2>Less interface noise.<br/><span>More audible control.</span></h2><p>Traditional tools can show every setting at once. AUDIXO brings the right controls into focus, lets you preview changes and keeps the path to export clear.</p><span className="ax92-story-mark">A clear route from your first import to your final mix.</span></div>
-    <div className="ax92-process" aria-label="The four-stage AUDIXO creative workflow">
-     {steps.map((s,i)=><article key={s.number} className="ax92-process-card" style={{'--ax92-index':i} as React.CSSProperties}><span className="ax92-step-icon"><Icon name={s.icon} size={18}/></span><div className="ax92-step-text"><small>STEP {s.number}</small><h3>{s.name}</h3><strong>{s.detail}</strong><p>{s.note}</p></div></article>)}
-    </div>
-   </section>
-   <section className="ax92-about-highlight ax92-animated-rim"><div className="ax92-highlight-head"><span className="ax92-eyebrow">FOCUSED CREATIVE POWER</span><h2>Power where it matters.<br/><span>Clarity everywhere else.</span></h2><p>Work with the waveform, open a dedicated effect, hear the difference and decide what to keep. Nothing important should get lost beneath a busy interface.</p></div><div className="ax92-highlight-tags"><span>Original source stays visible</span><span>Reversible applied edits</span><span>Real-time audio preview</span><span>Local export and library</span></div></section>
-   <section className="ax92-principles"><header><span className="ax92-eyebrow">OUR DESIGN PRINCIPLES</span><h2>Built around your <span>creative flow.</span></h2><p>Four practical choices make the workspace feel lighter without taking away the tools you need.</p></header><div className="ax92-principle-grid">{principles.map(p=><article key={p.n} className="ax92-principle-card"><span>{p.n}</span><h3>{p.name}</h3><p>{p.detail}</p><i aria-hidden="true"/></article>)}</div></section>
-   <section className="ax92-parent-card ax92-animated-rim"><div className="ax92-parent-symbol"><NexivoMark size={87}/></div><div><span className="ax92-eyebrow">THE PARENT COMPANY</span><h2>Powered by <span>Nexivo.</span></h2><p>Nexivo brings product design, research and repeatable execution together. AUDIXO is one of the digital tools built within that broader creative ecosystem.</p></div><Link to="/nexivo" className="ax92-secondary-link">Meet Nexivo <Icon name="arrowUpRight" size={16}/></Link></section>
+    <div className="ax94-about-visual" aria-label="AUDIXO brand symbol with live audio waveform"><div className="ax94-wavefield" aria-hidden="true">{Array.from({length:38},(_,i)=><i key={i} style={{height:(15+Math.abs(Math.sin(i*1.49)*70))+'%','--ax94-i':i} as React.CSSProperties}/>)}</div><div className="ax94-visual-identity"><img src="/audixo-official-symbol.png" alt="AUDIXO official symbol" /></div><small>IMPORT <b>·</b> SHAPE <b>·</b> LISTEN <b>·</b> EXPORT</small></div>
+   </header>
+   <section className="ax94-about-statement"><div><span className="ax92-eyebrow">WHY AUDIXO EXISTS</span><h2>Less interface noise.<br/><span>More creative control.</span></h2></div><p>Audio tools become easier to use when the workflow is obvious. AUDIXO brings waveform editing, live sound controls and local export into a focused workspace, without adding unnecessary steps.</p></section>
+   <section className="ax94-journey-section"><div className="ax94-section-heading"><span className="ax92-eyebrow">THE CREATIVE FLOW</span><h2>Four steps. <span>One uninterrupted idea.</span></h2></div><ol className="ax94-journey">{journey.map((s,i)=><li key={s.n} style={{'--ax94-index':i} as React.CSSProperties}><span className="ax94-journey-number">{s.n}</span><h3>{s.title}</h3><p>{s.copy}</p></li>)}</ol></section>
+   <section className="ax94-about-clarity"><div><span className="ax92-eyebrow">FOCUSED POWER</span><h2>Everything necessary.<br/><span>Nothing in the way.</span></h2><p>See your original, apply the effect, preview the difference and export when you're ready.</p></div><div className="ax94-feature-tags"><span>Original waveform</span><span>Removable edits</span><span>Live audio preview</span><span>Local export</span></div></section>
+   <section className="ax94-principles"><div className="ax94-section-heading"><span className="ax92-eyebrow">DESIGN PRINCIPLES</span><h2>Built around <span>your workflow.</span></h2></div><div className="ax94-principle-list">{principles.map(p=><article key={p.n}><span>{p.n}</span><div><h3>{p.title}</h3><p>{p.copy}</p></div></article>)}</div></section>
+   <footer className="ax94-parent-signature"><Link to="/nexivo" aria-label="Explore Nexivo"><NexivoOriginal compact /></Link><div><span className="ax92-eyebrow">THE PARENT COMPANY</span><h2>Powered by Nexivo.</h2><p>AUDIXO is part of Nexivo's approach to practical digital products and creative research.</p></div><Link className="ax94-text-link" to="/nexivo">Meet Nexivo <Icon name="arrowUpRight" size={16}/></Link></footer>
   </main>
  </SiteShell>
 }
-

@@ -14,9 +14,10 @@ const Blog = lazy(() => import('./pages/Blog'))
 const BlogPost = lazy(() => import('./pages/BlogPost'))
 const FAQ = lazy(() => import('./pages/FAQ'))
 const Help = lazy(() => import('./pages/Help'))
-const Nexivo = lazy(()=>import('./pages/About').then(m=>({default:m.Nexivo})))
+const Nexivo = lazy(() => import('./pages/NexivoV92'))
+const Pricing = lazy(() => import('./pages/PricingV92'))
 const Recording = lazy(()=>import('./pages/Editor').then(m=>({default:m.Recording})))
-const About = lazy(() => import('./pages/About'))
+const About = lazy(() => import('./pages/AboutV92'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Privacy = lazy(() => import('./pages/Terms').then(m => ({default:m.Privacy})))
 const Terms = lazy(() => import('./pages/Terms'))
@@ -50,7 +51,7 @@ export default function App(){return <SoundExperienceProvider><Suspense fallback
   <Route path="/blog/:slug" element={<BlogPost/>}/>
   <Route path="/faq" element={<FAQ/>}/>
   <Route path="/help" element={<Help/>}/>
-  <Route path="/about" element={<About/>}/><Route path="/nexivo" element={<Nexivo/>}/><Route path="/tools/recorder" element={<Recording/>}/>
+  <Route path="/about" element={<About/>}/><Route path="/nexivo" element={<Nexivo/>}/><Route path="/pricing" element={<Pricing/>}/><Route path="/tools/recorder" element={<Recording/>}/>
   <Route path="/contact" element={<Contact/>}/>
   <Route path="/privacy" element={<Privacy/>}/>
   <Route path="/terms" element={<Terms/>}/>

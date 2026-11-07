@@ -129,6 +129,7 @@ if(process.argv.includes('--check')){
 
 const base=await readFile('dist/index.html','utf8'),escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 const pages={
+ '/pricing':['AUDIXO Pricing — Completely Free Audio Studio','AUDIXO is free to use without an account, purchase or audio-studio subscription. See the clear, no-paywall pricing comparison.'],
  '/nexivo':['Nexivo — Digital Products, Research & Growth Systems','Learn about Nexivo, the entrepreneurial company backing Audixo Studio and investing in useful digital tools, SEO and lead discovery.'],
  '/tools/recorder':['Audixo Audio Recorder — Record and Edit Audio Online','Record microphone audio in your browser, pause and resume, preview the recording and open it in Audixo Studio.'],
  '/':['AUDIXO — Free Online Audio Studio & Audio Editor','Free online audio editor for recording, trimming, vocal separation, effects and WAV/MP3 export. No subscription required. Download authorized videos in MP3 or MP4.'],

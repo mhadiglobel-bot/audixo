@@ -467,7 +467,7 @@ function MusicStrip(){
 }
 
 function LiveRange({name,value,min,max,step=1,unit='',onChange}:{name:string;value:number;min:number;max:number;step?:number;unit?:string;onChange:(v:number)=>void}){
- return <label className="ax49-range"><span><strong>{name}</strong><output>{step<1?value.toFixed(2):value}{unit}</output></span><input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/></label>
+ return <label className="ax49-range"><span><strong>{name}</strong><output>{step<1?value.toFixed(2):value}{unit}</output></span><input type="range" min={min} max={max} step={step} value={value} style={{'--ax92-fill':Math.max(0,Math.min(100,(value-min)/(max-min)*100))+'%' } as CSSProperties} onChange={e=>onChange(Number(e.target.value))}/></label>
 }
 function LivePanel(){
  const {activeTab,setActiveTab,params,change,compare,setCompare,presetId,applyPreset,trackIndex}=useSound()

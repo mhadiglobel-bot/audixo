@@ -1,0 +1,213 @@
+/* AUDIXO V92 — refined interactive controls and layout recovery */
+
+/* Navigation: full capsule rail and consistent interactive pills. */
+.ax25-header-wrap .ax25-header {
+  border-radius:999px!important;overflow:visible!important;
+  padding:10px 15px 10px 20px!important;
+  background:rgba(255,255,255,.94)!important;
+  border:1px solid #dfe9f7!important;
+  box-shadow:0 12px 38px rgba(45,59,115,.085)!important;
+}
+.ax25-header .ax25-nav{gap:3px!important;min-width:0!important}
+.ax25-header .ax25-nav>a,
+.ax25-header .ax25-nav .ax25-tools>summary {
+  border-radius:999px!important;padding:11px 12px!important;
+  min-height:38px!important;display:inline-flex!important;align-items:center!important;
+  font-size:12px!important;white-space:nowrap;
+  transition:color .25s ease,background .25s ease,transform .25s ease!important;
+}
+.ax25-header .ax25-nav a:hover,.ax25-header .ax25-tools summary:hover{background:#f4eeff!important;transform:translateY(-1px)}
+.ax25-header .ax25-nav a.active,.ax25-header .ax25-tools.active>summary{
+  color:#6b47d0!important;background:linear-gradient(110deg,#f4edff,#ebf7ff)!important;
+  box-shadow:inset 0 0 0 1px #dfd4ff!important;
+}
+.ax25-header .ax25-editor-cta {
+  min-height:45px!important;padding:6px 9px 6px 20px!important;gap:10px!important;
+  border-radius:999px!important;white-space:nowrap;
+  background:linear-gradient(105deg,#652fe6 0%,#b12de3 48%,#00bee8 100%)!important;
+  color:white!important;
+  border:1px solid rgba(107,72,201,.28)!important;
+  box-shadow:0 8px 23px rgba(110,72,218,.20)!important;
+  transition:transform .25s ease,box-shadow .25s ease!important;
+}
+.ax25-header .ax25-editor-cta:hover{transform:translateY(-2px)!important;box-shadow:0 12px 26px rgba(110,72,218,.28)!important}
+.ax25-header .ax25-editor-cta b{
+  border-radius:50%!important;display:grid!important;place-items:center!important;
+  width:33px!important;height:33px!important;background:rgba(255,255,255,.2)!important;
+}
+.ax25-header .ax25-tools {border-radius:999px!important}
+.ax25-header-wrap .ax25-menu-button {border-radius:50%!important}
+.ax25-mobile-menu,.ax25-mobile-menu .ax25-editor-cta{border-radius:22px!important}
+@media(max-width:1400px) and (min-width:1061px) {
+  .ax25-header .ax25-nav>a,.ax25-header .ax25-nav .ax25-tools>summary{padding-inline:9px!important;font-size:11px!important}
+  .ax25-header .ax25-editor-cta {padding-left:14px!important}
+}
+@media(max-width:1160px) and (min-width:930px){
+  .ax25-header .ax25-nav>a[href="/contact"],
+  .ax25-header .ax25-nav>a[href="/library"]{display:none!important}
+}
+
+/* Studio: allow the right dock to reach the entire left stack including Applied Edits. */
+.ax-studio-body.with-controls{align-items:stretch!important}
+.ax-studio-body.with-controls>.ax25-inspector{
+  align-self:stretch!important;height:100%!important;min-height:0!important;
+  display:flex!important;flex-direction:column!important;
+}
+.ax-studio-body.with-controls>.ax25-inspector .ax25-inspector-empty{flex:1!important;min-height:380px!important}
+.ax-studio-body .ax85-timeline-stack {align-self:stretch!important;min-width:0!important}
+.ax25-timeline.ax72-timeline-surface .ax25-timeline-scroll{overflow-x:auto!important;scrollbar-width:thin}
+.ax25-timeline.ax72-timeline-surface .ax-ruler{min-width:100%!important}
+.ax25-timeline.ax72-timeline-surface .ax-ruler>div{min-width:calc(100% - 190px)!important}
+.ax25-timeline.ax72-timeline-surface .ax-ruler i{font-variant-numeric:tabular-nums}
+.ax25-timeline.ax72-timeline-surface .ax25-timeline-empty{min-width:100%!important}
+
+/* Applied effects: wrap to successive visible rows, no hidden horizontal scrollbar. */
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied{
+  height:auto!important;max-height:none!important;overflow:visible!important;
+  padding:16px!important;min-width:0!important;
+  border:1px solid #e3e9fb!important;border-radius:24px!important;
+}
+.ax-studio-body .ax25-applied.ax82-applied .ax25-edit-list {
+  display:flex!important;flex-flow:row wrap!important;
+  align-content:flex-start!important;align-items:stretch!important;
+  overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important;
+  max-height:none!important;height:auto!important;gap:10px!important;padding:0!important;
+  scrollbar-width:none!important;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list>article{
+  flex:0 1 178px!important;min-width:150px!important;max-width:230px!important;
+  min-height:48px!important;align-items:center!important;
+  border:1px solid #dde6f7!important;border-radius:999px!important;
+  padding:7px 12px!important;box-shadow:0 5px 14px rgba(46,74,124,.035)!important;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease!important;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list>article:hover{transform:translateY(-2px)!important;border-color:#b7acff!important;box-shadow:0 8px 17px rgba(97,81,180,.10)!important}
+.ax-studio-body .ax25-applied .ax25-edit-list article strong{max-width:120px!important}
+.ax-studio-body .ax25-applied .ax25-edit-list article output{color:#7651ce;font-size:11px!important}
+
+/* Sound lab: consistent seven soft-pill tabs and tiny, smooth slider knobs. */
+.ax49-tabs{
+  grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  gap:7px!important;border:0!important;border-radius:20px!important;
+  background:#f2f4fd!important;padding:6px!important;
+}
+.ax49-tabs>button{
+  min-height:55px!important;border-radius:16px!important;
+  background:transparent!important;color:#61708c!important;
+  font-size:11px!important;transition:background .25s ease,transform .22s ease,color .22s ease,box-shadow .22s ease!important;
+}
+.ax49-tabs>button span{font-size:17px!important;color:#8764e3}
+.ax49-tabs>button:hover{transform:translateY(-2px)!important;background:rgba(255,255,255,.75)!important}
+.ax49-tabs>button.active{
+  color:#fff!important;
+  background:linear-gradient(125deg,#7950e5,#a04fe3)!important;
+  box-shadow:0 5px 14px rgba(108,73,204,.2)!important;
+}
+.ax49-tabs>button.active span{color:white!important}
+.ax49-range>span{margin-bottom:4px!important}
+.ax49-range>span strong {font-size:12px!important;color:#334968!important}
+.ax49-range output {color:#795ad7!important;font-size:12px!important;font-weight:800!important}
+.ax49-range input[type=range]{
+  appearance:none!important;-webkit-appearance:none!important;height:5px!important;
+  border-radius:999px!important;margin:9px 0!important;
+  background:linear-gradient(to right,#7f5be0 0 var(--ax92-fill,50%),#e6e9f2 var(--ax92-fill,50%) 100%)!important;
+  cursor:pointer!important;outline:0!important;transition:filter .2s ease!important;
+}
+.ax49-range input[type=range]::-webkit-slider-thumb{
+  appearance:none!important;-webkit-appearance:none!important;
+  height:15px!important;width:15px!important;border:3px solid #fff!important;
+  border-radius:50%!important;background:#845de5!important;
+  box-shadow:0 2px 8px rgba(83,55,170,.22)!important;
+  transition:transform .18s ease,box-shadow .18s ease!important;
+}
+.ax49-range input[type=range]::-moz-range-thumb{
+  height:11px!important;width:11px!important;border:3px solid #fff!important;
+  border-radius:50%!important;background:#845de5!important;
+  box-shadow:0 2px 8px rgba(83,55,170,.22)!important;
+}
+.ax49-range input[type=range]:hover::-webkit-slider-thumb{
+  transform:scale(1.24)!important;box-shadow:0 0 0 5px rgba(129,91,224,.13)!important
+}
+.ax49-toggle-row button[role=switch]{
+  width:48px!important;height:27px!important;border-radius:999px!important;
+  background:#e4e9f4!important;border:1px solid #d8def0!important;
+  padding:3px!important;transition:background .25s ease,box-shadow .25s ease!important
+}
+.ax49-toggle-row button[role=switch] i{width:19px!important;height:19px!important;border-radius:50%!important;background:#fff!important;box-shadow:0 2px 5px rgba(35,57,103,.14)!important;transition:transform .26s cubic-bezier(.19,.84,.24,1)!important}
+.ax49-toggle-row button[role=switch].on{background:linear-gradient(100deg,#8d68ed,#26cfde)!important}
+.ax49-toggle-row button[role=switch].on i{transform:translateX(20px)!important}
+.ax49-record .ax91-record-cover{will-change:transform}
+.ax49-record.playing .ax91-record-cover{animation:ax92-turntable 7.5s linear infinite!important}
+.ax49-record:not(.playing) .ax91-record-cover{animation:none!important}
+@keyframes ax92-turntable{to{transform:rotate(360deg)}}
+
+/* Full redesign of the final mix modal, not a small button-only patch. */
+.ax91-export-modal {
+  padding:32px 34px 27px!important;border-radius:34px!important;
+  border:1.5px solid transparent!important;
+  background:linear-gradient(#fff,#fbfcff) padding-box,
+    linear-gradient(135deg,#23dec3,#26bff1,#9269ff,#f64cce) border-box!important;
+  box-shadow:0 28px 90px rgba(48,54,116,.17)!important;
+}
+.ax91-export-modal .modal-icon{
+  height:54px!important;width:54px!important;border-radius:18px!important;
+  background:linear-gradient(135deg,#e7fff5,#eaf7ff,#fae8ff)!important;
+  color:#7251d9!important;border:1px solid #dcf1ff!important;
+}
+.ax91-export-modal .modal-kicker{color:#7d5adf!important;letter-spacing:.16em;font-weight:900!important}
+.ax91-export-modal h2{font-size:clamp(30px,3vw,39px)!important;letter-spacing:-.055em!important;line-height:1.1!important}
+.ax91-export-modal>p{color:#71809a!important;font-size:14px!important;margin-bottom:20px!important}
+.ax91-export-modal .format-switch{
+  background:transparent!important;border:0!important;
+  padding:0!important;gap:12px!important;
+}
+.ax91-export-modal .format-switch button{
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+  min-height:78px!important;padding:15px 17px!important;
+  border:1px solid #dde5f6!important;border-radius:20px!important;
+  background:#fff!important;
+}
+.ax91-export-modal .format-switch button strong{font-size:15px!important;font-weight:900!important;color:#233451!important}
+.ax91-export-modal .format-switch button small{font-size:11px!important;line-height:1.4}
+.ax91-export-modal .format-switch button.active{
+  background:linear-gradient(115deg,#e4fff6,#e7f4ff,#f5eaff)!important;
+  border-color:#a58bff!important;
+  box-shadow:0 8px 19px rgba(107,87,186,.1),inset 0 0 0 1px #a88cf5!important;
+}
+.ax91-export-modal .export-row{border-top:1px solid #e6ebf7!important;margin-top:9px!important}
+.ax91-export-modal .export-row>span strong{font-size:13px!important;color:#233753!important}
+.ax91-export-modal .export-row>span small{line-height:1.5!important;color:#8490a5!important}
+.ax91-export-modal .export-name-input{border-radius:17px!important;border:1px solid #dce3f3!important}
+.ax91-export-modal .export-summary{
+  border-top:1px solid #e6ebf7!important;
+  padding-top:15px!important;display:flex!important;gap:8px!important;flex-wrap:wrap!important;
+}
+.ax91-export-modal .export-summary span{
+  border-radius:999px!important;padding:6px 10px!important;
+  border:1px solid #e0e5f6!important;background:#f7f9ff!important;
+  font-size:10px!important;color:#526681!important;
+}
+.ax91-export-modal .modal-actions{margin-top:23px!important;gap:12px!important}
+.ax91-export-modal .modal-actions button{
+  border-radius:999px!important;padding:12px 23px!important;min-height:51px!important;
+}
+.ax91-export-modal .modal-actions .button-glass{
+  background:#fff!important;color:#354968!important;
+  border:1px solid #d6dff0!important;box-shadow:none!important;
+}
+.ax91-export-modal .modal-actions .button-primary{
+  color:#fff!important;border:0!important;
+  background:linear-gradient(105deg,#7d40e5 0%,#bb37e9 55%,#0bc4e8 100%)!important;
+  box-shadow:0 9px 23px rgba(107,64,205,.22)!important;
+}
+.ax91-export-modal .modal-actions .button-primary:hover:not(:disabled){box-shadow:0 12px 30px rgba(107,64,205,.29)!important}
+.ax91-export-modal .modal-close{border-radius:50%!important;background:white!important}
+@media(max-width:780px){
+ .ax49-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ .ax-studio-body.with-controls>.ax25-inspector{min-height:440px!important}
+ .ax91-export-modal{padding:24px 20px!important;border-radius:26px!important}
+ .ax91-export-modal .format-switch{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(prefers-reduced-motion:reduce){.ax49-record.playing .ax91-record-cover{animation:none!important}}
+
+

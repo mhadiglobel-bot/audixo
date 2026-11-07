@@ -1,0 +1,30 @@
+import {Link} from 'react-router-dom'
+import Seo from '../components/Seo'
+import SiteShell from '../components/SiteShell'
+import Icon from '../editor/Icons'
+
+const fields=[
+ {n:'01',name:'Digital products',tag:'PRODUCT DESIGN',copy:'Turn a specific user problem into a focused web product—using prototypes, clear journeys and repeatable workflows before adding complexity.'},
+ {n:'02',name:'SEO & discovery',tag:'SEARCH RESEARCH',copy:'Study how audiences search, compare and understand products. Organize topics, page structure and helpful answers around real search intent.'},
+ {n:'03',name:'Trading research',tag:'RESEARCH SYSTEMS',copy:'Explore structured market information, research workflows and decision-support tools. Research is not investment advice or a guarantee of returns.'},
+ {n:'04',name:'Growth systems',tag:'BETTER EXECUTION',copy:'Connect content, user feedback and practical automation into measurable, responsible growth workflows that teams can maintain.'},
+ {n:'05',name:'Product experiments',tag:'BUILD · TEST · LEARN',copy:'Test promising ideas with small functional prototypes, validate usability and refine only the parts that show real usefulness.'},
+ {n:'06',name:'Operations',tag:'REPEATABLE WORK',copy:'Document important processes, reduce handoff friction and build simple systems that help digital projects operate consistently.'}
+]
+export default function NexivoV92(){
+ return <SiteShell><Seo title="Nexivo — Digital Products, Research and Creative Systems" description="Meet Nexivo, the parent company behind AUDIXO, exploring digital product creation, SEO research, responsible growth systems, trading research and software experimentation." path="/nexivo"/>
+  <main className="page-shell ax92-page ax92-nexivo">
+   <header className="ax92-nexivo-header"><span className="ax92-eyebrow">THE PEOPLE AND IDEAS BEHIND AUDIXO</span><h1>Meet <span>Nexivo.</span></h1><p>Independent digital products. Practical research. Better ways to build.</p></header>
+   <section className="ax92-nexivo-brandchain ax92-animated-rim" aria-label="Nexivo parent company connects to AUDIXO audio studio">
+    <div className="ax92-brand-node ax92-nexivo-node"><span className="ax92-node-orbit"><img src="/nexivo-official-mark.jpg" alt="Nexivo original logo"/></span><h2>NEXIVO</h2><small>PARENT COMPANY</small><p>Build · Research · Grow</p></div>
+    <div className="ax92-chain-bridge" aria-hidden="true"><span className="ax92-chain-beam"/><span className="ax92-chain-glyph"><svg viewBox="0 0 48 48" fill="none"><path d="M18 16 14 20a8 8 0 0 0 11 12l6-6M30 32l4-4a8 8 0 0 0-11-12l-6 6M19 29l10-10" stroke="currentColor" strokeWidth="4.2" strokeLinecap="round"/></svg></span></div>
+    <div className="ax92-brand-node ax92-audixo-node"><span className="ax92-node-orbit"><img src="/audixo-official-symbol.png" alt="AUDIXO original brand symbol"/></span><h2>AUDIXO</h2><small>A NEXIVO PRODUCT</small><p>Make sound your own</p></div>
+   </section>
+   <section className="ax92-nexivo-intro"><div><span className="ax92-eyebrow">ONE TEAM · MULTIPLE DISCIPLINES</span><h2>Build useful systems.<br/><span>Research what moves next.</span></h2></div><p>Nexivo works across software products, search discovery, operational workflows and research-led experiments. Each project starts with a clear problem, a focused first version and ongoing refinement.</p></section>
+   <section className="ax92-nexivo-purpose"><article className="ax92-purpose-card"><span className="ax92-purpose-icon"><Icon name="magic" size={20}/></span><small>OUR MISSION</small><h3>Turn useful ideas into systems people can actually use.</h3><p>Bring product thinking, research, and disciplined execution together so ideas become clear experiences instead of unused prototypes.</p><div className="ax92-purpose-footer">BUILD WITH PURPOSE <i/></div></article><article className="ax92-purpose-card"><span className="ax92-purpose-icon"><Icon name="waveform" size={20}/></span><small>OUR VISION</small><h3>Create a portfolio of focused, helpful digital ventures.</h3><p>Keep each product independent enough to serve its own audience, but connected by a consistent standard for clarity, learning and usability.</p><div className="ax92-purpose-footer">THINK LONG-TERM <i/></div></article></section>
+   <section className="ax92-nexivo-fields"><header><span className="ax92-eyebrow">FIELDS WE EXPLORE</span><h2>Six areas. <span>One practical mindset.</span></h2><p>Useful products grow from research, thoughtful interfaces and repeatable execution.</p></header><div className="ax92-field-grid">{fields.map(f=><article key={f.n} className="ax92-field-card"><div className="ax92-field-meta"><span>{f.n}</span><small>{f.tag}</small></div><h3>{f.name}</h3><p>{f.copy}</p><span className="ax92-field-line"/></article>)}</div></section>
+   <section className="ax92-nexivo-ventures"><header><span className="ax92-eyebrow">THE NEXIVO PORTFOLIO</span><h2>Different problems.<br/><span>One build mindset.</span></h2><p>Products and experiments do not have to look alike to follow the same principles.</p></header><div className="ax92-venture-grid"><article className="ax92-venture-card primary"><img src="/audixo-official-symbol.png" alt="AUDIXO symbol"/><span>AUDIO EDITING PRODUCT</span><h3>AUDIXO</h3><p>A free browser audio workspace for recording, trimming, sound effects, stem extraction and export.</p><Link to="/" aria-label="Explore AUDIXO">Explore AUDIXO <Icon name="arrowUpRight" size={15}/></Link></article><article className="ax92-venture-card"><span className="ax92-venture-symbol">◎</span><span>RESEARCH WORKFLOWS</span><h3>Discovery systems</h3><p>Methods and experiments for organizing search intent, content research and better product discovery.</p><span className="ax92-venture-foot">RESEARCH & ITERATION</span></article><article className="ax92-venture-card"><span className="ax92-venture-symbol">✧</span><span>WHAT COMES NEXT</span><h3>Future builds</h3><p>Small, practical software ideas investigated and tested before they become standalone products.</p><span className="ax92-venture-foot">PROTOTYPE & VALIDATE</span></article></div></section>
+  </main>
+ </SiteShell>
+}
+

@@ -1,0 +1,141 @@
+/* Pricing: an illustrative card stack that flips during scroll, then reveals $0. */
+.ax92-pricing-head{text-align:center;padding:42px 16px 62px}
+.ax92-pricing-head h1{font-size:clamp(54px,6.1vw,87px);margin:16px 0 12px}
+.ax92-pricing-head p{max-width:60ch;margin:0 auto;font-size:15px}
+.ax92-pricing-scroll-hint{display:inline-flex;align-items:center;gap:9px;margin-top:23px;border:1px solid #e1dcf8;border-radius:999px;background:#faf8ff;padding:10px 18px;color:#775bd1;font-size:10px;font-weight:900;letter-spacing:.13em}
+.ax92-pricing-scroll-hint span{font-size:18px;animation:ax92-bounce 1.5s ease-in-out infinite}
+@keyframes ax92-bounce{50%{transform:translateY(4px)}}
+.ax92-pricing-stage{height:930px;position:relative;margin:0 0 20px}
+.ax92-pricing-note{text-align:center;font-size:10px;font-weight:800;letter-spacing:.09em;color:#7b8ca2;padding:13px 10px;max-width:940px;margin:0 auto 15px;border:1px solid #e5eaf4;border-radius:999px;background:#fff}
+.ax92-price-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;
+ position:sticky;top:110px;perspective:1400px;padding:14px 1px 18px;align-items:stretch;
+}
+.ax92-price-item{height:390px;perspective:1400px}
+.ax92-price-flipper{height:100%;width:100%;position:relative;transform-style:preserve-3d;will-change:transform}
+.ax92-price-face{
+ position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+ background:linear-gradient(140deg,#fff,#f8faff);border:1px solid #e0e8f6;
+ border-radius:32px;padding:27px 26px;box-shadow:0 16px 36px rgba(48,64,116,.08);
+ display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;
+}
+.ax92-price-front:before{content:"";position:absolute;left:26px;right:26px;top:0;height:3px;background:linear-gradient(90deg,#18d7b4,#22c9ed,#9b61e6,#ef55ce);border-radius:999px}
+.ax92-price-overline{color:#8f6cca;font-size:10px;letter-spacing:.1em;font-weight:900}
+.ax92-price-face h2{font-size:27px;margin:21px 0 12px}
+.ax92-price-face>strong{font-size:53px;line-height:1;font-weight:1000;letter-spacing:-.07em;color:#283b59}
+.ax92-price-face>strong small{font-size:13px;color:#8790a7;letter-spacing:0;font-weight:800;margin-left:4px}
+.ax92-price-face p{font-size:12px;margin:12px 0 18px;line-height:1.55}
+.ax92-price-rule{height:1px;width:100%;background:#e6eaf5;margin-bottom:9px}
+.ax92-price-benefit{display:flex;align-items:center;gap:8px;color:#556581;font-size:12px;margin-top:8px}
+.ax92-price-benefit svg{color:#8d62df}
+.ax92-not-real{font-size:10px;color:#8f9cb0;margin-top:auto;padding-top:14px}
+.ax92-price-back{transform:rotateY(180deg);align-items:center;text-align:center;justify-content:center;background:linear-gradient(145deg,#faf7ff,#edfdff,#f5fff9);border:1px solid #bdc8f1}
+.ax92-price-back>span{font-size:10px;font-weight:900;color:#845bd1;letter-spacing:.1em}
+.ax92-price-back h2{margin:19px 0 8px}
+.ax92-price-back strong{font-size:83px;color:#6849d7;background:linear-gradient(95deg,#d336c6,#8a5fe9,#0fbfdc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.ax92-price-back p{max-width:27ch;font-size:13px}
+.ax92-free-check{border:1px solid #cfdaf4;border-radius:999px;padding:10px 14px;display:flex;align-items:center;gap:8px;color:#7454cc;background:#fff;font-size:10px;font-weight:900}
+.ax92-free-reveal{
+ min-height:460px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+ border-radius:40px;padding:46px 30px;margin-top:0;isolation:isolate;overflow:hidden;
+}
+.ax92-free-reveal h2{font-size:clamp(44px,6vw,82px);line-height:1.04;margin:20px 0 8px;max-width:980px}
+.ax92-free-reveal>p{max-width:62ch;font-size:15px}
+.ax92-free-badge{margin:20px 0 26px;width:115px;height:115px;border-radius:50%;background:linear-gradient(130deg,#df41d2,#9365fb,#16d1e5);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;box-shadow:0 12px 28px rgba(113,68,197,.23);transform:rotate(-8deg);animation:ax92-badge-pulse 5s ease-in-out infinite}
+.ax92-free-badge>span{font-size:28px;line-height:1;font-weight:1000}.ax92-free-badge>strong{font-size:16px;line-height:1.2;letter-spacing:.12em}
+@keyframes ax92-badge-pulse{50%{transform:rotate(8deg) scale(1.05)}}
+.ax92-pricing-features{margin-top:56px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.ax92-pricing-features>article{border-radius:26px;padding:28px 21px;background:#fff;border:1px solid #e1e6f3;min-height:205px;box-shadow:0 8px 21px rgba(51,70,114,.05)}
+.ax92-pricing-feature-symbol{font-size:27px;color:#8c60e7;display:grid;place-items:center;background:#f2eeff;width:51px;height:51px;border-radius:17px}
+.ax92-pricing-features h3{font-size:16px;margin:22px 0 6px}
+.ax92-pricing-features p{font-size:12px;line-height:1.6}
+.ax92-pricing-footnote{font-size:11px!important;max-width:85ch;text-align:center;margin:28px auto 0!important}
+
+@media(max-width:1080px){
+ .ax92-about-hero{padding:32px;grid-template-columns:1fr .85fr}
+ .ax92-principle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ax92-nexivo-ventures{grid-template-columns:1fr}
+ .ax92-nexivo-ventures>header{max-width:600px}
+ .ax92-venture-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .ax92-brand-node .ax92-node-orbit{width:152px;height:152px}
+ .ax92-nexivo-brandchain{grid-template-columns:1fr 100px 1fr}
+}
+@media(max-width:760px){
+ .ax92-page{padding-top:22px;padding-bottom:65px}
+ .ax92-about-hero{grid-template-columns:1fr;padding:30px 23px;border-radius:28px}
+ .ax92-about-visual{min-height:260px}
+ .ax92-story{grid-template-columns:1fr;gap:16px}
+ .ax92-story-copy{padding:27px 24px;min-height:unset}
+ .ax92-process{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .ax92-process-card{padding:16px 13px;flex-direction:column;min-height:160px}
+ .ax92-step-text{text-align:right;align-self:stretch}
+ .ax92-step-text h3{font-size:19px}
+ .ax92-step-text p{font-size:10px}
+ .ax92-about-highlight{display:block;padding:27px 23px;border-radius:27px}
+ .ax92-highlight-tags{width:100%;margin-top:22px;gap:9px}
+ .ax92-principles{margin:43px 0}
+ .ax92-principle-grid{gap:12px}
+ .ax92-principle-card{padding:22px 18px}
+ .ax92-parent-card{flex-wrap:wrap;padding:23px;gap:14px}
+ .ax92-parent-card .ax92-parent-symbol{width:75px;height:75px;flex-basis:75px}
+ .ax92-parent-symbol img{width:62px;height:62px}
+ .ax92-parent-card .ax92-secondary-link{width:100%}
+ .ax92-nexivo-brandchain{grid-template-columns:1fr 42px 1fr;gap:3px;padding:26px 10px;min-height:275px;border-radius:27px}
+ .ax92-node-orbit,.ax92-brand-node .ax92-node-orbit{width:115px;height:115px}
+ .ax92-node-orbit img{width:83px;height:83px}
+ .ax92-chain-glyph{width:47px;height:47px}
+ .ax92-chain-glyph svg{width:28px;height:28px}
+ .ax92-brand-node h2{font-size:20px}
+ .ax92-brand-node p{font-size:10px}
+ .ax92-nexivo-intro{grid-template-columns:1fr;gap:6px;margin:28px 0 22px}
+ .ax92-nexivo-purpose{grid-template-columns:1fr}
+ .ax92-purpose-card{padding:25px}
+ .ax92-field-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+ .ax92-field-card{padding:20px 16px;min-height:245px}
+ .ax92-field-card h3{font-size:19px}
+ .ax92-field-card p{font-size:11px}
+ .ax92-venture-grid{grid-template-columns:1fr}
+ .ax92-venture-card{min-height:240px}
+ .ax92-pricing-head{padding:20px 8px 48px}
+ .ax92-pricing-head h1{font-size:clamp(44px,9vw,68px)}
+ .ax92-pricing-stage{height:850px}
+ .ax92-price-grid{grid-template-columns:1fr;gap:12px;position:sticky;top:70px;padding:0}
+ .ax92-price-item{height:190px}
+ .ax92-price-face{padding:17px 19px;border-radius:23px}
+ .ax92-price-face h2{font-size:19px;margin:5px 0}
+ .ax92-price-face strong{font-size:31px}
+ .ax92-price-face p{margin:4px 0;font-size:11px}
+ .ax92-price-rule,.ax92-price-benefit,.ax92-not-real{display:none}
+ .ax92-price-back strong{font-size:46px}
+ .ax92-free-reveal{min-height:375px;padding:36px 22px}
+ .ax92-free-reveal h2{font-size:clamp(38px,8vw,59px)}
+ .ax92-pricing-features{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .ax92-pricing-features>article{padding:22px 16px;min-height:186px}
+ .ax92-pricing-features h3{font-size:14px}
+}
+@media(max-width:440px){
+ .ax92-page h1{font-size:clamp(36px,11vw,51px)}
+ .ax92-principle-grid,.ax92-field-grid{grid-template-columns:1fr}
+ .ax92-field-card{min-height:210px}
+ .ax92-about-hero{padding:27px 19px}
+ .ax92-visual-wave{gap:2px}
+ .ax92-floating-chip{font-size:10px}
+ .ax92-nexivo-brandchain{grid-template-columns:1fr 25px 1fr}
+ .ax92-node-orbit,.ax92-brand-node .ax92-node-orbit{width:98px;height:98px}
+ .ax92-node-orbit img{width:72px;height:72px}
+ .ax92-brand-node h2{font-size:16px}
+ .ax92-brand-node p{font-size:9px}
+ .ax92-chain-glyph{width:35px;height:35px}
+ .ax92-chain-glyph svg{width:20px;height:20px}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax92-animated-rim,.ax92-node-orbit,.ax92-audio-orb,.ax92-visual-wave>i,.ax92-price-face,.ax92-free-badge,.ax92-chain-glyph svg,
+ .ax92-pricing-scroll-hint span,.ax92-process-card{animation:none!important;transition:none!important}
+}
+
+
+/* Keep applied-edit cards fully visible in wrapped rows, never scroll horizontally. */
+.ax-studio-body .ax25-applied.ax82-applied .ax25-edit-list{overflow-x:clip!important;overflow-y:visible!important;max-height:none!important}
+.ax-studio-body .ax25-applied.ax82-applied .ax25-edit-list::-webkit-scrollbar{display:none!important}
+/* Match the legacy five-class selector so its old horizontal-scroll rule cannot win. */
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied .ax25-edit-list{display:flex!important;flex-flow:row wrap!important;overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important;height:auto!important;max-height:none!important;scrollbar-width:none!important}

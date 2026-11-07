@@ -6,7 +6,7 @@ import ToolGlyph from './ToolGlyph'
 import Icon from '../editor/Icons'
 
 const mainNav=[
- ['Home','/'],['Features','/features'],['How It Works','/how-it-works'],['Blog','/blog'],['About','/about'],['Contact','/contact'],['Library','/library']
+ ['Home','/'],['Features','/features'],['How It Works','/how-it-works'],['Blog','/blog'],['About','/about'],['Nexivo','/nexivo'],['Pricing','/pricing'],['Contact','/contact'],['Library','/library']
 ]
 
 function Caret(){return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10l4-3.75" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}

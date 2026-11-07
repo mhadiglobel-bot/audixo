@@ -17,6 +17,7 @@ import './styles/v82-production-refinements.css'
 import './styles/v83-ui-recovery.css'
 import './styles/v84-neon-rails-seo.css'
 import './styles/v85-studio-vocals.css'
+import './styles/v91-precision-polish.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

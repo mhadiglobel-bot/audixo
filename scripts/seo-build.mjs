@@ -83,10 +83,10 @@ function runUiRegression(){
  assert(audioEngine.includes('original.gain.value=1-fxBlend'))
  assert(modal.includes('downloadName')&&modal.includes('Download filename'))
  assert(studio.includes('safeExportBase(s.downloadName'))
- assert(metric.includes('delay:1250'))
+ assert(metric.includes('delay:3000')&&metric.includes('offset:380')&&metric.includes('offset:760')&&metric.includes('offset:1140')&&metric.includes('metric.delay + metric.offset'))
  assert(converter.includes('Mp3QualityRail')&&converter.includes('VideoQualityRail')&&converter.includes('encodeMp3Local'))
  for(const hue of ['#fc4ac5','#9254ff','#24def2','#40e39e'])assert(css.includes(hue),`Missing brand hue ${hue}`)
- console.log('AUDIXO V67 source contracts passed: 19-track slider, drag/wheel, correct artwork, 36 presets, rename-export, 1.25s metrics, browser converter preserved')
+ console.log('AUDIXO V67 source contracts passed: 19-track slider, drag/wheel, correct artwork, 36 presets, rename-export, staggered metrics, browser converter preserved')
 }
 if(process.argv.includes('--self-test')){runTrackRegression();runUiRegression();process.exit(0)}
 

@@ -1,0 +1,248 @@
+/* AUDIXO V91 — surgical UI refinement. Keep audio engine untouched. */
+
+/* Export: tactile format pills, real rounded action buttons, clearer hierarchy. */
+.ax91-export-modal {
+  border-radius:32px!important;
+  border:1px solid #dce9f8!important;
+  box-shadow:0 28px 88px rgba(42,49,112,.20)!important;
+}
+.ax91-export-modal .format-switch {
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  border-radius:24px!important;gap:10px!important;padding:7px!important;
+}
+.ax91-export-modal .format-switch button {
+  width:100%!important;min-width:0!important;
+  border-radius:19px!important;min-height:72px!important;
+  transition:background .28s ease,box-shadow .28s ease,transform .28s ease!important;
+}
+.ax91-export-modal .format-switch button:hover {transform:translateY(-2px)}
+.ax91-export-modal .format-switch button.active {
+  background:linear-gradient(135deg,#e8fffa 4%,#ebf6ff 49%,#f8edff 100%)!important;
+  box-shadow:inset 0 0 0 1px #73c8eb,0 6px 18px rgba(82,101,189,.13)!important;
+}
+.ax91-export-modal .modal-close {
+  border-radius:50%!important;width:40px!important;height:40px!important;
+  display:grid!important;place-items:center;transition:transform .2s ease,background .2s ease!important;
+}
+.ax91-export-modal .modal-close:hover {transform:rotate(90deg);background:#eef6ff!important}
+.ax91-export-modal .export-name-input {
+  border-radius:17px!important;min-width:0!important;transition:box-shadow .24s ease,border-color .24s ease!important;
+}
+.ax91-export-modal .export-name-input:focus {
+  outline:0!important;border-color:#8a7bee!important;
+  box-shadow:0 0 0 3px rgba(130,113,243,.12)!important;
+}
+.ax91-export-modal .modal-actions {display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:12px!important;flex-wrap:wrap!important}
+.ax91-export-modal .modal-actions button {
+  min-height:49px!important;padding:10px 26px!important;border-radius:999px!important;
+  font-weight:800!important;letter-spacing:.01em;transition:transform .23s ease,box-shadow .23s ease,background .23s ease!important;
+}
+.ax91-export-modal .modal-actions button:hover:not(:disabled){transform:translateY(-2px)}
+.ax91-export-modal .modal-actions .button-primary {
+  background:linear-gradient(105deg,#dffcf7,#eff8ff,#f6eaff)!important;
+  border:1px solid #a0e5d2!important;color:#1e4657!important;
+  box-shadow:0 7px 22px rgba(20,177,146,.12)!important;
+}
+.ax91-export-modal .modal-actions .button-glass {
+  background:#fff!important;border:1px solid #d6e5e9!important;color:#38506a!important;
+}
+
+/* Metric values change in a readable cascade; each card has a separate timer. */
+.ax46-metric-card .ax46-metric-value>span {
+  display:inline-block;animation:ax91-number-rise .72s cubic-bezier(.2,.82,.2,1) both;
+}
+.ax46-metric-card .ax46-metric-subtitle{transition:color .2s ease}
+@keyframes ax91-number-rise {
+  from {opacity:.15;transform:translateY(13px) scale(.94);filter:blur(4px)}
+  60% {opacity:1;filter:blur(0)}
+  to {opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Sound playground: cover reflects the selected song; tabs become pill segments. */
+.ax49-record .ax91-record-cover {
+  position:relative;display:block;width:100%;height:100%;border-radius:50%;
+  overflow:hidden;isolation:isolate;box-shadow:inset 0 0 0 2px rgba(255,255,255,.75);
+}
+.ax49-record .ax91-record-cover>.ax49-track-art {
+  display:block!important;width:100%!important;height:100%!important;min-width:100%!important;
+  border-radius:50%!important;background-size:500% 300%!important;box-shadow:none!important;
+}
+.ax49-record .ax91-record-cover>.ax49-track-art>img {display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ax49-tabs {
+  display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  gap:4px!important;padding:5px!important;border-radius:999px!important;
+  background:#f4f5fd!important;border:1px solid #e5e8f7!important;
+}
+.ax49-tabs>button {
+  min-width:0!important;border-radius:999px!important;
+  padding:8px 3px!important;transition:color .22s ease,background .24s ease,box-shadow .24s ease,transform .24s ease!important;
+}
+.ax49-tabs>button:hover {transform:translateY(-1px);color:#6046c9!important}
+.ax49-tabs>button.active {background:#fff!important;box-shadow:0 3px 13px rgba(69,77,152,.12)!important}
+.ax49-range input[type="range"],.ax49-progress input[type="range"],.ax49-compare input[type="range"] {
+  accent-color:#8764df;cursor:pointer;transition:filter .2s ease;
+}
+.ax49-range input[type="range"]:hover,.ax49-progress input[type="range"]:hover {filter:drop-shadow(0 1px 5px rgba(138,87,230,.28))}
+.ax49-range input[type="range"]::-webkit-slider-runnable-track {height:4px!important;border-radius:999px}
+.ax49-range input[type="range"]::-webkit-slider-thumb {transition:transform .2s ease,box-shadow .2s ease}
+.ax49-range input[type="range"]:hover::-webkit-slider-thumb{transform:scale(1.2)}
+
+/* Studio inspector: keep natural section groupings but remove a box around each range. */
+.ax25-fx-control.ax82-fx-control {
+  display:block!important;background:transparent!important;border:0!important;
+  border-bottom:1px solid #e7ebf7!important;border-radius:0!important;
+  padding:11px 3px 14px!important;margin:0!important;box-shadow:none!important;
+}
+.ax25-fx-control.ax82-fx-control>div:first-child {
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:10px!important;font-weight:700!important;color:#435276!important;
+}
+.ax25-fx-control.ax82-fx-control .ax82-control-row {margin-top:7px!important;gap:10px!important}
+.ax25-fx-control.ax82-fx-control input[type="range"] {
+  height:4px!important;appearance:none!important;-webkit-appearance:none!important;
+  background:linear-gradient(90deg,#8362e6 0 var(--range),#e7eaf4 var(--range) 100%)!important;
+  border-radius:999px!important;outline:0!important;cursor:pointer;
+}
+.ax25-fx-control.ax82-fx-control input[type="range"]::-webkit-slider-thumb {
+  appearance:none!important;-webkit-appearance:none!important;
+  background:#8564e6!important;border:2px solid #fff!important;border-radius:50%!important;
+  width:14px!important;height:14px!important;
+  box-shadow:0 2px 5px rgba(91,72,169,.24)!important;
+  transition:transform .18s ease,box-shadow .18s ease!important;
+}
+.ax25-fx-control.ax82-fx-control input[type="range"]:hover::-webkit-slider-thumb,
+.ax25-fx-control.ax82-fx-control input[type="range"]:focus-visible::-webkit-slider-thumb {
+  transform:scale(1.3)!important;box-shadow:0 0 0 5px rgba(132,103,228,.12)!important;
+}
+.ax25-fx-control.ax82-fx-control input[type="range"]::-moz-range-track {
+  height:4px;border-radius:999px;background:#e7eaf4
+}
+.ax25-fx-control.ax82-fx-control input[type="range"]::-moz-range-progress {height:4px;border-radius:999px;background:#8362e6}
+.ax25-fx-control.ax82-fx-control input[type="range"]::-moz-range-thumb {
+  width:12px;height:12px;border-radius:50%;background:#8564e6;border:2px solid #fff;
+}
+.ax25-fx-control.ax82-fx-control .ax82-nudge {
+  flex:0 0 30px!important;width:30px!important;height:30px!important;border-radius:50%!important;
+  display:grid!important;place-items:center!important;transition:background .18s ease,transform .18s ease!important;
+}
+.ax25-fx-control.ax82-fx-control .ax82-nudge:hover:not(:disabled) {transform:scale(1.12)!important;background:#eee9ff!important}
+.ax25-inspector .ax25-inspector-tabs button,
+.ax25-inspector .ax40-inspector-tabs button {border-radius:999px!important}
+
+/* Applied edits: one continuous horizontal rail, with genuine edit values. */
+.ax-studio-body .ax85-timeline-stack>.ax25-applied.ax82-applied {
+  padding:14px 16px!important;min-width:0!important;
+  border-radius:22px!important;max-height:none!important;overflow:visible!important;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list {
+  display:flex!important;flex-flow:row nowrap!important;
+  max-height:72px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  scroll-snap-type:x proximity;scrollbar-width:thin;gap:9px!important;
+  padding-bottom:6px!important;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list>article {
+  flex:0 0 auto!important;min-width:145px!important;max-width:245px!important;
+  scroll-snap-align:start;border-radius:999px!important;
+  display:flex!important;align-items:center!important;gap:8px!important;
+  padding:8px 11px!important;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list article strong {
+  display:block;min-width:0;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px!important;
+}
+.ax-studio-body .ax25-applied .ax91-edit-value {
+  display:block;white-space:nowrap;font-weight:800;font-size:10px;
+  font-variant-numeric:tabular-nums;color:#7450c8;
+}
+.ax-studio-body .ax25-applied .ax25-edit-list>article button {
+  flex-shrink:0;width:23px;height:23px;border-radius:50%;
+}
+
+/* Saved-mix library: icon-first actions that expand on hover / keyboard focus. */
+.ax25-saved-card .ax91-library-actions.ax83-reveal-actions {
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:7px!important;
+  max-height:76px!important;overflow:visible!important;opacity:1!important;
+  transform:none!important;pointer-events:auto!important;margin-top:12px!important;
+}
+.ax25-saved-card .ax91-library-actions .ax91-action {
+  display:inline-flex!important;flex:0 0 auto;align-items:center!important;
+  justify-content:flex-start!important;gap:8px!important;white-space:nowrap!important;
+  width:38px!important;height:37px!important;padding:0 10px!important;
+  border-radius:999px!important;overflow:hidden!important;
+  transition:width .3s cubic-bezier(.18,.8,.2,1),background .22s ease,box-shadow .22s ease!important;
+}
+.ax25-saved-card .ax91-library-actions .ax91-action svg {flex:0 0 16px}
+.ax25-saved-card .ax91-library-actions .ax91-action span {
+  display:block;opacity:0;transform:translateX(-5px);transition:opacity .24s ease,transform .24s ease!important;
+  font-size:11px!important;font-weight:800!important;
+}
+.ax25-saved-card .ax91-library-actions .ax91-action:hover,
+.ax25-saved-card .ax91-library-actions .ax91-action:focus-visible {
+  width:130px!important;background:linear-gradient(120deg,#ecfbff,#f1edff)!important;
+  box-shadow:0 6px 16px rgba(54,95,175,.12)!important;
+}
+.ax25-saved-card .ax91-library-actions .ax91-action:hover span,
+.ax25-saved-card .ax91-library-actions .ax91-action:focus-visible span {
+  opacity:1;transform:translateX(0)
+}
+.ax83-saved-identity {min-width:0!important;flex:1!important}
+.ax83-saved-identity h3 {max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+@media (hover:none) {
+  .ax25-saved-card .ax91-library-actions {flex-wrap:wrap!important}
+  .ax25-saved-card .ax91-library-actions .ax91-action {width:auto!important;min-width:40px!important}
+  .ax25-saved-card .ax91-library-actions .ax91-action span {opacity:1;transform:none}
+}
+
+/* About and Nexivo: active but restrained neon-glass components. */
+.ax91-about-story>article,.ax91-about-flow>span,.ax91-about-principles>article,
+.ax91-nexivo-teaser,.ax91-nexivo-mission>article,.ax91-value-grid>article {
+  border:1.5px solid transparent!important;
+  background:linear-gradient(130deg,#fff,#fafaff) padding-box,
+    linear-gradient(125deg,#14dfb9,#29c9f3,#a479ff,#ee69cf) border-box!important;
+  border-radius:29px!important;
+  box-shadow:0 10px 28px rgba(55,74,119,.085)!important;
+  transition:transform .36s cubic-bezier(.2,.8,.2,1),box-shadow .36s ease!important;
+}
+.ax91-about-flow>span:hover,.ax91-about-principles>article:hover,
+.ax91-nexivo-mission>article:hover,.ax91-value-grid>article:hover {
+  transform:translateY(-5px)!important;
+  box-shadow:0 18px 38px rgba(79,79,158,.14)!important;
+}
+.ax91-about-story>article h2 em {color:#9366d9!important}
+.ax91-about-flow>span {
+  display:flex!important;flex-direction:column!important;justify-content:center!important;
+  font-size:clamp(24px,3vw,34px)!important;font-weight:850!important;
+  color:#8365cf!important;gap:6px!important;
+}
+.ax91-about-flow>span b {font-size:16px!important;color:#1c2b48!important}
+.ax91-about-flow>span em {font-size:12px!important;color:#7a8ba5!important}
+.ax91-nexivo-teaser {
+  background:linear-gradient(#fff,#fff) padding-box,
+   linear-gradient(110deg,#0fe0b1,#25cbef,#9a64fb,#ed63d2,#0fe0b1) border-box!important;
+  background-size:100% 100%,350% 350%!important;
+  animation:ax91-border-pan 9s linear infinite!important;
+}
+.ax91-nexivo-orbit>div{
+  border-radius:50%!important;
+  background:linear-gradient(#f9faff,#f9faff) padding-box,linear-gradient(130deg,#17e1b8,#1ed6ed,#8f7bff,#e660d2) border-box!important;
+  background-size:100% 100%,300% 300%!important;
+  border:3px solid transparent!important;animation:ax91-border-pan 7s linear infinite!important;
+  box-shadow:0 10px 35px rgba(120,94,214,.14)!important;
+}
+@keyframes ax91-border-pan {to{background-position:0 0,300% 0}}
+@media (max-width:760px){
+  .ax49-tabs {border-radius:25px!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .ax49-tabs>button {min-height:45px!important}
+  .ax91-export-modal .modal-actions button {flex:1 1 130px;min-width:0}
+  .ax25-saved-card .ax91-library-actions {flex-wrap:wrap!important}
+}
+@media (prefers-reduced-motion:reduce){
+ .ax46-metric-card .ax46-metric-value>span,.ax91-nexivo-teaser,.ax91-nexivo-orbit>div{animation:none!important}
+ .ax25-saved-card .ax91-library-actions .ax91-action,
+ .ax25-fx-control.ax82-fx-control input[type="range"]::-webkit-slider-thumb{transition:none!important}
+}
+
+/* Contrast audit: inherited white-on-dark headings cannot sit on glass-white cards. */
+.ax91-about-story>article h2 {color:#20314b!important;text-shadow:none!important}
+.ax91-about-story>article h2 em {color:#9366d9!important;-webkit-text-fill-color:#9366d9!important}
+.ax91-about-story>article small {color:#8a5acb!important}
+.ax91-about-story>article p {color:#63778d!important}

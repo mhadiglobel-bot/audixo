@@ -2,6 +2,7 @@ import {Link} from 'react-router-dom'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
 import Icon from '../editor/Icons'
+import {NexivoMark} from '../components/BrandMarks'
 
 const steps=[
  {number:'01',name:'Import',detail:'Bring in your own audio',icon:'upload',note:'Start with the original file intact.'},
@@ -42,7 +43,7 @@ export default function AboutV92(){
    </section>
    <section className="ax92-about-highlight ax92-animated-rim"><div className="ax92-highlight-head"><span className="ax92-eyebrow">FOCUSED CREATIVE POWER</span><h2>Power where it matters.<br/><span>Clarity everywhere else.</span></h2><p>Work with the waveform, open a dedicated effect, hear the difference and decide what to keep. Nothing important should get lost beneath a busy interface.</p></div><div className="ax92-highlight-tags"><span>Original source stays visible</span><span>Reversible applied edits</span><span>Real-time audio preview</span><span>Local export and library</span></div></section>
    <section className="ax92-principles"><header><span className="ax92-eyebrow">OUR DESIGN PRINCIPLES</span><h2>Built around your <span>creative flow.</span></h2><p>Four practical choices make the workspace feel lighter without taking away the tools you need.</p></header><div className="ax92-principle-grid">{principles.map(p=><article key={p.n} className="ax92-principle-card"><span>{p.n}</span><h3>{p.name}</h3><p>{p.detail}</p><i aria-hidden="true"/></article>)}</div></section>
-   <section className="ax92-parent-card ax92-animated-rim"><div className="ax92-parent-symbol"><img src="/nexivo-official-mark.jpg" alt="Nexivo official brand mark"/></div><div><span className="ax92-eyebrow">THE PARENT COMPANY</span><h2>Powered by <span>Nexivo.</span></h2><p>Nexivo brings product design, research and repeatable execution together. AUDIXO is one of the digital tools built within that broader creative ecosystem.</p></div><Link to="/nexivo" className="ax92-secondary-link">Meet Nexivo <Icon name="arrowUpRight" size={16}/></Link></section>
+   <section className="ax92-parent-card ax92-animated-rim"><div className="ax92-parent-symbol"><NexivoMark size={87}/></div><div><span className="ax92-eyebrow">THE PARENT COMPANY</span><h2>Powered by <span>Nexivo.</span></h2><p>Nexivo brings product design, research and repeatable execution together. AUDIXO is one of the digital tools built within that broader creative ecosystem.</p></div><Link to="/nexivo" className="ax92-secondary-link">Meet Nexivo <Icon name="arrowUpRight" size={16}/></Link></section>
   </main>
  </SiteShell>
 }

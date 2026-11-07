@@ -39,7 +39,7 @@ export default function Timeline(p:Props){
  const effectiveView=trackView==='auto'?(p.project.tracks.length>=3?'focus':'all'):trackView
  const visibleTracks=effectiveView==='focus'&&activeTrack?[activeTrack]:p.project.tracks
  const editedDuration=p.project.tracks.some(t=>t.clips.length)?projectDuration(p.project):0
- let visualDuration=Math.max(p.project.tracks.length ? 30 : 120,editedDuration)
+ let visualDuration=Math.max(30,editedDuration)
  p.project.tracks.forEach(track=>track.clips.forEach(c=>{const b=p.buffers.get(c.bufferId);if(isCopy(c))visualDuration=Math.max(visualDuration,c.start+clipTimelineDuration(c));else visualDuration=Math.max(visualDuration,b?.duration||c.offset+c.duration)}))
  const width=Math.max(420,(visualDuration+Math.min(8,visualDuration*.015))*p.pxPerSec),raw=100/p.pxPerSec,steps=[.1,.5,1,2,5,10,30,60,120,300,600,1800,3600,7200],step=steps.find(s=>s>=raw)||Math.ceil(raw/3600)*3600,ticks=Array.from({length:Math.min(320,Math.ceil(visualDuration/step)+1)},(_,i)=>i*step)
  return <section className="ax25-timeline ax72-timeline-surface"><header className="ax25-timeline-head"><div><small>ORIGINAL-AWARE TIMELINE</small><strong>{p.project.tracks.length} {p.project.tracks.length===1?'track':'tracks'} · export length {formatTime(editedDuration,true)}</strong><span>Faded waveform = full source · bright waveform = what will export</span></div><button onClick={p.onImport}>+ Add audio</button></header>

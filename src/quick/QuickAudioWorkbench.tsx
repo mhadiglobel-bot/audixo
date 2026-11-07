@@ -19,16 +19,24 @@ type QuickPreset={name:string;note:string;apply:()=>void}
 const defaults={gainDb:0,speed:1,fadeIn:0,fadeOut:0,delayMs:240,delayWet:.18,feedback:.24,reverb:.28,pitch:0,motionMode:'8d' as '8d'|'16d',motionDepth:.78,motionHz:.18}
 
 const modeGuide:Record<QuickMode,{plain:string;result:string;tip:string}>={
-  trim:{plain:'Keep exactly the section you want with two large handles, exact time fields and visible fade zones.',result:'A clean trimmed file with optional fades.',tip:'Drag the two edge handles first. Use START / END only when you need exact millisecond timing.'},
-  echo:{plain:'Add controlled repeats without opening a full mixing desk.',result:'Adjustable delay, wet mix and repeat tail.',tip:'Start with Vocal Echo, preview, then reduce Feedback if repeats feel too long.'},
-  slowed:{plain:'Slow the song, optionally lock vocal pitch, then add reverb or a controlled echo tail.',result:'Slower song edits with either pitch-lock or tape-style depth.',tip:'Start with Pitch-lock dream for a slower feel without intentionally dropping the voice pitch.'},
-  pitch:{plain:'Move the audio lower or higher in semitone steps.',result:'Deeper or brighter tape-style pitch.',tip:'Negative values sound deeper. Positive values sound brighter.'},
-  spatial:{plain:'Move sound left and right automatically for headphones.',result:'Stylized 8D or wider 16D stereo movement.',tip:'Use headphones. Lower orbit speed feels smoother and less distracting.'},
+  trim:{plain:'Keep the section you love, fade the edges and save the result.',result:'A clean trimmed file with optional fades.',tip:'Drag the two edge handles first. Use START / END only when you need exact millisecond timing.'},
+  echo:{plain:'Make the sound repeat, from subtle space to dramatic echo.',result:'Adjustable delay, wet mix and repeat tail.',tip:'Start with Vocal Echo, preview, then reduce Feedback if repeats feel too long.'},
+  slowed:{plain:'Slow the pace, soften the edges and open up the space.',result:'Slower song edits with either pitch-lock or tape-style depth.',tip:'Start with Pitch-lock dream for a slower feel without intentionally dropping the voice pitch.'},
+  pitch:{plain:'Turn your track deeper or brighter with easy pitch controls.',result:'Deeper or brighter tape-style pitch.',tip:'Negative values sound deeper. Positive values sound brighter.'},
+  spatial:{plain:'Add moving stereo motion made for headphones.',result:'Stylized 8D or wider 16D stereo movement.',tip:'Use headphones. Lower orbit speed feels smoother and less distracting.'},
 }
 
 function Slider({label,value,min,max,step,onChange,display,help,active=false}:{label:string;value:number;min:number;max:number;step:number;onChange:(v:number)=>void;display?:string;help?:string;active?:boolean}){
-  const percent=((value-min)/(max-min))*100
-  return <label className={`v13-slider ${active?'is-active':''}`}><div><span><b>{label}</b>{help&&<small>{help}</small>}</span><strong>{display ?? value}</strong></div><input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} style={{'--quick-range':`${Math.max(0,Math.min(100,percent))}%`} as CSSProperties}/></label>
+ const down=()=>onChange(Math.max(min,Math.round((value-step)*1000)/1000))
+ const up=()=>onChange(Math.min(max,Math.round((value+step)*1000)/1000))
+ return <div className={'v13-slider ax96-slider'+(active?' is-active':'')}>
+  <div className="ax96-slider-description"><strong>{label}</strong>{help&&<small>{help}</small>}</div>
+  <div className="ax96-slider-input"><button type="button" aria-label={'Decrease '+label} disabled={value<=min} onClick={down}>−</button>
+   <input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>
+   <button type="button" aria-label={'Increase '+label} disabled={value>=max} onClick={up}>+</button>
+   <output>{display ?? value}</output>
+  </div>
+ </div>
 }
 
 function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer,trimStart=0,trimEnd=buffer.duration,fadeIn=0,fadeOut=0){
@@ -46,14 +54,14 @@ function drawWave(canvas:HTMLCanvasElement,buffer:AudioBuffer,trimStart=0,trimEn
   bars.push({x:x/Math.max(1,cols-1)*rect.width,min,max,time:x/Math.max(1,cols-1)*buffer.duration})
  }
  // Keep original source visible faintly, then draw the active region at full contrast.
- ctx.lineWidth=1.1;ctx.strokeStyle='#9db5cc';ctx.globalAlpha=.34;ctx.beginPath()
+ ctx.lineWidth=1.1;ctx.strokeStyle='#9db5cc';ctx.globalAlpha=.12;ctx.beginPath()
  for(const bar of bars){ctx.moveTo(bar.x,center+bar.min*amp);ctx.lineTo(bar.x,center+bar.max*amp)}
  ctx.stroke()
  ctx.strokeStyle=gradient;ctx.lineWidth=1.55;ctx.globalAlpha=.98;ctx.beginPath()
  for(const bar of bars){
   if(bar.time<trimStart||bar.time>trimEnd)continue
-  const inward=fadeIn>.01?Math.min(1,Math.max(.015,(bar.time-trimStart)/fadeIn)):1
-  const outward=fadeOut>.01?Math.min(1,Math.max(.015,(trimEnd-bar.time)/fadeOut)):1
+  const inward=fadeIn>.01?Math.min(1,Math.max(0,(bar.time-trimStart)/fadeIn)):1
+  const outward=fadeOut>.01?Math.min(1,Math.max(0,(trimEnd-bar.time)/fadeOut)):1
   const taper=Math.pow(Math.min(inward,outward),1.7)
   ctx.moveTo(bar.x,center+bar.min*amp*taper);ctx.lineTo(bar.x,center+bar.max*amp*taper)
  }
@@ -99,7 +107,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
   const [delayMs,setDelayMs]=useState(mode==='slowed'?140:defaults.delayMs);const [delayWet,setDelayWet]=useState(mode==='slowed'?.04:defaults.delayWet);const [feedback,setFeedback]=useState(mode==='slowed'?.12:defaults.feedback);const [reverb,setReverb]=useState(defaults.reverb);const [pitch,setPitch]=useState(defaults.pitch);const [preservePitch,setPreservePitch]=useState(mode==='slowed')
   const [echoEnabled,setEchoEnabled]=useState(true);const [pitchEnabled,setPitchEnabled]=useState(true);const [motionMode,setMotionMode]=useState<'8d'|'16d'>(defaults.motionMode);const [motionDepth,setMotionDepth]=useState(defaults.motionDepth);const [motionHz,setMotionHz]=useState(defaults.motionHz)
   const [format,setFormat]=useState<'mp3'|'wav'>('mp3');const [kbps,setKbps]=useState(320);const [saveLibrary,setSaveLibrary]=useState(true);const [busy,setBusy]=useState('');const [message,setMessage]=useState('')
-  const [previewUrl,setPreviewUrl]=useState('');const [sourceUrl,setSourceUrl]=useState('');const [previewDirty,setPreviewDirty]=useState(false);const [controlsCollapsed,setControlsCollapsed]=useState(false);const [isFullscreen,setIsFullscreen]=useState(false);const [isPseudoFullscreen,setIsPseudoFullscreen]=useState(false)
+  const autoRequestRef=useRef(''),latestRenderKeyRef=useRef('');const [previewUrl,setPreviewUrl]=useState('');const [sourceUrl,setSourceUrl]=useState('');const [previewDirty,setPreviewDirty]=useState(false);const [controlsCollapsed,setControlsCollapsed]=useState(false);const [isFullscreen,setIsFullscreen]=useState(false);const [isPseudoFullscreen,setIsPseudoFullscreen]=useState(false)
   const [longFile,setLongFile]=useState<File|null>(null);const [longDuration,setLongDuration]=useState(0)
   const guide=modeGuide[mode]
 
@@ -118,7 +126,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
   const resetFx=()=>{setEchoEnabled(true);setPitchEnabled(true);setGainDb(0);setSpeed(1);setFadeIn(0);setFadeOut(0);setDelayMs(mode==='slowed'?140:defaults.delayMs);setDelayWet(mode==='slowed'?.04:defaults.delayWet);setFeedback(mode==='slowed'?.12:defaults.feedback);setReverb(defaults.reverb);setPitch(0);setPreservePitch(mode==='slowed');setMotionMode('8d');setMotionDepth(defaults.motionDepth);setMotionHz(defaults.motionHz);setMessage('Settings reset to a clean edit.')}
   const toggleFullscreen=async()=>{if(isPseudoFullscreen){setIsPseudoFullscreen(false);return}try{if(document.fullscreenElement){await document.exitFullscreen();return}const el=workbenchRef.current;if(el?.requestFullscreen){try{await el.requestFullscreen();return}catch(error){console.warn('Native fullscreen unavailable, using in-page maximize.',error)}}setIsPseudoFullscreen(true)}catch{setIsPseudoFullscreen(true)}}
 
-  const loadFile=async(file?:File)=>{if(!file)return;setBusy('Reading audio…');setMessage('');try{const seconds=await localMetadata(file).catch(()=>0);if(seconds>600||file.size>70*1024*1024){if(!seconds)throw new Error('Your browser could not read the full duration. Try an MP3 or WAV source.');if(mode==='trim'){setLongFile(file);setLongDuration(seconds);return}throw new Error('Use a recording under 10 minutes for browser effects, or trim it in the Full Editor first.')}const buffer=await decodeAudio(await file.arrayBuffer());bufferRef.current=buffer;setFileName(file.name);setDuration(buffer.duration);setTrimStart(0);setTrimEnd(buffer.duration);resetFx();setSourceUrl(URL.createObjectURL(file));setPreviewUrl('');setPreviewDirty(false);setMessage('Audio ready. Start with the green and cyan trim handles, then preview before downloading.')}catch(error){console.error(error);setMessage(error instanceof Error?error.message:'This file could not be decoded in the current browser.')}finally{setBusy('')}}
+  const loadFile=async(file?:File)=>{if(!file)return;setBusy('Reading audio…');setMessage('');try{const seconds=await localMetadata(file).catch(()=>0);if(seconds>600||file.size>70*1024*1024){if(!seconds)throw new Error('Your browser could not read the full duration. Try an MP3 or WAV source.');if(mode==='trim'){setLongFile(file);setLongDuration(seconds);return}throw new Error('Use a recording under 10 minutes for browser effects, or trim it in the Full Editor first.')}const buffer=await decodeAudio(await file.arrayBuffer());bufferRef.current=buffer;setFileName(file.name);setDuration(buffer.duration);setTrimStart(0);setTrimEnd(buffer.duration);resetFx();setSourceUrl(URL.createObjectURL(file));setPreviewUrl('');setPreviewDirty(true);setMessage('Audio loaded. Your processed preview prepares automatically.')}catch(error){console.error(error);setMessage(error instanceof Error?error.message:'This file could not be decoded in the current browser.')}finally{setBusy('')}}
 
   const setHandleFromX=(kind:'start'|'end',clientX:number)=>{const host=waveRef.current;if(!host||!duration)return;const r=host.getBoundingClientRect();const t=Math.max(0,Math.min(duration,((clientX-r.left)/r.width)*duration));if(kind==='start')setTrimStart(Math.min(t,trimEnd-.02));else setTrimEnd(Math.max(t,trimStart+.02))}
   const startHandle=(kind:'start'|'end',e:ReactPointerEvent)=>{e.preventDefault();e.stopPropagation();const move=(ev:PointerEvent)=>setHandleFromX(kind,ev.clientX);const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up)};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true})}
@@ -132,7 +140,16 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
     clip.fx=fx;track.clips.push(clip);project.tracks.push(track);return{project,buffers:new Map([['quick-buffer',raw]])}}
 
   const render=async()=>{const {project,buffers}=makeProject();return renderProject(project,buffers,{normalize:true,stereoRepair:true,sampleRate:44100})}
-  const preview=async()=>{if(!bufferRef.current)return;setBusy('Building preview…');try{const {buffer}=await render();const blob=encodeWav(buffer);setPreviewUrl(URL.createObjectURL(blob));setPreviewDirty(false);setMessage('Preview ready. Listen once, then download if it sounds right.')}catch(error){console.error(error);setMessage('Preview failed in this browser.')}finally{setBusy('')}}
+  const previewKey=[sourceUrl,trimStart,trimEnd,gainDb,speed,fadeIn,fadeOut,delayMs,delayWet,feedback,reverb,pitch,preservePitch,motionMode,motionDepth,motionHz,echoEnabled,pitchEnabled].join('|')
+  latestRenderKeyRef.current=previewKey
+
+  const preview=async()=>{if(!bufferRef.current)return;const expected=previewKey;setBusy('Preparing processed audio…');try{const {buffer}=await render();const url=URL.createObjectURL(encodeWav(buffer));if(latestRenderKeyRef.current===expected){setPreviewUrl(url);setPreviewDirty(false);setMessage('Your processed audio is ready. Play either version to compare.')}else URL.revokeObjectURL(url)}catch(error){console.error(error);setMessage('Automatic preview unavailable. Choose Try preview to retry.')}finally{setBusy('')}}
+  useEffect(()=>{
+   if(!sourceUrl||!previewDirty||!!busy||!bufferRef.current||autoRequestRef.current===previewKey)return
+   const timer=window.setTimeout(()=>{autoRequestRef.current=previewKey;void preview()},950)
+   return()=>window.clearTimeout(timer)
+  },[sourceUrl,previewDirty,busy,previewKey])
+
   const exportAudio=async()=>{if(!bufferRef.current)return;setBusy('Preparing download…');try{const {buffer}=await render();const blob=format==='mp3'?await encodeMp3(buffer,kbps):encodeWav(buffer);const base=safeFileName(fileName.replace(/\.[^/.]+$/,'')||'audiox-audio');downloadBlob(blob,`${base}-${mode}.${format}`);if(saveLibrary)await saveMixToLibrary({name:`${base} · ${title}`,blob,format,kbps,duration:buffer.duration});emitAudixoSuccess();setMessage(`${format.toUpperCase()} downloaded${saveLibrary?' and saved to your local Library':''}.`)}catch(error){console.error(error);setMessage('Export failed in this browser. Try MP3/WAV source audio or another current browser.')}finally{setBusy('')}}
 
   const presets:QuickPreset[]=mode==='trim'?
@@ -214,30 +231,30 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             <div className="v13-wave ax27-wave" ref={waveRef} onPointerDown={e=>{if((e.target as HTMLElement).closest('button'))return;const r=e.currentTarget.getBoundingClientRect();const t=Math.max(0,Math.min(duration,((e.clientX-r.left)/r.width)*duration));const d1=Math.abs(t-trimStart),d2=Math.abs(t-trimEnd);if(d1<d2)setTrimStart(Math.min(t,trimEnd-.02));else setTrimEnd(Math.max(t,trimStart+.02))}}>
               <canvas ref={canvasRef}/><div className="ax27-wave-grid"/>
               <div className="v13-wave-dim left" style={{width:`${duration?trimStart/duration*100:0}%`}}/><div className="v13-wave-dim right" style={{width:`${duration?(duration-trimEnd)/duration*100:0}%`}}/>
-              <div className="v13-wave-selection" style={selectionStyle}><button className="start" aria-label="Trim start" onPointerDown={e=>startHandle('start',e)}/><button className="end" aria-label="Trim end" onPointerDown={e=>startHandle('end',e)}/>{fadeIn>.01&&<div className="v13-fade-zone fade-in" style={{width:`${fadeInPct}%`}}><span>FADE IN</span></div>}{fadeOut>.01&&<div className="v13-fade-zone fade-out" style={{width:`${fadeOutPct}%`}}><span>FADE OUT</span></div>}<span className="v13-duration-chip">{formatTime(selectedDuration,true)}</span></div>
+              <div className="v13-wave-selection" style={selectionStyle}><button className="start" aria-label="Trim start" onPointerDown={e=>startHandle('start',e)}/><button className="end" aria-label="Trim end" onPointerDown={e=>startHandle('end',e)}/>{fadeIn>.01&&<div className="v13-fade-zone fade-in" style={{width:`${fadeInPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C35 50 60 4 100 2 M0 50 C35 50 60 96 100 98"/></svg><span>FADE IN</span></div>}{fadeOut>.01&&<div className="v13-fade-zone fade-out" style={{width:`${fadeOutPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 2 C40 4 65 50 100 50 M0 98 C40 96 65 50 100 50"/></svg><span>FADE OUT</span></div>}<span className="v13-duration-chip">{formatTime(selectedDuration,true)}</span></div>
             </div>
             <div className="v13-time-fields ax27-time-fields"><label><span>START</span><input type="number" min="0" max={trimEnd-.02} step=".001" value={trimStart.toFixed(3)} onChange={e=>setTrimStart(Math.max(0,Math.min(Number(e.target.value)||0,trimEnd-.02)))}/></label><label><span>END</span><input type="number" min={trimStart+.02} max={duration} step=".001" value={trimEnd.toFixed(3)} onChange={e=>setTrimEnd(Math.min(duration,Math.max(Number(e.target.value)||duration,trimStart+.02)))}/></label><div><span>SELECTED</span><strong>{formatTime(selectedDuration,true)}</strong></div><button onClick={()=>{setTrimStart(0);setTrimEnd(duration)}}>Use full audio</button></div>
             {<div className="v13-fade-status ax27-fade-status"><button type="button" role="switch" aria-checked={fadeIn>.01} className={`ax71-switch-choice ${fadeIn>.01?'active':''}`} onClick={()=>setFadeIn(fadeIn>.01?0:Math.min(.8,selectedDuration/4))}><i className="ax71-switch-track"/> <span><strong>Fade in {fadeIn>.01?'ON':'OFF'}</strong><small>{fadeIn>.01?`${fadeIn.toFixed(2)} sec applied`:'Add a smooth entrance'}</small></span></button><button type="button" role="switch" aria-checked={fadeOut>.01} className={`ax71-switch-choice ${fadeOut>.01?'active red':''}`} onClick={()=>setFadeOut(fadeOut>.01?0:Math.min(.8,selectedDuration/4))}><i className="ax71-switch-track"/> <span><strong>Fade out {fadeOut>.01?'ON':'OFF'}</strong><small>{fadeOut>.01?`${fadeOut.toFixed(2)} sec applied`:'Add a smooth ending'}</small></span></button></div>}
-            <div className="ax68-timeline-footnote">The original waveform stays visible while you adjust the selected range.</div>
+            <div className="ax68-timeline-footnote">A clear original waveform with visibly tapered fades.</div>
         <section className={`ax68-compare-stage ax95-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">
           <header className="ax68-compare-heading"><div><small>LISTEN & COMPARE</small><strong>Hear the difference.</strong></div><span>{previewUrl&&!previewDirty?'Edited preview ready':'Original audio available'}</span></header>
           <div className="ax68-compare-grid">
             <article className="ax68-compare-audio ax68-compare-original"><div className="ax68-player-title"><span className="ax68-player-icon">♫</span><div><small>01 / SOURCE</small><strong>Original audio</strong></div><b>UNCHANGED</b></div>
               <AudioCompareTransport audioRef={originalPlayerRef} src={sourceUrl} kind="original" sourceDuration={duration} onStart={()=>editedPlayerRef.current?.pause()}/>
-              <p>Your uploaded sound, before any edits.</p>
+              <p>The untouched original track.</p>
             </article>
             <div className="ax68-versus" aria-hidden="true"><span>VS</span></div>
             <article className="ax68-compare-audio ax68-compare-edited"><div className="ax68-player-title"><span className="ax68-player-icon">✦</span><div><small>02 / PROCESSED</small><strong>Edited preview</strong></div><b>{previewUrl&&!previewDirty?'READY':previewUrl&&previewDirty?'CHANGED':'PENDING'}</b></div>
               {previewUrl&&!previewDirty?<AudioCompareTransport audioRef={editedPlayerRef} src={previewUrl} kind="edited" onStart={()=>originalPlayerRef.current?.pause()}/>:
-                <button type="button" className="ax68-build-preview" disabled={Boolean(busy)} onClick={preview}>{previewDirty?'Refresh edited preview':'Build your edited preview'} <span aria-hidden="true">↗</span></button>}
-              <p>{previewUrl&&previewDirty?'Settings changed. Refresh preview to hear the latest edit.':previewUrl?'Processed with your current settings.':'The edited player appears after you press Preview Edit.'}</p>
+               <div className="ax96-preview-pending" role="status"><i className="ax96-preview-spinner" aria-hidden="true"/><span>{busy?'Processing your edit…':previewDirty?'Preparing your new sound…':'The preview is being prepared.'}</span><button type="button" disabled={Boolean(busy)} onClick={()=>void preview()}>Try preview <span aria-hidden="true">↗</span></button></div>}
+              <p>{previewUrl&&!previewDirty?'Play your processed sound.':'The processed preview prepares automatically after each edit.'}</p>
             </article>
           </div>
         </section>
           </section>
 
           {!controlsCollapsed&&<aside className="v13-controls-card ax27-control-dock">
-            <div className="v13-controls-head ax27-controls-head"><div><small>DEDICATED SETTINGS</small><strong>{title}</strong><p>Only the controls needed for this tool are shown here.</p></div><button onClick={resetFx}>Reset</button></div>
+            <div className="v13-controls-head ax27-controls-head"><div><small>DEDICATED SETTINGS</small><strong>{title}</strong><p>Use a preset, or refine the details.</p></div><button onClick={resetFx}>Reset</button></div>
             <div className="v13-preset-row ax27-preset-row">{presets.map(p=><button key={p.name} onClick={()=>{p.apply();if(mode==='echo')setEchoEnabled(true);if(mode==='pitch')setPitchEnabled(true);emitAudixoInteraction();setMessage(`${p.name} preset applied. Preview it before downloading.`)}}><strong>{p.name}</strong><small>{p.note}</small></button>)}</div>
             {mode==='trim'&&<div className="v13-slider-grid"><Slider label="Fade in" help="Smooth beginning" value={fadeIn} min={0} max={Math.min(8,selectedDuration/2)} step={.05} display={`${fadeIn.toFixed(2)} s`} active={fadeIn>.01} onChange={setFadeIn}/><Slider label="Fade out" help="Smooth ending" value={fadeOut} min={0} max={Math.min(8,selectedDuration/2)} step={.05} display={`${fadeOut.toFixed(2)} s`} active={fadeOut>.01} onChange={setFadeOut}/></div>}
             {mode==='echo'&&<><div className="ax71-fx-switch-row"><div><b>Echo processing</b><small>Enable or bypass the entire echo chain.</small></div><button type="button" role="switch" aria-label="Echo processing" aria-checked={echoEnabled} className={`ax71-fx-switch ${echoEnabled?'active':''}`} onClick={()=>setEchoEnabled(v=>!v)}><i/><span>{echoEnabled?'On':'Off'}</span></button></div><div className={`v13-slider-grid ${!echoEnabled?'ax71-controls-bypassed':''}`}><Slider label="Delay time" help="Space between repeats" value={delayMs} min={40} max={900} step={5} display={`${Math.round(delayMs)} ms`} active onChange={setDelayMs}/><Slider label="Echo amount" help="How much repeat you hear" value={delayWet} min={0} max={.6} step={.01} display={`${Math.round(delayWet*100)}%`} active={delayWet>.01} onChange={setDelayWet}/><Slider label="Feedback" help="How long repeats continue" value={feedback} min={0} max={.7} step={.01} display={`${Math.round(feedback*100)}%`} active={feedback>.01} onChange={setFeedback}/><Slider label="Output volume" help="Final loudness" value={gainDb} min={-18} max={6} step={.5} display={`${gainDb>0?'+':''}${gainDb.toFixed(1)} dB`} active={Math.abs(gainDb)>.01} onChange={setGainDb}/></div></>}

@@ -24,6 +24,7 @@ import './styles/v92-pricing-page.css'
 import './styles/v92-completion.css'
 import './styles/v93-editorial-fixes.css'
 import './styles/v95-redesign.css'
+import './styles/v96-precision.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -40,7 +41,7 @@ const phrases=['MAKE EVERY BEAT COUNT','SHAPE SOUND YOUR WAY','CREATE IN YOUR RH
 const start=performance.now()
 let seenIntro=false
 try{seenIntro=window.sessionStorage.getItem('audixo-intro-v48')==='1'}catch{}
-const introDuration=window.matchMedia('(prefers-reduced-motion: reduce)').matches?120:seenIntro?250:2350
+const introDuration=window.matchMedia('(prefers-reduced-motion: reduce)').matches?120:seenIntro?180:1250
 let last=-1
 let finished=false
 const finish=()=>{
@@ -50,7 +51,7 @@ const finish=()=>{
  loader?.classList.add('done')
  document.documentElement.dataset.audixoReady='true'
  window.dispatchEvent(new Event('audixo:loader-complete'))
- window.setTimeout(()=>loader?.remove(),560)
+ window.setTimeout(()=>loader?.remove(),300)
 }
 const render=(now:number)=>{
  if(finished)return

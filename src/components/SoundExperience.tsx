@@ -401,7 +401,7 @@ function MusicStrip(){
    if(last&&!hovered.current&&!dragging.current&&document.visibilityState==='visible'){
     const w=laneWidth.current
     if(w>0){
-     el.scrollLeft+=(Math.min(40,time-last)*34)/1000
+     el.scrollLeft+=(Math.min(48,time-last)*76)/1000
      if(el.scrollLeft>=w*2)el.scrollLeft-=w
      if(el.scrollLeft<w)el.scrollLeft+=w
     }
@@ -444,8 +444,8 @@ function MusicStrip(){
   </button>)}
  </div>
  return <div className="ax49-strip-section ax67-songs-section">
-  <div className="ax49-strip-head"><span><i/> PHONK SOUND LAB</span><small>{DEMO_TRACKS.length} SONGS · HOVER TO PAUSE · GRAB TO BROWSE</small></div>
-  <p className="ax67-song-help">Click to play a track. Hover to pause the moving deck, drag left or right, or hold the mouse button and use the wheel to browse.</p>
+  <div className="ax49-strip-head"><span><i/> PHONK SOUND LAB</span></div>
+  
   <div ref={viewport} data-demo-bin="marquee" role="group" aria-label="Phonk song carousel"
    className={`ax67-songs-viewport ${grabbing?'is-grabbing':''} ${ready?'is-ready':''}`}
    onPointerEnter={()=>{hovered.current=true}}

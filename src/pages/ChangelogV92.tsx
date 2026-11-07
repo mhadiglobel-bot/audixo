@@ -6,6 +6,9 @@ import Icon from '../editor/Icons'
 
 type Milestone={id:string,date:string,title:string,detail:string,tags:string[],commit?:string}
 const milestones:Milestone[]=[
+ {id:'START',date:'10 OCT 2026',title:'The first AUDIXO source files',detail:'The repository begins with the first uploaded AUDIXO files—the early foundation for a browser-based audio workspace.',tags:['Repository start','Foundation']},
+ {id:'EARLY',date:'15 OCT 2026',title:'From idea to working interface',detail:'Further repository uploads mark the initial period of iteration, before the detailed numbered release notes.',tags:['Early builds','Iteration']},
+
  {id:'V22',date:'EARLY PHASE',title:'The early AUDIXO journey',detail:'A starting marker requested for the historical timeline. Detailed V22 release notes are not available in the present repository archive.',tags:['Early beginnings','Archive note']},
  {id:'V72',date:'04 NOV 2026',title:'A stronger Studio foundation',detail:'A focused Studio interface update with more dependable stem processing and editing controls.',tags:['Studio layout','Audio workflow'],commit:'a519c59'},
  {id:'V83',date:'05 NOV 2026',title:'The workspace comes together',detail:'Recovered Studio controls, the local Library, recording and vocal workflows with improved visual metrics.',tags:['Controls','Library','Recorder'],commit:'5bc05b5'},
@@ -38,11 +41,11 @@ export default function ChangelogV92(){
  },[])
  return <SiteShell><Seo title="AUDIXO Changelog — From Early Builds to V92" description="Explore the AUDIXO timeline from the early V22 marker through documented Studio updates, audio reliability improvements and free browser tools." path="/changelog"/>
  <main className="page-shell ax92-page ax94-page ax94-changelog">
-  <header className="ax94-changelog-hero"><span className="ax92-eyebrow">AUDIXO · THE BUILD JOURNEY</span><h1>From first ideas.<br/><span>To better sound.</span></h1><p>Follow the Studio's milestones along a connected, evolving timeline. Each stop highlights a meaningful stage—not a wall of release cards.</p><div className="ax94-inline-tags"><span>6 milestones</span><span>Historical starting point: V22</span><span>Latest recorded: V92</span></div></header>
+  <header className="ax94-changelog-hero"><span className="ax92-eyebrow">AUDIXO · THE BUILD JOURNEY</span><h1>From first ideas.<br/><span>To better sound.</span></h1><p>A visual journey from early development to the latest AUDIXO Studio. Each glowing stop represents a documented stage or clearly labeled historical marker.</p><div className="ax94-inline-tags"><span>8 milestones</span><span>Historical starting point: V22</span><span>Latest recorded: V92</span></div></header>
   <section className="ax94-release-path" ref={path} aria-label="AUDIXO release timeline from V22 to V92">
    {milestones.map((milestone,index)=><article key={milestone.id} className={'ax94-release '+(index%2===0?'is-left':'is-right')+(index===milestones.length-1?' is-current':'')}>
     <span className="ax94-release-dot" aria-hidden="true"><i/></span>
-    <div className="ax94-release-card"><div className="ax94-release-head"><strong>{milestone.id}</strong><small>{milestone.date}</small></div><h2>{milestone.title}</h2><p>{milestone.detail}</p><div className="ax94-release-bottom"><div className="ax94-release-tags">{milestone.tags.map(t=><span key={t}>{t}</span>)}</div>{milestone.commit&&<a href={'https://github.com/mhadiglobel-bot/audixo/commit/'+milestone.commit} target="_blank" rel="noopener noreferrer" aria-label={'View '+milestone.id+' commit'}>Commit ↗</a>}</div></div>
+    <div className="ax94-release-card"><div className="ax94-release-head"><strong>{milestone.id}</strong><small>{milestone.date}</small></div><h2>{milestone.title}</h2><p>{milestone.detail}</p><div className="ax94-release-bottom"><div className="ax94-release-tags">{milestone.tags.map(t=><span key={t}>{t}</span>)}</div></div></div>
    </article>)}
   </section>
   <section className="ax94-changelog-end"><div><span className="ax92-eyebrow">KEEP CREATING</span><h2>The best next change starts with the way you work.</h2></div><Link className="ax92-primary-link" to="/editor">Open Studio <Icon name="arrowUpRight" size={16}/></Link></section>

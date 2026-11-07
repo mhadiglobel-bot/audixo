@@ -1,28 +1,41 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import {useState} from 'react'
+import {Link} from 'react-router-dom'
 import Seo from '../components/Seo'
 import SiteShell from '../components/SiteShell'
+import Icon from '../editor/Icons'
 
+/* Answers are also used by the SEO prerender and structured-data script. */
 export const faqs=[
- ['Is AUDIXO free?','Yes. AUDIXO is a free browser-based audio studio. No subscription is required to record, trim, preview effects or edit audio. Downloads of third-party media must be authorized and supported by the source service.'],
- ['Do I need an account?','No. Audixo editing, recording and the browser Library work without an Audixo account.'],
- ['How do I trim or remove middle seconds?','Drag either waveform edge for a direct trim. For a middle section, choose Select range, mark the start and end, then Remove & join. Keep selected seconds retains only the highlighted part.'],
- ['How does vocal separation work?','Audixo first checks for the accelerated browser path and falls back when the device cannot use it. The separation model estimates Vocals, Drums, Bass and Music/Other; every returned stem opens as its own track.'],
- ['Can it recover every original instrument?','No. A finished MP3 does not contain the original studio session. Source separation estimates supported groups and can include bleed or artifacts. Audixo keeps the separate 60-item Music & Beats library distinct from AI-detected stems.'],
- ['Can I mute a stem or add my own vocal?','Yes. Every returned stem has Mute, Solo and Level controls. You can also record another take, import another file, or add a creative layer.'],
- ['How do I remove an effect I applied by mistake?','Each preset, manual control, trim, cut or duplicate appears in Applied Edits. Remove one item and the rest of the mix stays intact.'],
- ['Can I duplicate audio or a selected phrase?','Yes. Duplicate the selected track, or switch to range mode and duplicate only the highlighted seconds.'],
- ['Can I record and pause my microphone?','Yes. Record in Studio, pause and resume the same take, preview it and then add it as a new layer. Microphone access requires HTTPS and browser permission.'],
- ['How many mixes can I save?','The local Library keeps up to 21 finished exports in this browser profile. You can preview, reopen, download again or remove them.'],
- ['Does 320 kbps restore missing detail?','No. It controls the output bitrate. It cannot recreate detail that is already missing from the source. Choose WAV when you want to avoid another lossy encoding step.'],
- ['What about long recordings?','Long files use a streaming-oriented editor path instead of forcing the full recording through memory-heavy creative processing. Trim a shorter section before using heavier local AI features.'],
- ['Can I install AUDIXO on my phone?','On Android Chrome and Edge, choose Install app when it is offered. On iPhone Safari, tap Share and Add to Home Screen. The installed web app uses a touch-optimized layout; conversion still needs the network.'],
- ['Why is 4K not always selectable?','4K appears only when the original video has a usable 2160p video stream and audio for merging. The processing worker checks exact output dimensions before delivery.'],
- ['Is Echo different from Reverb?','Yes. Echo repeats a sound with adjustable delay, mix and feedback. Reverb adds a diffuse room tail. In the Full Studio, you can enable either independently in its dedicated tab.']
+ ['Is AUDIXO completely free to use?','Yes. You can trim, edit, record, preview audio effects and export supported audio files without purchasing a subscription or creating an AUDIXO account. Some operations depend on browser capabilities and device performance.'],
+ ['Do I need to sign in or install a heavy program?','No. Open AUDIXO in a supported modern browser and start editing. Local files can be imported without uploading them to an AUDIXO account. Your browser may request microphone permission when recording.'],
+ ['How can I make a quick edit in a few clicks?','Choose a tool, import your audio, adjust the waveform or the dedicated effect slider, preview the result and download the finished MP3 or WAV. Open Full Studio only when you need multitrack work.'],
+ ['How do I trim audio or remove a middle section?','Drag the waveform handles to keep a section. In Full Studio, select a middle range and choose Remove & join or Keep selected seconds. The original source remains visible as a faded reference.'],
+ ['What is the difference between Echo and Reverb?','Echo creates repeat taps with adjustable timing, wet mix and feedback. Reverb creates a diffuse room tail. They have separate controls so you can shape one without forcing the other.'],
+ ['Can I slow a track down and add fade-in or fade-out?','Yes. The Slowed + Reverb tool includes speed and reverb controls plus fades. Fade-in gradually increases volume at the start; fade-out gradually lowers it at the end. Their shape appears on the waveform.'],
+ ['Can I shift pitch or make 8D and 16D audio?','The Pitch Editor offers semitone changes. The Spatial Motion tool offers 8D and 16D-style moving stereo effects for headphones. These are creative effects, not new audio channels in the original recording.'],
+ ['How does vocal and instrument separation work?','Compatible devices can run local separation to estimate vocals and several instrument groups. These outputs are not the original studio masters and may contain bleed or artifacts. Separation can be resource-intensive.'],
+ ['Can I mute a separated stem or add my own vocals?','Yes. Full Studio provides track level, mute and solo controls. You can also import a new recording or create another layer, then preview the result before export.'],
+ ['Can I undo a preset or remove an applied effect?','Yes. The Applied Edits area lists changes individually. You can remove an edit or use undo controls without having to rebuild the full project from scratch.'],
+ ['Do you support recording and a local Library?','You can record using your microphone with browser permission. Finished mixes may be stored in the local browser Library, which currently keeps up to 21 saved exports in the same browser profile.'],
+ ['Which audio formats and output qualities are supported?','MP3 and WAV export are offered in the audio tools. Choose WAV to avoid a further lossy compression stage. A high MP3 bitrate does not recreate detail that is absent from the original source.'],
+ ['What happens with very long recordings?','Long recordings can follow a streaming-oriented workflow to avoid loading every effect into memory. For computationally heavy effects, trim a shorter section first and check your device capabilities.'],
+ ['Can AUDIXO work on mobile devices?','Responsive browser controls support common tasks on compatible phones. An install-to-home-screen option may appear depending on your browser and device. Some intensive workflows are more practical on a desktop.'],
+ ['Can I download media from third-party websites?','Only when you own the media or have the necessary permission and the source service supports the request. Available video qualities depend on the actual source files; a 4K option cannot be promised for every video.']
 ]
 
 export default function FAQ(){
- const [open,setOpen]=useState(0)
+ const [open,setOpen]=useState<number|null>(0)
  const schema={'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}
- return <SiteShell><Seo title="Audixo FAQ" description="Answers about trimming, vocal separation, removable edits, recording, Library saves, export quality and long audio." path="/faq" schema={schema}/><main className="page-shell ax25-faq"><section className="ax25-page-hero"><div className="ax25-kicker"><i/> FAQ / CLEAR ANSWERS</div><h1>Questions in.<br/><em>Clarity out.</em></h1><p>No draggable gimmicks. Choose a question and get the answer immediately.</p></section><section className="ax25-faq-highlights"><article><span>↔</span><small>TRIM</small><h3>Original audio stays visible</h3><p>The active range sits over a faded source reference.</p></article><article><span>≋</span><small>LAYERS</small><h3>Real stems stay separate</h3><p>Vocals, drums, bass and music/other are treated as independent tracks.</p></article><article><span>↶</span><small>EDIT STACK</small><h3>One change at a time</h3><p>Remove one edit without destroying everything else.</p></article></section><section className="ax25-faq-list">{faqs.map(([q,a],i)=><article key={q} className={open===i?'open':''}><button type="button" aria-expanded={open===i} onClick={()=>setOpen(open===i?-1:i)}><span><b>{String(i+1).padStart(2,'0')}</b><strong>{q}</strong></span><i>{open===i?'−':'+'}</i></button><div className="ax25-faq-answer" aria-hidden={open!==i}><p>{a}</p></div></article>)}</section><section className="ax25-faq-end"><div><small>STILL NEED A HAND?</small><h2>Help is within reach.</h2><p>Browse troubleshooting notes while our official support inbox is being prepared.</p></div><Link to="/help" className="ax25-primary-button">Open Help Center <span>↗</span></Link></section></main></SiteShell>
+ return <SiteShell><Seo title="AUDIXO FAQ — Audio Editing, Effects and Free Access" description="Clear answers about free browser audio editing, trimming, echo, reverb, pitch, 8D audio, recording and export." path="/faq" schema={schema}/>
+  <main className="page-shell ax25-faq ax95-faq">
+   <header className="ax95-faq-hero"><div className="ax25-kicker"><i/> ANSWERS / AUDIXO STUDIO</div><h1>Good questions.<br/><em>Clear answers.</em></h1><p>Everything you need to know before making your next sound—without technical overload.</p><div className="ax95-faq-pills"><span>Free browser tools</span><span>No account</span><span>Real editing controls</span></div></header>
+   <section className="ax95-faq-layout"><aside className="ax95-faq-aside"><span>01 / QUICK ANSWERS</span><h2>Find what you need.<br/>Keep creating.</h2><p>Start with a question. The answer opens smoothly, and the next one is only a click away.</p><Link to="/editor">Open Studio <Icon name="arrowUpRight" size={16}/></Link></aside>
+    <div className="ax95-faq-list">{faqs.map(([q,a],i)=>{const expanded=open===i;return <article key={q} className={'ax95-faq-item'+(expanded?' is-open':'')}>
+     <button type="button" aria-expanded={expanded} aria-controls={'ax95-faq-answer-'+i} onClick={()=>setOpen(expanded?null:i)}><span>{q}</span><i aria-hidden="true">{expanded?'−':'+'}</i></button>
+     <div id={'ax95-faq-answer-'+i} className="ax95-faq-answer" aria-hidden={!expanded}><div><p>{a}</p></div></div>
+    </article>})}</div>
+   </section>
+   <section className="ax95-faq-bottom"><div><span>NEED MORE HELP?</span><h2>We're here to make things clearer.</h2></div><Link to="/help">Explore Help Center <Icon name="arrowUpRight" size={16}/></Link></section>
+  </main>
+ </SiteShell>
 }

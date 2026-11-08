@@ -24,41 +24,30 @@ export const faqs=[
 ]
 
 export default function FAQ(){
- const [open,setOpen]=useState<number|null>(null)
- const [category,setCategory]=useState<'Essentials'|'Editing & effects'|'Export & access'>('Essentials')
- const groups={
-  'Essentials':[0,1,2,3,4,5],
-  'Editing & effects':[6,7,8,9,10],
-  'Export & access':[11,12,13,14]
- }
- const visible=groups[category]
+ const [open,setOpen]=useState<number|null>(0)
  const schema={'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}
- return <SiteShell><Seo title="AUDIXO FAQ — Easy Audio Editing Answers" description="Frequently asked questions about AUDIXO's audio tools, free editing, exports and sound effects." path="/faq" schema={schema}/>
-  <main className="page-shell ax25-faq ax95-faq ax96-faq">
-   <header className="ax95-faq-hero ax96-faq-hero"><span className="ax92-eyebrow">QUESTIONS / ANSWERS</span>
-    <h1>Questions, answered.<br/><span>Without the noise.</span></h1>
-    <p>Clear, practical answers about what AUDIXO does and how to make great edits in your browser.</p>
-    <div className="ax96-faq-highlights"><span>JUST THE ESSENTIALS</span><span>EASY TO EXPLORE</span><span>CREATOR FIRST</span></div>
-   </header>
-   <div className="ax96-faq-main">
-    <aside className="ax96-faq-aside"><div className="ax96-faq-vertical" aria-hidden="true">FIND WHAT YOU NEED · KEEP CREATING</div>
-     <div className="ax96-faq-aside-copy"><small>QUICK ANSWERS</small><h2>Everything in one place.</h2><p>Choose a topic. Open a question. Return to your music.</p><Link to="/editor">Open Studio <Icon name="arrowUpRight" size={16}/></Link></div>
-    </aside>
-    <section className="ax96-faq-content">
-     <nav className="ax96-faq-categories" aria-label="Frequently asked question topics">
-      {(['Essentials','Editing & effects','Export & access'] as const).map(cat=><button key={cat} type="button" aria-pressed={category===cat} className={category===cat?'active':''} onClick={()=>{setCategory(cat);setOpen(null)}}>{cat}</button>)}
-     </nav>
-     <div className="ax95-faq-list ax96-faq-list" key={category}>
-      {visible.map(i=>{const [question,answer]=faqs[i],expanded=open===i;return <article key={question} className={'ax95-faq-item ax96-faq-item'+(expanded?' is-open':'')}>
-        <button type="button" aria-expanded={expanded} aria-controls={'ax96-answer-'+i} onClick={()=>setOpen(expanded?null:i)}>
-         <span className="ax96-faq-question-num">{String(i+1).padStart(2,'0')}</span><strong>{question}</strong><i aria-hidden="true">{expanded?'−':'+'}</i>
-        </button>
-        <div id={'ax96-answer-'+i} className="ax95-faq-answer" aria-hidden={!expanded}><div><p>{answer}</p></div></div>
-       </article>})}
-     </div>
-     <div className="ax96-faq-count"><span>{visible.length} answers in this topic</span><span>MORE QUESTIONS? CHOOSE ANOTHER CATEGORY</span></div>
-    </section>
+ return <SiteShell><Seo title="AUDIXO FAQ — Frequently Asked Questions About Audio Editing" description="Answers about AUDIXO's free audio studio, trimming, echo, pitch, 8D/16D effects, recording, exports and browser privacy." path="/faq" schema={schema}/>
+ <main className="page-shell ax25-faq ax95-faq ax96-faq ax97-faq">
+  <header className="ax95-faq-hero ax96-faq-hero"><span className="ax92-eyebrow">AUDIXO / FREQUENTLY ASKED QUESTIONS</span>
+   <h1>Good questions.<br/><span>Clear answers.</span></h1>
+   <p>Answers that help you focus on making something worth hearing, not hunting through settings.</p>
+  </header>
+  <section className="ax97-faq-layout" aria-label="Frequently asked questions">
+   <aside className="ax97-faq-side">
+    <h2 className="ax97-faq-vertical"><span>FIND WHAT YOU NEED.</span><span>KEEP CREATING.</span></h2>
+    <p>Everything about your browser-based audio workspace in one place.</p>
+   </aside>
+   <div className="ax97-faq-main">
+    <div className="ax97-faq-count"><strong>FREQUENTLY ASKED QUESTIONS</strong><span>{faqs.length} ANSWERS · ONE PLACE</span></div>
+    <div className="ax97-faq-list">{faqs.map(([question,answer],i)=>{const expanded=open===i;return <article className={'ax97-faq-item'+(expanded?' is-open':'')} key={question}>
+      <h3><button type="button" aria-expanded={expanded} aria-controls={'ax97-faq-answer-'+i} onClick={()=>setOpen(expanded?null:i)}>
+       <span className="ax97-faq-index">{String(i+1).padStart(2,'0')}</span><span className="ax97-faq-question">{question}</span>
+       <span className="ax97-faq-symbol" aria-hidden="true">{expanded?'−':'+'}</span>
+      </button></h3>
+      <div id={'ax97-faq-answer-'+i} className="ax97-faq-answer" aria-hidden={!expanded}><div><p>{answer}</p></div></div>
+     </article>})}</div>
+    <div className="ax97-faq-help"><span>Still have questions?</span><Link to="/help">Visit Help Center <Icon name="arrowUpRight" size={16}/></Link></div>
    </div>
-   <div className="ax96-faq-help"><div><small>NEED A HAND?</small><h2>More answers are one click away.</h2></div><Link to="/help">Help Center <Icon name="arrowUpRight" size={16}/></Link></div>
-  </main></SiteShell>
+  </section>
+ </main></SiteShell>
 }

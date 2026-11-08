@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
 import Icon from '../editor/Icons'
-import NexivoOriginal from './NexivoOriginal'
 
 const cols=[
  {name:'Tools',links:[
@@ -18,19 +17,17 @@ const cols=[
  {name:'Legal',links:[['Privacy Policy','/privacy'],['Terms of Use','/terms'],['Copyright & Media Rights','/copyright']]}
 ]
 export default function Footer(){
- return <footer className="ax30-footer ax40-footer ax96-footer" data-audixo-release="v96-refinement">
+ return <footer className="ax30-footer ax40-footer ax96-footer ax97-footer" data-audixo-release="v97-refinement">
   <div className="ax30-footer-glow" aria-hidden="true"/>
   <div className="page-shell ax96-footer-top">
    <div><span className="ax25-kicker"><i/> AUDIXO / CREATE MORE</span><h2>Make sound your own.<br/><em>Everywhere.</em></h2><p>Powerful sound editing. Without the noise.</p></div>
    <Link className="ax40-footer-cta ax96-footer-cta" to="/editor">Open Studio <Icon name="arrowUpRight" size={17}/></Link>
   </div>
   <div className="page-shell ax96-footer-directory">
-   <div className="ax96-footer-brand">
-    <Link to="/nexivo" className="ax96-nexivo-brand" aria-label="Nexivo parent company"><NexivoOriginal compact/></Link>
-    <div className="ax96-footer-brand-rule"/>
-    <Link to="/" className="ax96-audixo-brand" aria-label="AUDIXO home"><Logo/></Link>
-    <p>A focused browser audio workspace. Trim, shape, mix and export in a few clicks.</p>
-    <span>AN INDEPENDENT NEXIVO PRODUCT</span>
+   <div className="ax96-footer-brand ax97-footer-brand">
+    <Link to="/" className="ax96-audixo-brand" aria-label="AUDIXO Studio home"><Logo/></Link>
+    <p>Creative, direct audio tools for trimming, mixing and shaping sound. Media downloads require permission from the rights holder.</p>
+    <small>FREE BROWSER AUDIO STUDIO</small>
    </div>
    {cols.map(col=><nav key={col.name} aria-label={col.name} className="ax96-footer-col">
     <h3>{col.name}</h3>

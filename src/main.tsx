@@ -25,6 +25,7 @@ import './styles/v92-completion.css'
 import './styles/v93-editorial-fixes.css'
 import './styles/v95-redesign.css'
 import './styles/v96-precision.css'
+import './styles/v97-ui.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

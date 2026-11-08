@@ -1,0 +1,279 @@
+/* AUDIXO V97 | systematic UX refinement, no audio DSP changes */
+:root{--v97-ink:#20324d;--v97-sub:#70819a;--v97-border:#dfe8f4;--v97-green:#12e2ac;--v97-cyan:#06cbe7;--v97-purple:#8f52ef;--v97-pink:#f12cc4;--v97-gradient:linear-gradient(105deg,#12e2ac,#06cbe7,#8f52ef,#f12cc4,#12e2ac)}
+@keyframes v97-pan{from{background-position:0% 50%}to{background-position:200% 50%}}
+@keyframes v97-shine{0%,100%{opacity:.48}50%{opacity:1}}
+@keyframes v97-reveal{0%{filter:brightness(.86);transform:scale(.97)}55%{filter:brightness(1.26);transform:scale(1.016)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes v97-scan{from{transform:translateX(-110%)}to{transform:translateX(160%)}}
+
+/* FOOTER: only the AUDIXO identity belongs in the global directory. */
+.ax97-footer .ax97-footer-brand{display:flex;flex-direction:column;gap:17px;align-items:flex-start}
+.ax97-footer .ax97-footer-brand .ax96-audixo-brand{max-width:100%;display:inline-flex}
+.ax97-footer .ax97-footer-brand .ax96-audixo-brand svg,
+.ax97-footer .ax97-footer-brand .ax96-audixo-brand img{width:min(225px,100%)!important;max-width:100%!important;height:auto!important}
+.ax97-footer .ax97-footer-brand p{font-size:13px!important;line-height:1.8!important;color:#657690!important;max-width:33ch!important}
+.ax97-footer .ax97-footer-brand small{font-size:10px;color:#8c68c3;letter-spacing:.13em;font-weight:1000}
+.ax97-footer .ax96-footer-directory{grid-template-columns:minmax(220px,1.55fr) minmax(168px,1.1fr) minmax(155px,1fr) minmax(140px,.9fr) minmax(142px,.9fr)}
+.ax97-footer .ax96-footer-col a{line-height:1.55}
+
+/* FAQ: one uninterrupted, complete accordion with a bold vertical masthead. */
+.ax97-faq{padding-bottom:65px}
+.ax97-faq .ax97-faq-layout{border-top:1px solid #e1e8f3;padding:39px 0 60px;display:grid;grid-template-columns:minmax(200px,245px) minmax(0,1fr);gap:clamp(30px,4.5vw,85px);align-items:start}
+.ax97-faq .ax96-faq-hero{padding:42px 0 38px!important;max-width:none!important}
+.ax97-faq .ax96-faq-hero h1{font-size:clamp(52px,6vw,82px)!important;line-height:1.02!important;letter-spacing:-.055em!important;font-weight:1000!important;margin:17px 0 14px}
+.ax97-faq .ax96-faq-hero>p{font-size:14px!important;line-height:1.7!important;max-width:58ch!important;color:#71849c}
+.ax97-faq-side{position:sticky;top:110px;align-self:start;min-width:0}
+.ax97-faq-vertical{display:flex;flex-direction:row;gap:14px;align-items:flex-start;justify-content:flex-end;writing-mode:vertical-rl;transform:rotate(180deg);height:480px;margin:0 0 25px!important;padding:0;font-family:'Nunito',ui-rounded,system-ui,sans-serif!important;font-weight:1000!important;font-size:clamp(25px,3vw,42px)!important;line-height:1.02!important;letter-spacing:-.05em!important;color:#1e3150}
+.ax97-faq-vertical span:nth-child(2){background:linear-gradient(180deg,var(--v97-green),var(--v97-cyan),var(--v97-purple),var(--v97-pink));background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ax97-faq-side>p{font-size:11px!important;line-height:1.65;color:#8190aa;max-width:25ch;padding-top:15px;margin:0!important;border-top:1px solid #e1e6f3}
+.ax97-faq-main{min-width:0}
+.ax97-faq-count{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:5px 4px 17px;border-bottom:1px solid #e2e8f2;margin-bottom:12px}
+.ax97-faq-count strong{font-size:11px;font-weight:1000;letter-spacing:.08em;color:#7859b7}
+.ax97-faq-count>span{font-size:10px;color:#9a8cb4;letter-spacing:.07em}
+.ax97-faq-list{display:flex;flex-direction:column;gap:11px}
+.ax97-faq-item{border:1px solid #e0e6f1;background:#fff;box-shadow:0 8px 20px rgba(50,70,115,.04);border-radius:999px;overflow:hidden;transition:border-color .26s,box-shadow .26s,border-radius .34s}
+.ax97-faq-item.is-open{border-radius:28px;border-color:#d1baee;box-shadow:0 12px 27px rgba(98,76,167,.08)}
+.ax97-faq-item h3{margin:0;padding:0;line-height:1;display:block}
+.ax97-faq-item h3 button{appearance:none;border:0;background:transparent;display:flex;align-items:center;gap:15px;text-align:left;width:100%;min-height:65px;padding:14px 21px;cursor:pointer;color:var(--v97-ink);font-family:inherit}
+.ax97-faq-item h3 button:hover .ax97-faq-question{color:#6d4cc3}
+.ax97-faq-index{font-size:11px;min-width:21px;font-weight:1000;letter-spacing:.02em;color:#a181ce}
+.ax97-faq-question{flex:1;font-size:14px;line-height:1.4;font-weight:900;transition:color .2s}
+.ax97-faq-symbol{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;border-radius:50%;border:1px solid #e1d3f5;background:#f7f2ff;font-size:20px;font-weight:900;line-height:1;color:#8e66dc}
+.ax97-faq-item.is-open .ax97-faq-symbol{color:#fff;background:linear-gradient(120deg,#8054ea,#dc3dd5);border-color:transparent}
+.ax97-faq-answer{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .4s cubic-bezier(.2,.9,.2,1),opacity .28s}
+.ax97-faq-item.is-open .ax97-faq-answer{grid-template-rows:1fr;opacity:1}
+.ax97-faq-answer>div{overflow:hidden;min-height:0}
+.ax97-faq-answer p{font-size:13px!important;line-height:1.7!important;color:#71819b;margin:0 25px 22px 56px!important;max-width:67ch}
+.ax97-faq-help{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin:25px 4px;padding-top:20px;border-top:1px solid #e4eaf2;font-size:12px;color:#7787a0}
+.ax97-faq-help a{display:inline-flex;gap:8px;align-items:center;color:#785ac4;font-weight:900;text-decoration:none}
+.ax97-faq-help a:hover{color:#c839c4}
+
+/* Five editors share a single responsive layout and uncluttered transport. */
+.v13-quick-page .ax97-workbench{max-width:1310px!important;border:1px solid #dfe8f4!important;border-radius:30px!important;background:linear-gradient(145deg,#fafcff,#f5f8fe)!important;padding:20px!important;box-shadow:0 19px 48px rgba(39,52,90,.075)!important}
+.v13-quick-page .ax97-editor-brief{display:flex!important;align-items:center;gap:14px;padding:12px 17px;margin:0 0 16px;border:0;border-bottom:1px solid #e0e7f2;min-height:45px;background:transparent}
+.ax97-editor-brief-marker{width:3px;height:34px;flex-shrink:0;border-radius:99px;background:var(--v97-gradient);background-size:250% 100%;animation:v97-pan 5s linear infinite}
+.ax97-editor-brief>div{display:grid;gap:4px;flex:1;min-width:0}
+.ax97-editor-brief strong{color:#273a57;font-size:13px;font-weight:1000}
+.ax97-editor-brief p{color:#8192a8;font-size:11px;line-height:1.5;margin:0}
+.ax97-editor-brief-result{white-space:nowrap;color:#8873b9;letter-spacing:.08em;font-size:9px;font-weight:950}
+.v13-quick-page .ax97-workbench .ax27-source-bar{border-radius:999px!important;background:#fff!important;border:1px solid #e0e8f4!important}
+.v13-quick-page .ax97-workbench .ax27-progress-strip{border-radius:999px!important}
+.v13-quick-page .ax97-workbench .ax27-quick-grid:not(.single){display:grid!important;grid-template-columns:minmax(0,1.28fr) minmax(310px,.87fr)!important;gap:17px!important;align-items:start!important}
+.v13-quick-page .ax97-workbench .ax27-quick-grid.single{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+.v13-quick-page .ax97-workbench .ax27-timeline-card{background:#fff!important;border:1px solid #e0e7f3!important;border-radius:26px!important;min-width:0!important;overflow:hidden!important;padding:17px!important}
+.v13-quick-page .ax97-workbench .ax27-control-dock{border:1px solid #e0e7f3!important;border-radius:26px!important;background:#fff!important;min-width:0!important;box-shadow:none!important}
+.v13-quick-page .ax97-workbench .ax27-controls-head{background:transparent!important;border-bottom:1px solid #e9ecf4!important;border-radius:0!important;min-height:0!important;margin-bottom:11px!important;padding:6px 4px 14px!important}
+.v13-quick-page .ax97-workbench .ax27-preset-row{display:flex!important;flex-wrap:wrap!important;gap:7px!important;padding:3px 0 9px!important}
+.v13-quick-page .ax97-workbench .ax27-preset-row button{border-radius:999px!important;min-height:32px!important;padding:8px 12px!important;background:#fff!important;border:1px solid #e1e5f1!important;box-shadow:none!important}
+.v13-quick-page .ax97-workbench .ax27-preset-row button:hover{color:#8959e5!important;border-color:#c4adef!important;background:#f8f4ff!important}
+.v13-quick-page .ax97-workbench .ax27-preset-row button strong{font-weight:900;font-size:11px!important}
+.v13-quick-page .ax97-workbench .ax97-slider-group{border-top:1px solid #e5eaf3!important;margin-top:7px!important}
+.v13-quick-page .ax97-workbench .ax97-slider-group .ax96-slider{padding:16px 2px!important}
+.v13-quick-page .ax97-workbench .ax96-slider-input output{font-variant-numeric:tabular-nums;font-size:11px!important;min-width:47px!important}
+.v13-quick-page .ax97-workbench .ax96-slider-input input[type=range]{min-width:36px!important}
+.v13-quick-page .ax97-workbench .ax96-slider-input button{border-radius:50%!important;flex:0 0 29px!important;width:29px!important;height:29px!important;padding:0!important}
+.v13-quick-page .ax97-workbench .ax27-wave{border-radius:20px!important;min-height:150px}
+.v13-quick-page .ax97-workbench .ax27-wave canvas{display:block;width:100%;height:100%}
+.v13-quick-page .ax97-workbench .v13-fade-zone{z-index:4!important;pointer-events:none;mix-blend-mode:normal;background:linear-gradient(90deg,rgba(10,234,174,.13),rgba(9,217,207,.012))!important}
+.v13-quick-page .ax97-workbench .v13-fade-zone.fade-out{background:linear-gradient(90deg,rgba(235,51,216,.014),rgba(241,44,196,.13))!important}
+.v13-quick-page .ax97-workbench .ax96-fade-curve path{stroke-width:2.2!important;opacity:.98!important;filter:drop-shadow(0 0 2px rgba(17,233,177,.35))}
+.v13-quick-page .ax97-workbench .fade-out .ax96-fade-curve path{filter:drop-shadow(0 0 2px rgba(237,30,191,.35))}
+.v13-quick-page .ax97-workbench .ax97-fade-status{display:flex!important;align-items:center;gap:0!important;border-top:1px solid #e6edf4!important;border-bottom:1px solid #e6edf4!important;padding:4px 0!important;background:transparent!important}
+.v13-quick-page .ax97-workbench .ax97-fade-status>button{flex:1!important;display:flex!important;align-items:center!important;gap:12px!important;justify-content:flex-start!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:44px!important;padding:9px 14px!important;transition:background .2s!important}
+.v13-quick-page .ax97-workbench .ax97-fade-status>button+button{border-left:1px solid #e6ebf5!important}
+.v13-quick-page .ax97-workbench .ax97-fade-status>button:hover{background:#f9f9fd!important}
+.v13-quick-page .ax97-workbench .ax97-fade-status button strong{font-size:12px!important;color:#2f405b!important;font-weight:950!important}
+.v13-quick-page .ax97-workbench .ax97-fade-status button small{font-size:10px!important;color:#8191a8!important}
+.v13-quick-page .ax97-workbench .ax97-compare-stage{border-radius:23px!important;padding:17px!important;background:linear-gradient(160deg,#fff,#fbfcff)!important;border:1px solid #e2e8f3!important;box-shadow:none!important;margin-top:16px!important}
+.v13-quick-page .ax97-compare-stage .ax68-compare-heading{margin-bottom:13px!important}
+.v13-quick-page .ax97-compare-stage .ax68-compare-heading strong{font-size:20px!important}
+.v13-quick-page .ax97-compare-stage .ax97-compare-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important;min-width:0!important}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio{display:grid!important;grid-template-columns:minmax(120px,.47fr) minmax(0,1fr)!important;align-items:center!important;gap:10px!important;min-width:0!important;width:100%!important;min-height:78px!important;border:1px solid #e1e8f4!important;border-radius:18px!important;padding:11px 13px!important;background:#fff!important;box-shadow:none!important;animation:none!important}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax68-player-title{grid-column:1;grid-row:1;min-width:0!important;flex-wrap:wrap}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax68-player-title .ax68-player-icon{width:32px;height:32px;flex:0 0 32px}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax68-player-title strong{font-size:11px!important}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax68-player-title>b{font-size:8px!important}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax69-transport,
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax96-preview-pending{grid-column:2;grid-row:1;min-width:0!important;max-width:100%!important;width:100%!important;box-sizing:border-box!important}
+.v13-quick-page .ax97-compare-grid .ax68-compare-audio>p{display:none!important}
+.v13-quick-page .ax97-compare-grid .ax68-versus{min-height:24px!important;margin:-3px 0!important;display:grid!important;place-items:center!important;pointer-events:none}
+.v13-quick-page .ax97-compare-grid .ax68-versus::before,.v13-quick-page .ax97-compare-grid .ax68-versus::after{display:none!important}
+.v13-quick-page .ax97-compare-grid .ax68-versus span{width:29px!important;height:29px!important;border-radius:50%!important;font-size:10px!important;font-weight:1000!important;box-shadow:none!important;background:#fff!important}
+.v13-quick-page .ax97-compare-grid .ax69-transport{display:block!important}
+.v13-quick-page .ax97-compare-grid .ax69-transport-main{display:grid!important;grid-template-columns:33px minmax(0,1fr) 26px minmax(52px,76px)!important;gap:7px!important;align-items:center!important;width:100%!important;min-height:47px!important;box-sizing:border-box!important;border-radius:999px!important;padding:5px 7px!important;overflow:hidden!important}
+.v13-quick-page .ax97-compare-grid .ax69-play{width:32px!important;height:32px!important;min-width:32px!important;padding:0!important}
+.v13-quick-page .ax97-compare-grid .ax69-transport-meter{min-width:0!important;overflow:hidden!important}
+.v13-quick-page .ax97-compare-grid .ax69-transport-meter input{width:100%!important;min-width:0!important}
+.v13-quick-page .ax97-compare-grid .ax69-transport-time{display:flex!important;justify-content:space-between!important;gap:5px;font-size:9px!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.v13-quick-page .ax97-compare-grid .ax69-mute{min-width:22px!important;width:22px!important;height:25px!important;padding:0!important;border-radius:50%!important}
+.v13-quick-page .ax97-compare-grid .ax70-speed-select{width:100%!important;min-width:0!important;max-width:76px!important;border-radius:999px!important}
+.v13-quick-page .ax97-compare-grid .ax96-preview-pending{border-radius:999px!important;padding:8px 11px!important;min-height:44px}
+
+/* About: coordinated editorial system with exceptionally thin kinetic neon lines. */
+.ax97-about .ax94-about-statement{border-radius:30px!important;border:1px solid #e1e8f3!important;background:linear-gradient(115deg,#fff,#f7fbff)!important;padding:36px 42px!important;align-items:center!important;margin:30px 0 0;box-shadow:0 13px 37px rgba(44,58,104,.035)}
+.ax97-about .ax94-about-statement h2{font-size:clamp(36px,3.85vw,55px)!important;font-weight:1000!important;line-height:1.08!important}
+.ax97-about .ax94-about-statement>p{font-size:14px!important;line-height:1.8!important}
+.ax97-about .ax94-journey-section{padding:55px 0 56px!important}
+.ax97-about .ax94-section-heading h2{font-size:clamp(33px,3.9vw,52px)!important;line-height:1.1!important;font-weight:1000!important}
+.ax97-about .ax94-journey{gap:25px!important;padding-top:10px!important}
+.ax97-about .ax94-journey li{border-top:1px solid #e0e7f3!important;padding-top:23px!important}
+.ax97-about .ax94-journey li:before{height:1.5px!important;width:100%!important;left:0!important;top:-1px!important;border-radius:0!important;background:var(--v97-gradient)!important;background-size:240% 100%!important;animation:v97-pan 3.8s linear infinite!important}
+.ax97-about .ax94-journey-number{font-size:11px!important;color:#9171cf!important}
+.ax97-about .ax94-journey h3{font-size:26px!important;font-weight:1000!important;margin:11px 0 7px!important}
+.ax97-about .ax94-journey p{font-size:13px!important;line-height:1.7!important}
+.ax97-about .ax94-about-clarity{border-radius:26px!important;border:1px solid #e0e7f3!important;background:linear-gradient(145deg,#f8fbff,#fff)!important;padding:40px!important;box-shadow:0 9px 25px rgba(56,65,103,.035)}
+.ax97-about .ax94-about-clarity h2{font-weight:1000!important}
+.ax97-about .ax94-principles{padding:62px 0!important}
+.ax97-about .ax94-principle-list{gap:26px 37px!important}
+.ax97-about .ax94-principle-list article{border-top:1px solid #e2e7f1!important;padding-top:20px!important}
+.ax97-about .ax94-principle-list h3{font-weight:1000!important}
+.ax97-about .ax94-parent-signature{border-top:1px solid #e0e6f1!important;padding:30px 4px!important;align-items:center!important}
+
+/* Changelog: stronger rounded version markers and proximity-based editorial keywords. */
+.ax97-changelog .ax94-release-head strong{font-size:clamp(35px,3.8vw,50px)!important;font-family:'Nunito',ui-rounded,system-ui,sans-serif!important;font-weight:1000!important;letter-spacing:-.035em!important;line-height:1!important;color:#7646ca!important;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.ax97-changelog .ax94-release-card h2{font-size:clamp(20px,2.2vw,27px)!important;font-weight:1000!important;line-height:1.15!important;color:#273a54!important}
+.ax97-changelog .ax94-release-card p{font-size:12px!important;line-height:1.7!important;color:#6d7e94!important}
+.ax97-changelog .ax94-release{isolation:isolate}
+.ax97-changelog-keyword{position:absolute;top:15px;left:calc(50% + 59px);height:175px;max-width:64px;writing-mode:vertical-rl;transform:rotate(180deg) translateY(-12px);font:1000 clamp(19px,2.7vw,29px)/1.05 'Nunito',ui-rounded,system-ui,sans-serif;letter-spacing:-.035em;opacity:0;pointer-events:none;z-index:6;background:var(--v97-gradient);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;transition:opacity .35s ease,transform .45s ease;animation:v97-pan 3.8s linear infinite}
+.ax97-changelog .ax94-release.is-right .ax97-changelog-keyword{left:auto;right:calc(50% + 59px)}
+.ax97-changelog .ax94-release.is-keyword-active .ax97-changelog-keyword{opacity:1;transform:rotate(180deg) translateY(0)}
+.ax97-changelog .ax94-release-card{border-radius:28px!important}
+.ax97-changelog .ax94-release-card::after{animation-duration:1.5s!important}
+.ax97-changelog .ax94-release-path::after{width:2px!important;left:calc(50% - 1px)!important}
+
+/* Pricing: less dead vertical space; richer continuous reveal that reads as one journey. */
+.ax97-pricing .ax96-pricing-heading{padding:36px 18px 24px!important;min-height:0!important}
+.ax97-pricing .ax96-pricing-heading h1{font-size:clamp(48px,5.9vw,81px)!important;line-height:1.04!important;margin:12px auto!important}
+.ax97-pricing .ax96-pricing-heading p{font-size:14px!important;max-width:55ch!important}
+.ax97-pricing .ax96-pricing-scroll{margin:16px 0 0!important}
+.ax97-pricing .ax96-pricing-stage{height:165vh!important;min-height:1050px!important}
+.ax97-pricing .ax96-pricing-sticky{height:94vh!important;top:3vh!important;min-height:610px!important}
+.ax97-pricing .ax96-plan-world{padding:24px 24px 32px!important}
+.ax97-pricing .ax96-plan-intro{margin-bottom:16px!important}
+.ax97-pricing .ax96-plan-card{min-height:420px!important;border-radius:27px!important}
+.ax97-pricing .ax96-plan-card:before{height:2px!important}
+.ax97-pricing .ax96-sike-stage>strong{font-size:clamp(60px,11vw,158px)!important;letter-spacing:-.055em!important;white-space:nowrap!important;animation:v97-pan 2.4s linear infinite,v97-reveal 1.45s ease-in-out infinite!important}
+.ax97-pricing .ax96-sike-stage>p{font-size:clamp(17px,2.2vw,25px)!important;color:#34445f!important}
+.ax97-pricing .ax96-sike-rays{opacity:.26!important;filter:blur(40px)!important}
+.ax97-pricing .ax96-pricing-free h2{font-size:clamp(45px,5.8vw,76px)!important}
+.ax97-pricing .ax96-pricing-free>p{max-width:57ch!important;font-size:14px!important}
+.ax97-pricing .ax96-pricing-included{padding:43px 0 40px!important}
+.ax97-pricing .ax96-included-grid article{border-radius:23px!important}
+.ax97-pricing .ax96-pricing-note{margin-bottom:48px!important}
+
+/* Nexivo brand presentation (the mark appears only on About and Nexivo pages). */
+.ax97-nexivo .ax94-nexivo-hero-mark{background:linear-gradient(150deg,#f9faff,#f3f7fe)!important;border:1px solid #e0e8f3!important;border-radius:30px!important}
+.ax97-nexivo .ax94-nexivo-hero-mark .ax95-brand-orbit{opacity:.5}
+.ax97-nexivo .ax94-family-origin{overflow:visible!important}
+
+/* Contextual no-duplicate-CTA guards for legacy extra bottom sections. */
+.ax25-journal-cta,.ax94-product-note,.ax33-final-cta{display:none!important}
+
+/* Mobile and tablet: no off-screen controls or horizontal comparison overlap. */
+@media(max-width:1160px){
+ .ax97-footer .ax96-footer-directory{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ .ax97-footer .ax97-footer-brand{grid-column:1/-1;max-width:none!important;flex-direction:row;align-items:center;flex-wrap:wrap}
+ .ax97-footer .ax97-footer-brand p{max-width:42ch!important}
+ .v13-quick-page .ax97-workbench .ax27-quick-grid:not(.single){grid-template-columns:minmax(0,1fr) minmax(300px,.75fr)!important}
+}
+@media(max-width:900px){
+ .v13-quick-page .ax97-workbench .ax27-quick-grid:not(.single){grid-template-columns:minmax(0,1fr)!important}
+ .v13-quick-page .ax97-workbench .ax27-control-dock{grid-column:1!important}
+ .v13-quick-page .ax97-workbench .ax27-timeline-card{grid-column:1!important}
+ .ax97-faq .ax97-faq-layout{grid-template-columns:180px minmax(0,1fr);gap:18px}
+ .ax97-faq-vertical{font-size:clamp(22px,2.8vw,31px)!important}
+ .ax97-about .ax94-about-statement{grid-template-columns:1fr!important;gap:13px!important;padding:26px!important}
+ .ax97-pricing .ax96-pricing-sticky{min-height:600px!important}
+ .ax97-changelog-keyword{font-size:20px;max-width:40px;left:calc(50% + 44px)}
+ .ax97-changelog .ax94-release.is-right .ax97-changelog-keyword{right:calc(50% + 44px)}
+}
+@media(max-width:650px){
+ .ax97-faq .ax96-faq-hero{padding:32px 0 22px!important}
+ .ax97-faq .ax96-faq-hero h1{font-size:clamp(41px,9.2vw,59px)!important}
+ .ax97-faq .ax97-faq-layout{display:block;padding:22px 0 46px}
+ .ax97-faq-side{position:static;display:block;margin-bottom:22px}
+ .ax97-faq-vertical{height:auto!important;writing-mode:horizontal-tb!important;transform:none!important;flex-direction:column!important;align-items:flex-start!important;gap:0!important;font-size:clamp(25px,7vw,35px)!important;line-height:1.02!important}
+ .ax97-faq-side>p{margin:12px 0 0!important;padding-top:10px;max-width:none}
+ .ax97-faq-count{font-size:10px}
+ .ax97-faq-count>span{font-size:9px}
+ .ax97-faq-item h3 button{min-height:62px;padding:13px 12px;gap:10px}
+ .ax97-faq-question{font-size:12px}
+ .ax97-faq-index{font-size:10px}
+ .ax97-faq-symbol{width:28px;height:28px}
+ .ax97-faq-answer p{margin:0 14px 18px 43px!important;font-size:12px!important}
+ .ax97-footer .ax96-footer-directory{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:26px!important}
+ .ax97-footer .ax97-footer-brand{grid-column:1/-1;flex-direction:column;align-items:flex-start}
+ .ax97-footer .ax97-footer-brand p{max-width:40ch!important}
+ .v13-quick-page .ax97-workbench{padding:12px!important;border-radius:22px!important}
+ .v13-quick-page .ax97-editor-brief{padding:10px 3px;gap:10px}
+ .v13-quick-page .ax97-editor-brief strong{font-size:12px}
+ .v13-quick-page .ax97-editor-brief p{font-size:10px}
+ .v13-quick-page .ax97-editor-brief-result{display:none!important}
+ .v13-quick-page .ax97-workbench .ax27-timeline-card{padding:11px!important}
+ .v13-quick-page .ax97-compare-stage{padding:12px!important}
+ .v13-quick-page .ax97-compare-grid .ax68-compare-audio{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:9px!important;padding:13px!important}
+ .v13-quick-page .ax97-compare-grid .ax68-compare-audio .ax68-player-title{width:100%!important}
+ .v13-quick-page .ax97-compare-grid .ax69-transport,
+ .v13-quick-page .ax97-compare-grid .ax96-preview-pending{width:100%!important}
+ .v13-quick-page .ax97-compare-grid .ax69-transport-main{grid-template-columns:31px minmax(0,1fr) 25px 61px!important;gap:6px!important}
+ .v13-quick-page .ax97-workbench .ax97-fade-status{gap:0}
+ .v13-quick-page .ax97-workbench .ax97-fade-status>button{padding:8px 5px!important;gap:7px!important}
+ .v13-quick-page .ax97-workbench .ax97-fade-status button strong{font-size:10px!important}
+ .ax97-about .ax94-about-statement{margin-top:12px!important}
+ .ax97-about .ax94-journey{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:25px 18px!important}
+ .ax97-about .ax94-about-clarity{padding:25px!important}
+ .ax97-changelog .ax97-changelog-keyword{display:none!important}
+ .ax97-pricing .ax96-pricing-heading{padding:27px 15px 14px!important}
+ .ax97-pricing .ax96-pricing-heading h1{font-size:clamp(41px,10vw,60px)!important}
+ .ax97-pricing .ax96-pricing-stage{height:158vh!important;min-height:1040px!important}
+ .ax97-pricing .ax96-pricing-sticky{height:94vh!important;top:3vh!important;min-height:565px!important;padding:12px 9px!important}
+ .ax97-pricing .ax96-plan-world{padding:16px 10px!important}
+ .ax97-pricing .ax96-pricing-cards{width:100%!important;grid-template-columns:repeat(3,235px)!important;overflow-x:auto!important;scroll-snap-type:x mandatory}
+ .ax97-pricing .ax96-plan-card{min-height:355px!important}
+ .ax97-pricing .ax96-sike-stage>strong{font-size:clamp(51px,11vw,79px)!important}
+ .ax97-pricing .ax96-pricing-free h2{font-size:clamp(39px,10vw,60px)!important}
+ .ax97-pricing .ax96-pricing-free>p{font-size:12px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax97-faq-answer,.ax97-faq-item,.ax97-changelog-keyword{transition:none!important}
+ .ax97-about .ax94-journey li:before,.ax97-pricing .ax96-sike-stage>strong,.ax97-editor-brief-marker{animation:none!important}
+}
+
+/* Final art direction: a genuinely rounded, weighted reveal headline. */
+.ax97-pricing .ax96-sike-stage>strong{
+ font-family:'Fredoka','Nunito',ui-rounded,system-ui,sans-serif!important;
+ font-weight:700!important;
+ letter-spacing:-.055em!important;
+ line-height:1.13!important;
+ filter:drop-shadow(0 10px 23px rgba(157,73,217,.11));
+}
+.ax97-pricing .ax96-sike-rays{opacity:.48!important;filter:blur(27px)!important}
+.ax97-pricing .ax96-sike-stage::after{
+ content:"";display:block;width:min(270px,52vw);height:2px;margin:17px auto 0;
+ border-radius:99px;background:var(--v97-gradient);background-size:230% 100%;
+ animation:v97-pan 2.2s linear infinite;
+ box-shadow:0 0 17px rgba(144,80,238,.26);
+}
+/* The provided metallic-magenta emblem stays paired with a crisp live wordmark
+   until the high-resolution approved artwork can be directly loaded. */
+.ax97-nexivo .ax96-nexivo-type strong,
+.ax97-about .ax96-nexivo-type strong{
+ color:#273149!important;
+ font-weight:1000!important;
+ letter-spacing:.04em!important;
+}
+
+/* Preserve the supplied metallic magenta Nexivo spiral exclusively on About / Nexivo. */
+.ax97-nexivo .ax96-nexivo-emblem img,
+.ax97-about .ax96-nexivo-emblem img{
+ image-rendering:auto!important;
+ filter:drop-shadow(0 9px 19px rgba(183,59,203,.18))!important;
+}
+.ax97-nexivo .ax96-nexivo-type strong,
+.ax97-about .ax96-nexivo-type strong{
+ background:linear-gradient(120deg,#383f65 0%,#7788b2 30%,#2e78c9 63%,#09b9ec 95%)!important;
+ -webkit-background-clip:text!important;background-clip:text!important;
+ -webkit-text-fill-color:transparent!important;
+ font-size:clamp(29px,3vw,44px)!important;
+}
+.ax97-nexivo .ax96-nexivo-identity.is-compact .ax96-nexivo-type strong,
+.ax97-about .ax96-nexivo-identity.is-compact .ax96-nexivo-type strong{font-size:clamp(21px,2.3vw,27px)!important}

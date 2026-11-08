@@ -31,13 +31,13 @@ export default function PricingV92(){
   scroll();window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',scroll)
   return()=>{window.removeEventListener('scroll',scroll);window.removeEventListener('resize',scroll);if(frame)cancelAnimationFrame(frame)}
  },[])
- const tierOut=ease((progress-.24)/.25)
- const sikeIn=ease((progress-.34)/.14)
- const sikeOut=1-ease((progress-.53)/.12)
+ const tierOut=ease((progress-.32)/.20)
+ const sikeIn=ease((progress-.41)/.11)
+ const sikeOut=1-ease((progress-.62)/.13)
  const sikeVisible=sikeIn*sikeOut
- const freeIn=ease((progress-.63)/.20)
+ const freeIn=ease((progress-.72)/.18)
  return <SiteShell><Seo title="AUDIXO Pricing — Browser Audio Editing Without Paywalls" description="See how illustrated audio editing tiers compare with AUDIXO's actual free browser editing experience." path="/pricing"/>
-  <main className="ax96-pricing">
+  <main className="ax96-pricing ax97-pricing">
    <header className="page-shell ax96-pricing-heading">
     <div className="ax92-eyebrow">AUDIXO / PRICING</div><h1>Big creativity.<br/><span>What should it cost?</span></h1>
     <p>Imagine your sound split across subscription tiers. Take a closer look, then scroll to find out what AUDIXO actually costs.</p>
@@ -58,7 +58,7 @@ export default function PricingV92(){
       <p className="ax96-plan-finish">THE FEATURES ARE REAL. THE PRICES ABOVE AREN'T.</p>
      </div>
      <div className="ax96-sike-stage" style={{opacity:sikeVisible,transform:'scale('+(0.78+.22*sikeIn)+')',pointerEvents:'none'}} aria-hidden={sikeVisible<.4}>
-      <span className="ax96-sike-rays" aria-hidden="true"/><span className="ax96-sike-kicker">WAIT FOR IT...</span><strong>SIKE.</strong><p>Forget the paywalls.</p>
+      <span className="ax96-sike-rays" aria-hidden="true"/><span className="ax96-sike-kicker">HERE IS THE DIFFERENCE</span><strong>PLOT TWIST.</strong><p>All that creative power. No subscription.</p>
      </div>
      <div className="ax96-pricing-free" style={{opacity:freeIn,transform:'translateY('+((1-freeIn)*34)+'px) scale('+(0.84+.16*freeIn)+')',pointerEvents:freeIn>.95?'auto':'none'}} aria-hidden={freeIn<.5}>
       <span className="ax96-free-eyebrow">THE ACTUAL AUDIXO PRICE</span>
@@ -71,7 +71,7 @@ export default function PricingV92(){
      <div className="ax96-price-progress" aria-hidden="true"><span style={{width:(progress*100)+'%'}}/></div>
     </div>
    </section>
-   <section className="page-shell ax96-pricing-included"><header><div className="ax92-eyebrow">YOUR CREATIVE TOOLKIT</div><h2>Everything you need.<br/><span>Nothing locked away.</span></h2><p>Available features depend on your browser and device, not a paid plan.</p></header>
+   <section className="page-shell ax96-pricing-included"><header><div className="ax92-eyebrow">YOUR CREATIVE TOOLKIT</div><h2>One complete studio.<br/><span>No extra tiers.</span></h2><p>Available features depend on your browser and device, not a paid plan.</p></header>
     <div className="ax96-included-grid">{real.map(([head,copy],i)=><article key={head}><div>0{i+1} <span aria-hidden="true">✓</span></div><h3>{head}</h3><p>{copy}</p></article>)}</div>
    </section>
    <p className="page-shell ax96-pricing-note">The $12, $29 and $59 examples are fictional comparisons, not AUDIXO offers or actual charges. Processing performance varies by browser, device and file type. For third-party media, you must have the necessary rights or permission.</p>

@@ -17,6 +17,6 @@ export default function Blog(){
   <section className="ax25-journal-controls"><label><span>SEARCH THE JOURNAL</span><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Try: trim, vocals, reverb…"/></label><div>{categories.map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(c)}>{c}</button>)}</div></section>
   <section className="ax25-journal-grid">{filtered.map((post,i)=><Link to={`/blog/${post.slug}`} key={post.slug} className="ax25-story-card"><JournalVisual index={i}/><div><small>{post.category}<span>{post.readTime}</span></small><h2>{post.title}</h2><p>{post.excerpt}</p><b>Read guide <span>↗</span></b></div></Link>)}</section>
   {!filtered.length&&<div className="ax25-empty-state"><strong>No guide matched that search.</strong><p>Try a tool name, effect or workflow.</p></div>}
-  <section className="ax25-journal-cta"><div><small>MAKE THE IDEA REAL</small><h2>Read less.<br/><em>Try it in the Studio.</em></h2></div><Link to="/editor" className="ax25-primary-button">Open Studio <span>↗</span></Link></section>
+
  </main></SiteShell>
 }

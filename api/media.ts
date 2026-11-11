@@ -28,14 +28,30 @@ async function streamMedia(req:Req,res:Res,rawToken:unknown){
  const args=['-hide_banner','-loglevel','error','-nostdin','-y','-nostats','-reconnect','1','-reconnect_streamed','1','-reconnect_delay_max','5']
 
  const addInput=async(f:MediaFormat)=>{
+  // yt-dlp may specify headers that the source CDN expects on the actual
+  // media request. Previously only User-Agent and Referer reached FFmpeg,
+  // so metadata could work while the download itself failed with HTTP 403.
   const headers=f.http_headers||media.http_headers||{}
-  const ua=String(headers['User-Agent']||headers['user-agent']||'Mozilla/5.0')
-  if(!/[\r\n]/.test(ua))args.push('-user_agent',ua.slice(0,250))
-  const ref=String(headers.Referer||headers.referer||token.url)
+  const normalized=new Map(Object.entries(headers).map(([key,value])=>[key.toLowerCase(),String(value)]))
+  const ua=normalized.get('user-agent')||'Mozilla/5.0'
+  if(ua.length<=250&&!/[\r\n\0]/.test(ua))args.push('-user_agent',ua)
+  const ref=normalized.get('referer')||token.url
   try{
    const r=new URL(ref)
-   if(r.protocol==='https:'&&!r.username&&!r.password&&!/[\r\n]/.test(ref))args.push('-referer',r.href.slice(0,2000))
+   if(r.protocol==='https:'&&!r.username&&!r.password&&!/[\r\n\0]/.test(ref))args.push('-referer',r.href.slice(0,2000))
   }catch{}
+  // Forward only non-secret request headers. Never forward cookies,
+  // Authorization, Host, Range or arbitrary keys to a CDN/redirect.
+  const safeHeaders:{name:string;value:string}[]=[]
+  for(const [name,canonical] of [['accept','Accept'],['accept-language','Accept-Language'],['origin','Origin'],['sec-fetch-mode','Sec-Fetch-Mode'],['sec-fetch-site','Sec-Fetch-Site'],['sec-fetch-dest','Sec-Fetch-Dest']] as const){
+   const value=normalized.get(name)
+   if(!value||value.length>2048||/[\r\n\0]/.test(value))continue
+   if(name==='origin'){
+    try{const parsed=new URL(value);if(parsed.protocol!=='https:'||parsed.origin!==value||parsed.username||parsed.password)continue}catch{continue}
+   }
+   safeHeaders.push({name:canonical,value})
+  }
+  if(safeHeaders.length)args.push('-headers',safeHeaders.map(h=>h.name+': '+h.value).join('\r\n')+'\r\n')
   args.push('-i',(await secureSource(f)).toString())
  }
  if(token.format==='mp3'){

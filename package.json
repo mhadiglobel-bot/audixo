@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/prepare-favicon.mjs && node scripts/prepare-ytdlp.mjs && node scripts/prepare-ffmpeg.mjs && node scripts/prepare-ort-runtime.mjs && npm run test:media && tsc --noEmit && vite build && node scripts/seo-build.mjs && node scripts/v85-release-check.mjs && node scripts/seo-domain-contract.mjs",
+    "build": "node scripts/prepare-favicon.mjs && node scripts/prepare-ytdlp.mjs && node scripts/prepare-ffmpeg.mjs && node scripts/prepare-ort-runtime.mjs && npm run test:media && npm run test:lyrics && tsc --noEmit && vite build && node scripts/seo-build.mjs && node scripts/v85-release-check.mjs && node scripts/seo-domain-contract.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:ssr": "node scripts/seo-build.mjs --check",
     "test:tracks": "node scripts/seo-build.mjs --self-test",
     "test:ui": "node scripts/seo-build.mjs --self-test",
-    "test:media": "node tests/mock-media.cjs"
+    "test:media": "node tests/mock-media.cjs",
+    "test:lyrics": "node tests/lyrics-video.cjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",

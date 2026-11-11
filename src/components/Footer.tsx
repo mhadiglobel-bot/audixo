@@ -7,7 +7,7 @@ const cols=[
   ['Open Studio','/editor'],['Trim Audio','/tools/trim-audio'],['Vocal Extractor','/tools/vocals'],
   ['Echo & Delay','/tools/echo'],['Slowed + Reverb','/tools/slowed-reverb'],
   ['Pitch Editor','/tools/pitch'],['8D / 16D Motion','/tools/spatial-motion'],
-  ['Audio Recorder','/tools/recorder'],['Social Video Downloader','/tools/social-video-downloader'],['Local Library','/library']
+  ['Audio Recorder','/tools/recorder'],['Lyrics Video Maker','/tools/lyrics-video-maker'],['Social Video Downloader','/tools/social-video-downloader'],['Local Library','/library']
  ]},
  {name:'Explore',links:[
   ['Home','/'],['Features','/features'],['How It Works','/how-it-works'],['About AUDIXO','/about'],

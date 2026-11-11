@@ -83,7 +83,8 @@ export default function YouTubeConverter(){
  }
  const start=async()=>{
   if(busy||!canDownload)return
-  if(downloadHref&&!local){setCompleted(false);setNotice('Retrying your download on this page.');downloadOnThisPage(downloadHref);return}
+  // Issue a fresh signed URL on every attempt; retrying the old one fails
+  // after its short expiry even when the source becomes available again.
   const controller=new AbortController();running.current?.abort();running.current=controller
   // Pre-open within the user's click gesture, before the async token request.
   // No popups, new tabs or top-level navigation for remote downloads.
@@ -106,7 +107,12 @@ export default function YouTubeConverter(){
     setProgress({stage:'Download handed to your browser · transfer in progress'})
    }
 
-   if(!controller.signal.aborted){setCompleted(true);setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:'Download initiated. Your browser Downloads panel displays the exact transfer progress.')}
+   if(!controller.signal.aborted){
+    // Remote delivery is asynchronous and may fail inside the iframe after
+    // start() succeeds. Only local exports have a confirmed blob/file action.
+    setCompleted(Boolean(local))
+    setNotice(local?`${format.toUpperCase()} export requested. Check your browser downloads.`:'Download requested. Check your browser Downloads panel; source restrictions may still prevent delivery.')
+   }
   }catch(e){if(!aborted(e)){setCompleted(false);setNotice(explainMediaError(e))}}
   finally{if(running.current===controller)running.current=null;setBusy(false);setProgress(null)}
  }

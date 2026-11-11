@@ -43,7 +43,8 @@ export default function LyricsVideoMaker(){
   const c=new AbortController();cancelRef.current=c;setBusy('ai');setWarning('');setStatus('Preparing local AI model. The first download can be large and transcription may take several minutes.')
   try{
    const audio=await downsample(buffer);if(c.signal.aborted)return
-   const module:any=await import(/* @vite-ignore */ 'https://esm.sh/@huggingface/transformers@3.7.6')
+   const modelLibraryUrl='https://esm.sh/@huggingface/transformers@3.7.6'
+   const module:any=await import(/* @vite-ignore */ modelLibraryUrl)
    if(c.signal.aborted)return
    const transcriber=await module.pipeline('automatic-speech-recognition','Xenova/whisper-tiny',{device:'wasm',progress_callback:(p:{status?:string;progress?:number})=>{
     if(!c.signal.aborted&&p.status==='progress'&&Number.isFinite(p.progress))setStatus('Downloading AI model: '+Math.round(p.progress||0)+'%')

@@ -22,7 +22,7 @@ export type ProductTool = {
  * Each task gets its own interface instead of dropping users into the full DAW.
  */
 export const productTools: ProductTool[] = [
-  {id:'lyrics-video',name:'Lyrics Video Maker',route:'/tools/lyrics-video-maker',short:'Turn an audio recording into a synchronized lyric video with editable Roman text and MP4 export.',group:'Create',icon:'♫',bullets:['Timed lyrics with AI draft or LRC import','Roman text + word highlighting','1080p-style landscape and portrait MP4']},
+  {id:'lyrics-video',name:'Lyrics Video Maker',route:'/tools/lyrics-video-maker',short:'Turn an audio recording into a synchronized lyric video with editable Roman text and MP4 export.',group:'Create',icon:'♫',bullets:['Timed lyrics with AI draft or LRC import','Roman text + word highlighting','Landscape and portrait MP4 export']},
   {
     id: 'youtube-mp3',
     name: 'Social Video Downloader',

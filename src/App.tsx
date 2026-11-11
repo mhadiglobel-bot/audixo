@@ -24,6 +24,7 @@ const Privacy = lazy(() => import('./pages/Terms').then(m => ({default:m.Privacy
 const Terms = lazy(() => import('./pages/Terms'))
 const Copyright = lazy(() => import('./pages/Terms').then(m => ({default:m.Copyright})))
 const YouTubeConverter = lazy(() => import('./pages/YouTubeConverter'))
+const LyricsVideoMaker = lazy(() => import('./pages/LyricsVideoMaker'))
 const QuickTrim = lazy(() => import('./pages/QuickTrim'))
 const EchoTool = lazy(() => import('./pages/QuickTrim').then(m => ({default:m.EchoTool})))
 const SlowedReverbTool = lazy(() => import('./pages/QuickTrim').then(m => ({default:m.SlowedReverbTool})))
@@ -38,6 +39,7 @@ export default function App(){return <SoundExperienceProvider><Suspense fallback
   <Route path="/tools/vocals" element={<Vocals/>}/>
   <Route path="/editor" element={<Editor/>}/>
   <Route path="/tools/social-video-downloader" element={<YouTubeConverter/>}/>
+  <Route path="/tools/lyrics-video-maker" element={<LyricsVideoMaker/>}/>
   <Route path="/tools/youtube-to-mp3" element={<YouTubeConverter/>}/>
   <Route path="/tools/trim-audio" element={<QuickTrim/>}/>
   <Route path="/tools/echo" element={<EchoTool/>}/>

@@ -1,7 +1,7 @@
 import {useId} from 'react'
 type Props={id:string;size?:number}
 const palette:Record<string,[string,string]>={
- 'youtube-mp3':['#00e9be','#27a7f9'],'recorder':['#fc50bd','#a65aff'],
+ 'lyrics-video':['#24deaf','#d65af4'],'youtube-mp3':['#00e9be','#27a7f9'],'recorder':['#fc50bd','#a65aff'],
  'vocals':['#a45aff','#2ed9fc'],'quick-trim':['#2ad9f5','#13df99'],
  'echo':['#8f64fa','#f15fc8'],'slowed-reverb':['#28d6ec','#8463ee'],
  'pitch':['#e85ed5','#19d7ed'],'spatial':['#18dda6','#aa63ed'],
@@ -11,7 +11,8 @@ export default function ToolGlyph({id,size=24}:Props){
  const idGradient='audixo-glyph-'+useId().replace(/:/g,'')
  const [start,end]=palette[id]||['#18d8ba','#9962ea']
  let lines
- if(id==='youtube-mp3')lines=<><rect x="3" y="4.5" width="18" height="12.5" rx="3"/><path d="m10 8.3 4.6 2.45L10 13.2zM8 21h8m-4-4v4"/></>
+ if(id==='lyrics-video')lines=<><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M8 9h8M8 12h8M8 15h4M16 14l3-1.4v4.3a1.5 1.5 0 1 1-1-1.4"/></>
+ else if(id==='youtube-mp3')lines=<><rect x="3" y="4.5" width="18" height="12.5" rx="3"/><path d="m10 8.3 4.6 2.45L10 13.2zM8 21h8m-4-4v4"/></>
  else if(id==='recorder')lines=<><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-4 0h8"/><path d="M10 7h4M10 10h4" strokeWidth="1.2"/></>
  else if(id==='vocals')lines=<><path d="M3 9v6M6 6v12M9 10v4M12 3v18M15 8v8M18 5v14M21 10v4"/><path d="M4.5 19.5h15" opacity=".45"/></>
  else if(id==='quick-trim')lines=<><circle cx="6.5" cy="17.5" r="2.7"/><circle cx="17.5" cy="17.5" r="2.7"/><path d="M8.5 15.5 19 5M15.5 15.5 5 5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></>

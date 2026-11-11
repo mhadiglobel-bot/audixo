@@ -150,7 +150,7 @@ export async function renderLyricMp4(options:{
  const canvas=document.createElement('canvas')
  canvas.width=options.aspect==='portrait'?720:1280;canvas.height=options.aspect==='portrait'?1280:720
  const target=new m.BufferTarget()
- const output=new m.Output({format:new m.Mp4OutputFormat({fastStart:'in-memory'}),target})
+ const output=new m.Output({format:new m.Mp4OutputFormat(),target})
  const video=new m.CanvasSource(canvas,{codec:'avc',quality:new m.Quality({bitrate:2_400_000}),keyFrameInterval:2})
  const audio=new m.AudioBufferSource({codec:'aac',quality:new m.Quality({bitrate:160_000})})
  output.addVideoTrack(video);output.addAudioTrack(audio)

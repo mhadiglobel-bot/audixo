@@ -143,7 +143,7 @@ export async function renderLyricMp4(options:{
  audio:AudioBuffer;lines:LyricLine[];title:string;theme:Theme;offset:number;aspect:Aspect;
  onProgress:(value:number)=>void;signal:AbortSignal
 }):Promise<Blob>{
- if(typeof VideoEncoder==='undefined'||typeof AudioEncoder==='undefined')throw Error('MP4 export needs a current desktop Chrome/Edge browser with WebCodecs H.264 and AAC support.')
+ if(typeof (globalThis as any).VideoEncoder==='undefined'||typeof (globalThis as any).AudioEncoder==='undefined')throw Error('MP4 export needs a current desktop Chrome/Edge browser with WebCodecs H.264 and AAC support.')
  const url='https://esm.sh/mediabunny@1.65.2'
  const m:any=await import(/* @vite-ignore */ url)
  if(options.signal.aborted)throw new DOMException('Cancelled','AbortError')

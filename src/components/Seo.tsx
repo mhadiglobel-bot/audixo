@@ -27,12 +27,18 @@ export default function Seo({title,description=site.description,path='/',schema}
   canonical.href=url
   const identity=document.getElementById('site-identity-schema')
   if(path==='/'){
-   const website={'@context':'https://schema.org','@type':'WebSite','@id':site.url+'/#website',name:'AUDIXO',alternateName:['Audixo Studio','audixo.tiers.rest'],url:site.url+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.'}
+   const website={'@context':'https://schema.org','@type':'WebSite','@id':site.url+'/#website',name:'AUDIXO',alternateName:['Audixo','Audixo Studio','audixo.tiers.rest'],url:site.url+'/',description:'Free browser-based audio editor, recorder, vocal extractor and sound tools. No subscription required.',publisher:{'@id':site.url+'/#organization'},inLanguage:'en'}
    const script=(identity as HTMLScriptElement|null)||document.createElement('script')
    script.id='site-identity-schema';script.type='application/ld+json'
    script.textContent=JSON.stringify(website)
    if(!identity)document.head.append(script)
-  }else identity?.remove()
+   const org={'@context':'https://schema.org','@type':'Organization','@id':site.url+'/#organization',name:'AUDIXO Studio',alternateName:'AUDIXO',url:site.url+'/',logo:{'@type':'ImageObject',url:site.url+'/favicon.png',contentUrl:site.url+'/favicon.png',width:256,height:256},parentOrganization:{'@type':'Organization',name:'Nexivo'}}
+   const existingOrg=document.getElementById('organization-identity-schema')
+   const orgScript=(existingOrg as HTMLScriptElement|null)||document.createElement('script')
+   orgScript.id='organization-identity-schema';orgScript.type='application/ld+json'
+   orgScript.textContent=JSON.stringify(org)
+   if(!existingOrg)document.head.append(orgScript)
+  }else {identity?.remove();document.getElementById('organization-identity-schema')?.remove()}
   document.getElementById('page-schema')?.remove()
   if(path!=='/library'){
    const generic={'@context':'https://schema.org','@type':path.startsWith('/tools/')?'SoftwareApplication':'WebPage',name:full,url,description,isPartOf:{'@type':'WebSite',name:site.name,url:site.url}}

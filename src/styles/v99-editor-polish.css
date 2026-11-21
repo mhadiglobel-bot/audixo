@@ -1,0 +1,145 @@
+/* AUDIXO V99 | quick-editor control polish, route transitions and editorial cards */
+:root{--ax99-green:#12e2ac;--ax99-cyan:#06cbe7;--ax99-purple:#8f52ef;--ax99-pink:#f12cc4;--ax99-ink:#172b45}
+@keyframes ax99-page-enter{from{opacity:0;transform:translate3d(0,13px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes ax99-copy-enter{from{opacity:0;transform:translate3d(0,9px,0);filter:blur(1.5px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+@keyframes ax99-gradient-drift{from{background-position:0% 50%}to{background-position:220% 50%}}
+@keyframes ax99-toggle-settle{0%{transform:translateX(0) scale(.9)}64%{transform:translateX(21px) scale(1.12)}100%{transform:translateX(18px) scale(1)}}
+@keyframes ax99-small-toggle-settle{0%{transform:translateX(0) scale(.9)}64%{transform:translateX(18px) scale(1.12)}100%{transform:translateX(16px) scale(1)}}
+@keyframes ax99-border-flow{from{background-position:0 0,0% 50%}to{background-position:0 0,280% 50%}}
+@keyframes ax99-card-enter{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ax99-ring-rotate{to{transform:rotate(360deg)}}
+
+/* Smooth page entry and staggered editor copy. */
+.ax98-quick-page{animation:ax99-page-enter .48s cubic-bezier(.2,.75,.25,1) both}
+.ax98-quick-page .ax47-tool-heading{animation:ax99-copy-enter .46s .035s both;color:var(--ax99-ink)!important;background:none!important;-webkit-text-fill-color:var(--ax99-ink)!important}
+.ax98-quick-page .ax47-tool-tagline{background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-size:240% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:ax99-gradient-drift 7s linear infinite,ax99-copy-enter .48s .095s both!important}
+.ax98-quick-page .v13-tool-hero>div:first-child>p:not(.ax47-tool-tagline){animation:ax99-copy-enter .5s .15s both}
+.ax98-quick-page .ax98-tool-switcher{animation:ax99-copy-enter .48s .12s both}
+.ax98-quick-page .ax98-workbench{animation:ax99-copy-enter .52s .18s both}
+
+/* Separate source sessions between quick editors. */
+.ax99-switcher-disclaimer{display:flex;align-items:center;gap:10px;margin-top:-5px!important;margin-bottom:13px!important;padding:9px 14px;border:1px solid #dce8f2;border-radius:999px;background:linear-gradient(100deg,rgba(231,255,247,.8),rgba(247,250,255,.94),rgba(250,241,255,.78));color:#61758e;box-shadow:0 4px 13px rgba(49,72,115,.035)}
+.ax99-switcher-disclaimer>span{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;border-radius:50%;background:linear-gradient(120deg,var(--ax99-green),var(--ax99-cyan));color:#fff;font-size:11px;font-weight:1000}
+.ax99-switcher-disclaimer p{margin:0;font-size:10px;line-height:1.5}
+
+/* Pill switches: colour stays on the track, with a soft spring on the thumb. */
+.ax98-quick-page .ax71-switch-choice{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;min-height:43px!important;padding:7px 12px!important;border:1px solid #dfe8f2!important;border-radius:999px!important;background:#fff!important;color:#344a67!important;box-shadow:0 3px 10px rgba(48,69,111,.045)!important;transition:background .22s ease,border-color .22s ease,box-shadow .22s ease,transform .22s ease!important}
+.ax98-quick-page .ax71-switch-choice:hover{border-color:#c4d8eb!important;transform:translateY(-1px)}
+.ax98-quick-page .ax71-switch-choice.active{border-color:#bdeee0!important;background:linear-gradient(100deg,rgba(18,226,172,.055),rgba(6,203,231,.035),rgba(143,82,239,.025))!important;box-shadow:0 4px 13px rgba(18,180,155,.07)!important}
+.ax98-quick-page .ax71-switch-track{position:relative!important;display:block!important;flex:0 0 42px!important;width:42px!important;height:24px!important;border:1px solid #d8e2ee!important;border-radius:999px!important;background:#e7edf5!important;box-shadow:inset 0 1px 3px rgba(34,55,88,.1)!important;overflow:visible!important;transition:background .24s ease,border-color .24s ease!important}
+.ax98-quick-page .ax71-switch-track::before{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(26,48,83,.22);transform:translateX(0);transition:transform .32s cubic-bezier(.2,1.45,.4,1),box-shadow .22s ease!important}
+.ax98-quick-page .ax71-switch-choice.active .ax71-switch-track{border-color:transparent!important;background:linear-gradient(100deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple))!important;box-shadow:0 0 0 2px rgba(18,226,172,.08),inset 0 1px 2px rgba(23,43,72,.08)!important}
+.ax98-quick-page .ax71-switch-choice.active .ax71-switch-track::before{animation:ax99-toggle-settle .38s cubic-bezier(.2,.85,.3,1) both;box-shadow:0 1px 5px rgba(23,43,72,.2),0 0 7px rgba(255,255,255,.75)}
+.ax98-quick-page .ax71-switch-choice.active.red .ax71-switch-track{background:linear-gradient(100deg,var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink))!important}
+.ax98-quick-page .ax71-switch-choice>span{display:grid;gap:2px;min-width:0}
+.ax98-quick-page .ax71-switch-choice>span strong{font-size:11px!important;line-height:1.2;color:#263d59!important}
+.ax98-quick-page .ax71-switch-choice>span small{font-size:9px!important;line-height:1.35;color:#8494a9!important}
+.ax98-quick-page .ax71-switch-choice.active>span strong{color:#167d69!important}
+.ax98-quick-page .v14-pitch-lock{grid-template-columns:minmax(0,1fr)!important;gap:8px!important;padding:13px!important;border:1px solid #e1eaf4!important;border-radius:22px!important;background:#fff!important}
+.ax98-quick-page .v14-pitch-lock .ax71-switch-choice{width:100%!important;justify-content:space-between!important}
+.ax98-quick-page .v14-pitch-lock .ax71-switch-choice>span{display:block!important;margin-right:auto}
+.ax98-quick-page .v14-pitch-lock .ax71-switch-choice>strong{font-size:9px!important;letter-spacing:.08em;color:#7b8ca1}
+.ax98-quick-page .v14-pitch-lock .ax71-switch-choice.active>strong{color:#168b6b!important}
+
+/* Echo and pitch bypass toggle, using the compact Open Studio pattern. */
+.ax98-quick-page .ax71-fx-switch-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;min-height:66px!important;padding:11px 13px!important;border:1px solid #e0e9f3!important;border-radius:22px!important;background:#fff!important;box-shadow:0 4px 13px rgba(49,69,111,.04)!important}
+.ax98-quick-page .ax71-fx-switch-row>div{display:grid;gap:3px;min-width:0}
+.ax98-quick-page .ax71-fx-switch-row>div>b{font-size:11px!important;color:#263d59!important}
+.ax98-quick-page .ax71-fx-switch-row>div>small{font-size:9px!important;line-height:1.4;color:#8191a6!important}
+.ax98-quick-page .ax71-fx-switch{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;flex:0 0 auto!important;min-width:76px!important;height:38px!important;padding:5px 9px!important;border:1px solid #dce6f0!important;border-radius:999px!important;background:#f9fbfe!important;color:#7b8da3!important;box-shadow:0 2px 7px rgba(43,62,99,.045)!important;transition:border-color .22s ease,background .22s ease,transform .22s ease!important}
+.ax98-quick-page .ax71-fx-switch>i{position:relative!important;display:block!important;flex:0 0 38px!important;width:38px!important;height:22px!important;border-radius:999px!important;background:#e1e8f1!important;box-shadow:inset 0 1px 3px rgba(31,52,84,.1)!important;transition:background .24s ease!important}
+.ax98-quick-page .ax71-fx-switch>i::before{content:"";position:absolute;left:4px;top:4px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(28,47,80,.22);transform:translateX(0);transition:transform .32s cubic-bezier(.2,1.45,.4,1)!important}
+.ax98-quick-page .ax71-fx-switch.active{border-color:#bdeee0!important;background:#fff!important;color:#168b6b!important}
+.ax98-quick-page .ax71-fx-switch.active>i{background:linear-gradient(100deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple))!important}
+.ax98-quick-page .ax71-fx-switch.active>i::before{animation:ax99-small-toggle-settle .38s cubic-bezier(.2,.85,.3,1) both}
+.ax98-quick-page .ax71-fx-switch>span{font-size:10px!important;font-weight:900!important;min-width:17px}
+.ax98-quick-page .ax71-fx-switch-row:focus-within{border-color:#c7d7ee!important;box-shadow:0 0 0 3px rgba(143,82,239,.07)!important}
+
+/* Save to Library is a rounded toggle, not a native square checkbox. */
+.ax98-quick-page .v13-check{display:inline-flex!important;align-items:center!important;gap:8px!important;padding:0!important}
+.ax98-quick-page .v13-check input[type=checkbox]{appearance:none!important;-webkit-appearance:none!important;position:relative!important;display:inline-block!important;flex:0 0 35px!important;width:35px!important;height:20px!important;margin:0!important;padding:0!important;border:1px solid #d6e1ed!important;border-radius:999px!important;background:#e5ebf3!important;cursor:pointer;accent-color:transparent!important;box-shadow:inset 0 1px 3px rgba(31,52,84,.1)!important;transition:background .22s ease,border-color .22s ease!important}
+.ax98-quick-page .v13-check input[type=checkbox]::before{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(28,47,80,.22);transition:transform .3s cubic-bezier(.2,1.45,.4,1)!important}
+.ax98-quick-page .v13-check input[type=checkbox]:checked{border-color:transparent!important;background:linear-gradient(100deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple))!important}
+.ax98-quick-page .v13-check input[type=checkbox]:checked::before{transform:translateX(15px)}
+.ax98-quick-page .v13-check>span{font-size:10px!important;font-weight:800;color:#687b93}
+
+/* Removable edit chips directly under the waveform. */
+.ax99-applied-edits{display:grid;gap:7px;margin:12px 0 4px;padding:11px 12px;border:1px solid #e0e9f3;border-radius:19px;background:linear-gradient(105deg,#f5fffb,#fbfcff 55%,#fcf7ff)}
+.ax99-applied-edits>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ax99-applied-edits>header strong{font-size:8px;font-weight:1000;letter-spacing:.14em;color:#6c7e98}
+.ax99-applied-edits>header small{font-size:9px;font-weight:850;color:#8b73bd}
+.ax99-edit-chip-list{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.ax99-edit-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;min-height:30px;padding:3px 4px 3px 10px;border:1px solid #dfe8f2;border-radius:999px;background:#fff;color:#344a67;box-shadow:0 2px 7px rgba(42,62,102,.035)}
+.ax99-edit-chip>b{font-size:9px;font-weight:850;line-height:1.25;overflow-wrap:anywhere}
+.ax99-edit-chip>button{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;padding:0;border:0;border-radius:50%;background:#f1edfb;color:#7954c8;font-size:15px;font-weight:700;line-height:1;cursor:pointer;transition:background .18s ease,color .18s ease,transform .18s ease}
+.ax99-edit-chip>button:hover{background:#fff0f8;color:#d02b9c;transform:rotate(90deg)}
+.ax99-edit-chip>button:focus-visible{outline:2px solid rgba(143,82,239,.45);outline-offset:2px}
+.ax99-applied-edits>p{margin:0;color:#8493a7;font-size:9px;line-height:1.45}
+
+/* Thin bracket fade curves complement the real canvas and rendered DSP. */
+.ax98-quick-page .v13-fade-zone{overflow:visible!important;border:0!important;box-shadow:none!important;filter:none!important;background:linear-gradient(90deg,rgba(18,226,172,.09),transparent)!important}
+.ax98-quick-page .v13-fade-zone.fade-out{background:linear-gradient(270deg,rgba(241,44,196,.09),transparent)!important}
+.ax98-quick-page .ax96-fade-curve{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important}
+.ax98-quick-page .ax96-fade-curve path{fill:none!important;stroke:var(--ax99-green)!important;stroke-width:1.65!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important;opacity:.96!important}
+.ax98-quick-page .fade-out .ax96-fade-curve path{stroke:var(--ax99-pink)!important}
+
+/* A/B transport controls share one centre line and predictable grid tracks. */
+.ax98-compare-stage .ax68-compare-audio{grid-template-columns:minmax(185px,.36fr) minmax(0,1fr)!important;grid-template-rows:auto auto!important;align-items:center!important}
+.ax98-compare-stage .ax68-player-title{grid-column:1!important;grid-row:1!important;align-self:center!important}
+.ax98-compare-stage .ax69-transport{grid-column:2!important;grid-row:1 / span 2!important;align-self:center!important;display:flex!important;align-items:center!important;min-height:54px!important;margin:0!important}
+.ax98-compare-stage .ax69-transport-main{display:grid!important;grid-template-columns:40px minmax(0,1fr) 32px minmax(64px,86px)!important;align-items:center!important;justify-items:stretch!important;gap:10px!important;width:100%!important;height:56px!important;min-height:56px!important;padding:6px 10px!important;box-sizing:border-box!important;border-radius:999px!important;overflow:hidden!important}
+.ax98-compare-stage .ax69-play{display:grid!important;place-items:center!important;align-self:center!important;justify-self:center!important;width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;margin:0!important;padding:0!important;border-radius:50%!important;font-size:14px!important;line-height:1!important;text-align:center!important}
+.ax98-compare-stage .ax69-transport-meter{display:grid!important;grid-template-rows:16px auto!important;align-content:center!important;align-self:center!important;gap:3px!important;height:100%!important;min-width:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+.ax98-compare-stage .ax69-transport-meter input[type=range]{display:block!important;align-self:center!important;width:100%!important;min-width:0!important;height:14px!important;min-height:14px!important;margin:0!important;padding:0!important;position:relative!important;top:0!important;transform:none!important;accent-color:var(--ax99-purple)!important}
+.ax98-compare-stage .ax69-transport-time{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;margin:0!important;padding:0!important;line-height:1.15!important;white-space:nowrap!important;font-size:9px!important;font-variant-numeric:tabular-nums!important}
+.ax98-compare-stage .ax69-mute{display:grid!important;place-items:center!important;align-self:center!important;justify-self:center!important;width:30px!important;height:30px!important;min-width:30px!important;margin:0!important;padding:0!important;border-radius:50%!important;line-height:1!important;text-align:center!important}
+.ax98-compare-stage .ax70-speed-select{align-self:center!important;justify-self:stretch!important;margin:0!important}
+.ax98-compare-stage .ax68-compare-audio>p{grid-column:1!important;grid-row:2!important;align-self:start!important;margin:3px 0 0!important}
+.ax98-compare-stage .ax68-versus{display:flex!important;align-items:center!important;justify-content:center!important;min-height:32px!important;height:32px!important;margin:0!important;padding:0!important}
+.ax98-compare-stage .ax68-versus>span{display:grid!important;place-items:center!important;flex:0 0 30px!important;width:30px!important;height:30px!important;margin:0 auto!important;padding:0!important;border-radius:50%!important;line-height:1!important;text-align:center!important}
+
+/* How It Works cards: two columns, four-neon outline and concise hierarchy. */
+.ax29-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+.ax29-step-card{position:relative!important;min-width:0!important;min-height:174px!important;padding:23px 58px 23px 23px!important;border:1.5px solid transparent!important;border-radius:25px!important;overflow:hidden!important;background-image:linear-gradient(#fff,#fff),linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-origin:border-box!important;background-clip:padding-box,border-box!important;background-size:100% 100%,280% 100%!important;background-repeat:no-repeat!important;animation:ax99-border-flow 7s linear infinite,ax99-card-enter .52s cubic-bezier(.2,.75,.25,1) both!important;box-shadow:0 10px 28px rgba(35,60,105,.055),0 0 12px rgba(6,203,231,.035)!important;transition:transform .24s ease,box-shadow .24s ease!important}
+.ax29-step-card:nth-child(2){animation-delay:0s,.04s!important}.ax29-step-card:nth-child(3){animation-delay:0s,.08s!important}.ax29-step-card:nth-child(4){animation-delay:0s,.12s!important}.ax29-step-card:nth-child(5){animation-delay:0s,.16s!important}.ax29-step-card:nth-child(6){animation-delay:0s,.20s!important}.ax29-step-card:nth-child(7){animation-delay:0s,.24s!important}.ax29-step-card:nth-child(8){animation-delay:0s,.28s!important}.ax29-step-card:nth-child(9){animation-delay:0s,.32s!important}.ax29-step-card:nth-child(10){animation-delay:0s,.36s!important}.ax29-step-card:nth-child(11){animation-delay:0s,.40s!important}.ax29-step-card:nth-child(12){animation-delay:0s,.44s!important}
+.ax29-step-card:hover{transform:translateY(-4px)!important;box-shadow:0 15px 34px rgba(37,62,110,.1),0 0 16px rgba(18,226,172,.09),0 0 16px rgba(241,44,196,.075)!important}
+.ax29-step-card>div{display:flex!important;align-items:center!important;gap:11px!important}
+.ax29-step-card>div>b{display:grid!important;place-items:center!important;flex:0 0 36px!important;width:36px!important;height:36px!important;border:1px solid #d9e9ef!important;border-radius:13px!important;background:linear-gradient(135deg,rgba(18,226,172,.12),rgba(6,203,231,.12),rgba(143,82,239,.1),rgba(241,44,196,.08))!important;color:#29415d!important;font-size:10px!important;font-weight:1000!important}
+.ax29-step-card>div>small{font-size:8px!important;line-height:1.35!important;letter-spacing:.11em!important;color:#7c78a0!important;font-weight:950!important}
+.ax29-step-card h3{margin:15px 0 7px!important;color:var(--ax99-ink)!important;font-size:21px!important;line-height:1.15!important;font-weight:1000!important}
+.ax29-step-card p{margin:0!important;color:#6c7d94!important;font-size:12px!important;line-height:1.65!important;max-width:62ch!important}
+.ax29-step-card>i{position:absolute!important;right:18px!important;top:22px!important;translate:0 0!important;display:grid!important;place-items:center!important;width:29px!important;height:29px!important;border:1px solid #e0d8f5!important;border-radius:50%!important;background:#fff!important;color:#7952cb!important;font-size:14px!important;box-shadow:0 3px 10px rgba(89,63,150,.07)!important;transition:transform .22s ease,border-color .22s ease!important}
+.ax29-step-card:hover>i{translate:0 0!important;transform:translate(2px,-2px)!important;border-color:#c9b4f1!important}
+
+/* Changelog: remove the inner stripe/box; keep a darkened rotating neon circle. */
+.ax97-changelog .ax94-release-card{position:relative!important;isolation:isolate!important;overflow:visible!important;border:0!important;border-radius:50%!important;background:#fff!important;box-shadow:0 12px 30px rgba(30,47,80,.075)!important}
+.ax97-changelog .ax94-release-card::before{content:none!important;display:none!important}
+.ax97-changelog .ax94-release-card::after{content:""!important;position:absolute!important;inset:0!important;z-index:3!important;border:4px solid transparent!important;border-radius:50%!important;background:conic-gradient(var(--ax99-green),var(--ax99-pink),#15283f,var(--ax99-purple),var(--ax99-cyan),var(--ax99-green)) border-box!important;mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0)!important;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0)!important;mask-composite:exclude!important;-webkit-mask-composite:xor!important;pointer-events:none!important;animation:none!important}
+.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:ax99-ring-rotate 5.5s linear infinite!important}
+.ax97-changelog .ax94-release-head strong{background:linear-gradient(105deg,#b81491,#5830a7,#006e94,#087a57)!important;background-clip:text!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
+.ax97-changelog .ax94-release-head small{color:#5f7088!important;font-weight:900!important}
+.ax97-changelog .ax94-release-card h2{color:#182d47!important}
+.ax97-changelog .ax94-release-card p{color:#667a92!important}
+.ax97-changelog .ax94-release-card{outline:0!important}
+
+@media(max-width:900px){.ax29-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}}
+@media(max-width:650px){
+ .ax99-switcher-disclaimer{align-items:flex-start;border-radius:18px!important;padding:10px 12px!important}
+ .ax99-switcher-disclaimer p{font-size:9px!important}
+ .ax98-quick-page .ax71-fx-switch-row{align-items:flex-start!important}
+ .ax98-quick-page .ax71-fx-switch{min-width:73px!important}
+ .ax98-compare-stage .ax68-compare-audio{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important}
+ .ax98-compare-stage .ax68-player-title,.ax98-compare-stage .ax69-transport,.ax98-compare-stage .ax68-compare-audio>p{grid-column:1!important;grid-row:auto!important}
+ .ax98-compare-stage .ax69-transport-main{grid-template-columns:34px minmax(0,1fr) 27px 66px!important;height:50px!important;min-height:50px!important;gap:6px!important;padding:5px 7px!important}
+ .ax98-compare-stage .ax69-play{width:32px!important;height:32px!important;min-width:32px!important;max-width:32px!important}
+ .ax98-compare-stage .ax69-transport-meter{grid-template-rows:15px auto!important}
+ .ax29-step-grid{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+ .ax29-step-card{min-height:155px!important;padding:20px 52px 20px 18px!important;border-radius:21px!important}
+ .ax29-step-card h3{font-size:19px!important;margin-top:12px!important}
+ .ax29-step-card p{font-size:11px!important}
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:ax99-ring-rotate 5.5s linear infinite!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax98-quick-page,.ax98-quick-page .ax47-tool-heading,.ax98-quick-page .ax47-tool-tagline,.ax98-quick-page .v13-tool-hero>div:first-child>p:not(.ax47-tool-tagline),.ax98-quick-page .ax98-tool-switcher,.ax98-quick-page .ax98-workbench,.ax29-step-card,.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:none!important;transition:none!important;filter:none!important;transform:none!important;opacity:1!important}
+ .ax98-quick-page .ax71-switch-track::before,.ax98-quick-page .ax71-fx-switch>i::before,.ax98-quick-page .v13-check input[type=checkbox]::before{transition:none!important;animation:none!important}
+}

@@ -25,7 +25,7 @@ function fakeCanvas(){
  }
  return {canvas:{getBoundingClientRect(){return{width:200,height:100}},getContext(){return ctx}},strokes}
 }
-const samples=new Float32Array(20*16000).fill(.8)
+const samples=Float32Array.from({length:20*16000},(_,i)=>.8*Math.sin(2*Math.PI*220*i/16000))
 const source={duration:20,sampleRate:16000,length:samples.length,numberOfChannels:1,getChannelData(){return samples}}
 function peaks(stroke){
  const cols=[]

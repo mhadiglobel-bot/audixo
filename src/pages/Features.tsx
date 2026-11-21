@@ -70,7 +70,7 @@ function FeatureVisual({kind}:{kind:string}){
 export default function Features(){
  const toolsRef=useRef<HTMLDivElement|null>(null)
  const [toolsRevealed,setToolsRevealed]=useState(false)
- const {active:activeTool,phase,select:selectTool}=useNeonJourney(focusedTools.length,1650,2350)
+ const {active:activeTool,phase,select:selectTool}=useNeonJourney(focusedTools.length,1650,2350,toolsRef)
  useEffect(()=>{const node=toolsRef.current;if(!node)return;if(!('IntersectionObserver' in window)){setToolsRevealed(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setToolsRevealed(true);observer.disconnect()}},{threshold:.12});observer.observe(node);return()=>observer.disconnect()},[])
 
  return <SiteShell><Seo title="AUDIXO Features — Trim, Stems, Echo, Mixing & Export" description="Explore real Audixo tools for trimming audio, adding echo effects, separating supported stems, and exporting edits from the browser." path="/features"/>

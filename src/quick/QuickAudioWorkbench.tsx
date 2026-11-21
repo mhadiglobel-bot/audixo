@@ -18,7 +18,7 @@ type Props={mode:QuickMode;title:string;eyebrow:string;description:string;taglin
 type QuickPreset={name:string;note:string;apply:()=>void}
 type AppliedEdit={id:string;label:string;remove:()=>void}
 
-const defaults={gainDb:0,speed:1,fadeIn:0,fadeOut:0,delayMs:240,delayWet:.18,feedback:.24,reverb:.28,pitch:0,motionMode:'8d' as '8d'|'16d',motionDepth:.78,motionHz:.18,pan:0}
+const defaults={gainDb:0,speed:1,fadeIn:0,fadeOut:0,delayMs:240,delayWet:.18,feedback:.24,reverb:.28,pitch:0,motionMode:'8d' as '8d'|'16d',motionDepth:.78,motionHz:.16,pan:0}
 
 const quickTools:Array<{mode:QuickMode;label:string;path:string;glyph:string}>=[
  {mode:'trim',label:'Trim Audio',path:'/tools/trim-audio',glyph:'✂'},

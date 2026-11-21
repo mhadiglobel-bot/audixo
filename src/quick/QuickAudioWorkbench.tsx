@@ -54,7 +54,7 @@ type SegmentOption={value:string;label:string}
 function SegmentedControl({label,value,options,onChange,tone='green'}:{label:string;value:string;options:SegmentOption[];onChange:(value:string)=>void;tone?:'green'|'pink'|'violet'}){
  const activeIndex=Math.max(0,options.findIndex(option=>option.value===value))
  const activeValue=options[activeIndex]?.value
- const style={"--ax100-active-index":activeIndex,"--ax100-option-count":options.length} as CSSProperties
+ const style={"--ax100-option-count":options.length,"--ax100-option-width":(100/options.length)+"%","--ax100-shift":(activeIndex*100)+"%"} as CSSProperties
  return <div className={'ax100-segmented'+(tone==='pink'?' is-pink':tone==='violet'?' is-violet':'')+(activeValue==='off'?' is-neutral':'')} role="group" aria-label={label} style={style}>
   {options.map(option=><button key={option.value} type="button" aria-pressed={value===option.value} className={value===option.value?'active':''} onClick={()=>onChange(option.value)}>{option.label}</button>)}
  </div>
@@ -286,7 +286,6 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
               <div className="v13-wave-selection" style={selectionStyle}><button className="start" aria-label="Trim start" onPointerDown={e=>startHandle('start',e)}/><button className="end" aria-label="Trim end" onPointerDown={e=>startHandle('end',e)}/>{fadeIn>.01&&<div className="v13-fade-zone fade-in" style={{width:`${fadeInPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M2 50 C19 50 44 10 94 4 M2 50 C19 50 44 90 94 96 M94 4 L94 96"/></svg></div>}{fadeOut>.01&&<div className="v13-fade-zone fade-out" style={{width:`${fadeOutPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M6 4 C56 10 81 50 98 50 M6 96 C56 90 81 50 98 50 M6 4 L6 96"/></svg></div>}<span className="v13-duration-chip">{formatTime(selectedDuration,true)}</span></div>
             </div>
             <div className="v13-time-fields ax27-time-fields"><label><span>START</span><input type="number" min="0" max={trimEnd-.02} step=".001" value={trimStart.toFixed(3)} onChange={e=>setTrimStart(Math.max(0,Math.min(Number(e.target.value)||0,trimEnd-.02)))}/></label><label><span>END</span><input type="number" min={trimStart+.02} max={duration} step=".001" value={trimEnd.toFixed(3)} onChange={e=>setTrimEnd(Math.min(duration,Math.max(Number(e.target.value)||duration,trimStart+.02)))}/></label><div><span>SELECTED</span><strong>{formatTime(selectedDuration,true)}</strong></div><button onClick={()=>{setTrimStart(0);setTrimEnd(duration)}}>Use full audio</button></div>
-            {}
             <div className="ax99-applied-edits" aria-label="Applied edits">
               <header><strong>APPLIED EDITS</strong><small>{applied.length} active</small></header>
               {applied.length?<div className="ax99-edit-chip-list">{applied.map(item=><span className="ax99-edit-chip" key={item.id}><b>{item.label}</b><button type="button" title={`Remove ${item.label}`} aria-label={`Remove ${item.label}`} onClick={item.remove}>×</button></span>)}</div>:<p>No additional edits yet. Changes you make will appear here.</p>}

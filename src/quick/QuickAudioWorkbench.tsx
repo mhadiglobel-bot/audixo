@@ -43,7 +43,7 @@ function Slider({label,value,min,max,step,onChange,display,help,active=false}:{l
  return <div className={'v13-slider ax96-slider'+(active?' is-active':'')}>
   <div className="ax96-slider-description"><strong>{label}</strong>{help&&<small>{help}</small>}</div>
   <div className="ax96-slider-input"><button type="button" aria-label={'Decrease '+label} disabled={value<=min} onClick={down}>−</button>
-   <input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} style={{"--ax100-progress":progress+"%"} as CSSProperties}/>
+   <input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} style={{"--ax100-progress":progress+"%","--ax102-progress-mid":(progress/2)+"%"} as CSSProperties}/>
    <button type="button" aria-label={'Increase '+label} disabled={value>=max} onClick={up}>+</button>
    <output>{display ?? value}</output>
   </div>

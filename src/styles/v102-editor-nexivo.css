@@ -72,7 +72,7 @@
  image-rendering:auto!important;filter:none!important;transform:none!important;opacity:1!important
 }
 .ax98-quick-page .ax96-slider-input input[type=range]{
- background:linear-gradient(to right,var(--ax102-green) 0%,var(--ax102-cyan) 45%,var(--ax102-purple) var(--ax100-progress),#e4eaf2 var(--ax100-progress),#e4eaf2 100%)!important;
+ background:linear-gradient(to right,var(--ax102-green) 0%,var(--ax102-cyan) var(--ax102-progress-mid),var(--ax102-purple) var(--ax100-progress),#e4eaf2 var(--ax100-progress),#e4eaf2 100%)!important;
 }
 .ax98-quick-page .ax96-slider-description strong,.ax98-quick-page .ax96-slider-input output{
  text-shadow:none!important;filter:none!important;

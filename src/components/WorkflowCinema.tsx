@@ -1,4 +1,4 @@
-import {type CSSProperties} from 'react'
+import {useRef,type CSSProperties} from 'react'
 import {useNeonJourney} from '../hooks/useNeonJourney'
 import {Link} from 'react-router-dom'
 import Icon from '../editor/Icons'
@@ -56,9 +56,10 @@ const FLOW_LINKS=FLOW_POSITIONS.slice(0,-1).map((start,index)=>{
 const FLOW_RETURN='M 300 594 C 353 594 375 569 375 514 L 375 91 C 375 43 345 21 301 21 L 106 21 Q 52 21 52 61 Q 52 83 100 54'
 
 export default function WorkflowCinema(){
- const {active:step,phase,select:setStep}=useNeonJourney(scenes.length,FLOW_STEP_MS,2350)
+ const hostRef=useRef<HTMLElement|null>(null)
+ const {active:step,phase,select:setStep}=useNeonJourney(scenes.length,FLOW_STEP_MS,2350,hostRef)
  const current=scenes[step]
- return <section className={"ax46-workflow ax73-workflow ax74-workflow ax77-workflow "+(phase==='return'?'is-returning':phase==='rewind'?'is-rewinding':phase==='settle'?'is-settling':'')} aria-label="Animated Audixo workflow">
+ return <section ref={hostRef} className={"ax46-workflow ax73-workflow ax74-workflow ax77-workflow "+(phase==='return'?'is-returning':phase==='rewind'?'is-rewinding':phase==='settle'?'is-settling':'')} aria-label="Animated Audixo workflow">
   <div className="ax46-workflow-sidebar">
    <span className="ax46-eyebrow">HOW AUDIXO MOVES</span>
    <h2>Every step.<br/><em>One workspace.</em></h2>

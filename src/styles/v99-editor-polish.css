@@ -151,3 +151,7 @@
 /* Final pixel alignment: use the higher-specificity workbench fade rule and keep the mobile right milestone inside the viewport. */
 .v13-quick-page.ax98-quick-page .ax97-workbench .ax96-fade-curve path{stroke-width:1.5px!important;filter:none!important}
 @media(max-width:650px){.ax97-changelog .ax94-release.is-right .ax94-release-card{margin-left:31px!important}}
+
+/* V97's compact VS row has a more specific negative margin; reset it so the badge sits exactly between the players. */
+.v13-quick-page .ax98-compare-stage .ax97-compare-grid .ax68-versus{display:flex!important;align-items:center!important;justify-content:center!important;place-items:unset!important;min-height:32px!important;height:32px!important;margin:0!important;padding:0!important}
+.v13-quick-page .ax98-compare-stage .ax97-compare-grid .ax68-versus>span{display:grid!important;place-items:center!important;align-self:center!important;flex:0 0 30px!important;width:30px!important;height:30px!important;margin:0 auto!important;padding:0!important;line-height:1!important}

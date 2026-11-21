@@ -147,3 +147,7 @@
  .ax98-quick-page,.ax98-quick-page .ax47-tool-heading,.ax98-quick-page .ax47-tool-tagline,.ax98-quick-page .v13-tool-hero>div:first-child>p:not(.ax47-tool-tagline),.ax98-quick-page .ax98-tool-switcher,.ax98-quick-page .ax98-workbench,.ax29-step-card,.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:none!important;transition:none!important;filter:none!important;transform:none!important;opacity:1!important}
  .ax98-quick-page .ax71-switch-track::before,.ax98-quick-page .ax71-fx-switch>i::before,.ax98-quick-page .v13-check input[type=checkbox]::before{transition:none!important;animation:none!important}
 }
+
+/* Final pixel alignment: use the higher-specificity workbench fade rule and keep the mobile right milestone inside the viewport. */
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax96-fade-curve path{stroke-width:1.5px!important;filter:none!important}
+@media(max-width:650px){.ax97-changelog .ax94-release.is-right .ax94-release-card{margin-left:31px!important}}

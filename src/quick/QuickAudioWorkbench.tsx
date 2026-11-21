@@ -16,6 +16,7 @@ import type { ClipFx } from '../editor/types'
 type QuickMode='trim'|'echo'|'slowed'|'pitch'|'spatial'
 type Props={mode:QuickMode;title:string;eyebrow:string;description:string;tagline?:string}
 type QuickPreset={name:string;note:string;apply:()=>void}
+type AppliedEdit={id:string;label:string;remove:()=>void}
 
 const defaults={gainDb:0,speed:1,fadeIn:0,fadeOut:0,delayMs:240,delayWet:.18,feedback:.24,reverb:.28,pitch:0,motionMode:'8d' as '8d'|'16d',motionDepth:.78,motionHz:.18}
 
@@ -202,15 +203,37 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
       {name:'Fast orbit',note:'16D · energetic movement',apply:()=>{setMotionMode('16d');setMotionDepth(.86);setMotionHz(.36)}},
     ]
 
-  const applied=useMemo(()=>{
-    const items=[`Keep ${formatTime(trimStart,true)} → ${formatTime(trimEnd,true)}`]
-    if(mode==='trim'){if(fadeIn>.01)items.push(`Fade in ON · ${fadeIn.toFixed(2)}s`);if(fadeOut>.01)items.push(`Fade out ON · ${fadeOut.toFixed(2)}s`)}
-    if(mode==='echo')items.push(echoEnabled?`Delay ${Math.round(delayMs)} ms`:'Echo OFF',...(echoEnabled?[`Echo ${Math.round(delayWet*100)}%`,`Feedback ${Math.round(feedback*100)}%`]:[]))
-    if(mode==='slowed'){items.push(`Speed ${speed.toFixed(2)}×`,preservePitch?'Pitch Lock ON':'Tape Pitch feel',`Reverb ${Math.round(reverb*100)}%`);if(delayWet>.045)items.push(`Echo ${Math.round(delayWet*100)}% · ${Math.round(delayMs)}ms`);if(fadeIn>.01)items.push(`Fade in ON · ${fadeIn.toFixed(2)}s`);if(fadeOut>.01)items.push(`Fade out ON · ${fadeOut.toFixed(2)}s`)}
-    if(mode==='pitch')items.push(pitchEnabled?`Pitch ${pitch>0?'+':''}${pitch} st`:'Pitch OFF')
-    if(mode==='spatial')items.push(`${motionMode.toUpperCase()} mode`,`Depth ${Math.round(motionDepth*100)}%`,`Orbit ${motionHz.toFixed(2)} Hz`)
+  const applied=useMemo<AppliedEdit[]>(()=>{
+    const items:AppliedEdit[]=[]
+    if(duration>0&&(trimStart>.001||trimEnd<duration-.001))items.push({id:'trim-range',label:`Trim ${formatTime(trimStart,true)} → ${formatTime(trimEnd,true)}`,remove:()=>{setTrimStart(0);setTrimEnd(duration)}})
+    if(Math.abs(gainDb)>.01)items.push({id:'output-gain',label:`Output ${gainDb>0?'+':''}${gainDb.toFixed(1)} dB`,remove:()=>setGainDb(0)})
+    if(fadeIn>.01)items.push({id:'fade-in',label:`Fade in · ${fadeIn.toFixed(2)}s`,remove:()=>setFadeIn(0)})
+    if(fadeOut>.01)items.push({id:'fade-out',label:`Fade out · ${fadeOut.toFixed(2)}s`,remove:()=>setFadeOut(0)})
+    if(mode==='echo'){
+      if(!echoEnabled)items.push({id:'echo-bypass',label:'Echo bypassed',remove:()=>setEchoEnabled(true)})
+      if(echoEnabled&&Math.abs(delayMs-defaults.delayMs)>1)items.push({id:'delay-time',label:`Delay · ${Math.round(delayMs)} ms`,remove:()=>setDelayMs(defaults.delayMs)})
+      if(echoEnabled&&Math.abs(delayWet-defaults.delayWet)>.005)items.push({id:'echo-amount',label:`Echo · ${Math.round(delayWet*100)}%`,remove:()=>setDelayWet(defaults.delayWet)})
+      if(echoEnabled&&Math.abs(feedback-defaults.feedback)>.005)items.push({id:'feedback',label:`Feedback · ${Math.round(feedback*100)}%`,remove:()=>setFeedback(defaults.feedback)})
+    }
+    if(mode==='slowed'){
+      if(Math.abs(speed-1)>.005)items.push({id:'speed',label:`Speed · ${speed.toFixed(2)}×`,remove:()=>setSpeed(1)})
+      if(!preservePitch)items.push({id:'tape-pitch',label:'Tape pitch',remove:()=>setPreservePitch(true)})
+      if(Math.abs(reverb-defaults.reverb)>.005)items.push({id:'reverb',label:`Reverb · ${Math.round(reverb*100)}%`,remove:()=>setReverb(defaults.reverb)})
+      if(Math.abs(delayWet-.04)>.005)items.push({id:'slowed-echo',label:`Echo · ${Math.round(delayWet*100)}%`,remove:()=>setDelayWet(.04)})
+      if(Math.abs(delayMs-140)>1)items.push({id:'slowed-delay',label:`Delay · ${Math.round(delayMs)} ms`,remove:()=>setDelayMs(140)})
+      if(Math.abs(feedback-.12)>.005)items.push({id:'slowed-feedback',label:`Feedback · ${Math.round(feedback*100)}%`,remove:()=>setFeedback(.12)})
+    }
+    if(mode==='pitch'){
+      if(!pitchEnabled)items.push({id:'pitch-bypass',label:'Pitch bypassed',remove:()=>setPitchEnabled(true)})
+      else if(pitch!==0)items.push({id:'pitch',label:`Pitch · ${pitch>0?'+':''}${pitch} st`,remove:()=>setPitch(0)})
+    }
+    if(mode==='spatial'){
+      if(motionMode!=='8d')items.push({id:'spatial-mode',label:'16D motion',remove:()=>setMotionMode('8d')})
+      if(Math.abs(motionDepth-defaults.motionDepth)>.005)items.push({id:'motion-depth',label:`Depth · ${Math.round(motionDepth*100)}%`,remove:()=>setMotionDepth(defaults.motionDepth)})
+      if(Math.abs(motionHz-defaults.motionHz)>.005)items.push({id:'orbit-speed',label:`Orbit · ${motionHz.toFixed(2)} Hz`,remove:()=>setMotionHz(defaults.motionHz)})
+    }
     return items
-  },[trimStart,trimEnd,mode,gainDb,speed,fadeIn,fadeOut,delayMs,delayWet,feedback,reverb,pitch,preservePitch,motionMode,motionDepth,motionHz,echoEnabled,pitchEnabled])
+  },[duration,trimStart,trimEnd,mode,gainDb,speed,fadeIn,fadeOut,delayMs,delayWet,feedback,reverb,pitch,preservePitch,motionMode,motionDepth,motionHz,echoEnabled,pitchEnabled])
 
   if(longFile)return <StreamingStudio file={longFile} duration={longDuration} onBack={()=>setLongFile(null)}/>
   const ruler=[0,.25,.5,.75,1]
@@ -220,6 +243,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
     <nav className="page-shell ax98-tool-switcher" aria-label="Quick audio editors">
       {quickTools.map(tool=><Link key={tool.mode} to={tool.path} className={mode===tool.mode?'is-active':''} aria-current={mode===tool.mode?'page':undefined}><span className="ax98-tool-glyph" aria-hidden="true">{tool.glyph}</span><span>{tool.label}</span></Link>)}
     </nav>
+    <div className="page-shell ax99-switcher-disclaimer" role="note"><span aria-hidden="true">i</span><p>Each quick editor has its own audio session. Switching tools does not carry your song or edits across. Download the result, then upload that file in the next editor to continue.</p></div>
 
     <section ref={workbenchRef} className={`page-shell v13-workbench v13-neon-frame ax27-workbench ax97-workbench ax98-workbench ${controlsCollapsed?'is-controls-collapsed':''} ${isFullscreen?'is-fullscreen':''} ${isPseudoFullscreen?'is-pseudo-fullscreen':''}`}>
       <div className="ax98-unified-note"><span className="ax98-note-icon" aria-hidden="true">i</span><p><strong>One unified editor for five audio tools.</strong> {guide.plain} The waveform, compare players, upload and export stay consistent; only the settings change for {title}.</p><small>ONE UI SHELL · FIVE TOOLS</small></div>
@@ -244,10 +268,14 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             <div className="v13-wave ax27-wave" ref={waveRef} onPointerDown={e=>{if((e.target as HTMLElement).closest('button'))return;const r=e.currentTarget.getBoundingClientRect();const t=Math.max(0,Math.min(duration,((e.clientX-r.left)/r.width)*duration));const d1=Math.abs(t-trimStart),d2=Math.abs(t-trimEnd);if(d1<d2)setTrimStart(Math.min(t,trimEnd-.02));else setTrimEnd(Math.max(t,trimStart+.02))}}>
               <canvas ref={canvasRef}/><div className="ax27-wave-grid"/>
               <div className="v13-wave-dim left" style={{width:`${duration?trimStart/duration*100:0}%`}}/><div className="v13-wave-dim right" style={{width:`${duration?(duration-trimEnd)/duration*100:0}%`}}/>
-              <div className="v13-wave-selection" style={selectionStyle}><button className="start" aria-label="Trim start" onPointerDown={e=>startHandle('start',e)}/><button className="end" aria-label="Trim end" onPointerDown={e=>startHandle('end',e)}/>{fadeIn>.01&&<div className="v13-fade-zone fade-in" style={{width:`${fadeInPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C35 50 60 4 100 2 M0 50 C35 50 60 96 100 98"/></svg><span>FADE IN</span></div>}{fadeOut>.01&&<div className="v13-fade-zone fade-out" style={{width:`${fadeOutPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 2 C40 4 65 50 100 50 M0 98 C40 96 65 50 100 50"/></svg><span>FADE OUT</span></div>}<span className="v13-duration-chip">{formatTime(selectedDuration,true)}</span></div>
+              <div className="v13-wave-selection" style={selectionStyle}><button className="start" aria-label="Trim start" onPointerDown={e=>startHandle('start',e)}/><button className="end" aria-label="Trim end" onPointerDown={e=>startHandle('end',e)}/>{fadeIn>.01&&<div className="v13-fade-zone fade-in" style={{width:`${fadeInPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M4 50 C24 50 52 9 96 3 M4 50 C24 50 52 91 96 97"/></svg></div>}{fadeOut>.01&&<div className="v13-fade-zone fade-out" style={{width:`${fadeOutPct}%`}}><svg className="ax96-fade-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M4 3 C48 9 76 50 96 50 M4 97 C48 91 76 50 96 50"/></svg></div>}<span className="v13-duration-chip">{formatTime(selectedDuration,true)}</span></div>
             </div>
             <div className="v13-time-fields ax27-time-fields"><label><span>START</span><input type="number" min="0" max={trimEnd-.02} step=".001" value={trimStart.toFixed(3)} onChange={e=>setTrimStart(Math.max(0,Math.min(Number(e.target.value)||0,trimEnd-.02)))}/></label><label><span>END</span><input type="number" min={trimStart+.02} max={duration} step=".001" value={trimEnd.toFixed(3)} onChange={e=>setTrimEnd(Math.min(duration,Math.max(Number(e.target.value)||duration,trimStart+.02)))}/></label><div><span>SELECTED</span><strong>{formatTime(selectedDuration,true)}</strong></div><button onClick={()=>{setTrimStart(0);setTrimEnd(duration)}}>Use full audio</button></div>
             {<div className="v13-fade-status ax27-fade-status ax97-fade-status"><button type="button" role="switch" aria-checked={fadeIn>.01} className={`ax71-switch-choice ${fadeIn>.01?'active':''}`} onClick={()=>setFadeIn(fadeIn>.01?0:Math.min(.8,selectedDuration/4))}><i className="ax71-switch-track"/> <span><strong>Fade in {fadeIn>.01?'ON':'OFF'}</strong><small>{fadeIn>.01?`${fadeIn.toFixed(2)} sec applied`:'Add a smooth entrance'}</small></span></button><button type="button" role="switch" aria-checked={fadeOut>.01} className={`ax71-switch-choice ${fadeOut>.01?'active red':''}`} onClick={()=>setFadeOut(fadeOut>.01?0:Math.min(.8,selectedDuration/4))}><i className="ax71-switch-track"/> <span><strong>Fade out {fadeOut>.01?'ON':'OFF'}</strong><small>{fadeOut>.01?`${fadeOut.toFixed(2)} sec applied`:'Add a smooth ending'}</small></span></button></div>}
+            <div className="ax99-applied-edits" aria-label="Applied edits">
+              <header><strong>APPLIED EDITS</strong><small>{applied.length} active</small></header>
+              {applied.length?<div className="ax99-edit-chip-list">{applied.map(item=><span className="ax99-edit-chip" key={item.id}><b>{item.label}</b><button type="button" title={`Remove ${item.label}`} aria-label={`Remove ${item.label}`} onClick={item.remove}>×</button></span>)}</div>:<p>No additional edits yet. Changes you make will appear here.</p>}
+            </div>
             <div className="ax68-timeline-footnote">A clear original waveform with visibly tapered fades.</div>
 
           </section>
@@ -261,7 +289,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             {mode==='pitch'&&<><div className="ax71-fx-switch-row"><div><b>Pitch processing</b><small>Bypass pitch without losing your chosen semitone value.</small></div><button type="button" role="switch" aria-label="Pitch processing" aria-checked={pitchEnabled} className={`ax71-fx-switch ${pitchEnabled?'active':''}`} onClick={()=>setPitchEnabled(v=>!v)}><i/><span>{pitchEnabled?'On':'Off'}</span></button></div><div className={`v13-slider-grid ${!pitchEnabled?'ax71-controls-bypassed':''}`}><Slider label="Pitch" help="Deep ↔ bright" value={pitch} min={-12} max={12} step={1} display={`${pitch>0?'+':''}${pitch} st`} active={pitch!==0} onChange={setPitch}/><Slider label="Output volume" help="Final loudness" value={gainDb} min={-18} max={6} step={.5} display={`${gainDb>0?'+':''}${gainDb.toFixed(1)} dB`} active={Math.abs(gainDb)>.01} onChange={setGainDb}/></div></>}
             {mode==='spatial'&&<><div className="v13-motion-switch ax71-mode-picker" role="group" aria-label="Spatial motion mode"><button type="button" aria-pressed={motionMode==='8d'} className={motionMode==='8d'?'active':''} onClick={()=>setMotionMode('8d')}>8D · smooth orbit</button><button type="button" aria-pressed={motionMode==='16d'} className={motionMode==='16d'?'active':''} onClick={()=>setMotionMode('16d')}>16D · wider motion</button></div><div className="v13-slider-grid ax97-slider-group"><Slider label="Motion depth" help="How far left/right" value={motionDepth} min={0} max={.98} step={.01} display={`${Math.round(motionDepth*100)}%`} active={motionDepth>.01} onChange={setMotionDepth}/><Slider label="Orbit speed" help="How quickly sound moves" value={motionHz} min={.03} max={.8} step={.01} display={`${motionHz.toFixed(2)} Hz`} active onChange={setMotionHz}/></div></>}
             {mode!=='trim'&&mode!=='slowed'&&<div className="v13-slider-grid ax95-global-fades"><Slider label="Fade in" help="Shape the opening waveform" value={fadeIn} min={0} max={Math.max(.05,Math.min(8,selectedDuration/2))} step={.05} display={fadeIn.toFixed(2)+' s'} active={fadeIn>.01} onChange={setFadeIn}/><Slider label="Fade out" help="Shape the ending waveform" value={fadeOut} min={0} max={Math.max(.05,Math.min(8,selectedDuration/2))} step={.05} display={fadeOut.toFixed(2)+' s'} active={fadeOut>.01} onChange={setFadeOut}/></div>}
-            <div className="v13-applied-panel ax27-applied-panel"><span>ACTIVE ON EXPORT</span><div>{applied.map(item=><b key={item}>✓ {item}</b>)}</div></div>
+
           </aside>}
         </div>
         <section className={`ax68-compare-stage ax95-compare-stage ax97-compare-stage ax98-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">

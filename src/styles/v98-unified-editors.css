@@ -146,3 +146,33 @@
  .ax98-tool-switcher>a,.ax98-compare-stage .ax68-versus span{transition:none!important}
  .ax97-changelog .ax94-release-card{transition:none!important}
 }
+
+/* V98 performance: stop animating every off-screen changelog orb and large blurred layer.
+   Keep one active neon motion cue; retain the premium visual identity without repaint storms. */
+.ax97-changelog .ax94-release.is-visible .ax94-release-card{animation:none!important}
+.ax97-changelog .ax94-release-card::after{animation:none!important}
+.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{
+ animation:ax96-rotate 9s linear infinite!important
+}
+.ax97-changelog .ax94-release.is-visible .ax94-release-dot>i{animation:none!important}
+.ax97-changelog .ax94-release.is-keyword-active .ax94-release-dot>i{
+ animation:ax96-pulse 3.6s ease-in-out infinite!important
+}
+.ax97-pricing .ax96-sike-rays{
+ animation:none!important;filter:blur(12px)!important;opacity:.22!important;will-change:auto!important
+}
+.ax97-pricing .ax96-sike-stage>strong{
+ animation:v97-pan 8s linear infinite!important;filter:none!important;will-change:auto!important
+}
+.ax67-songs-viewport{will-change:auto!important}
+@media(max-width:650px){
+ .ax97-pricing .ax96-sike-rays{filter:none!important;opacity:.11!important}
+ .ax97-changelog .ax94-release-card::after,
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ax97-changelog .ax94-release-card::after,
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after,
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-dot>i,
+ .ax97-pricing .ax96-sike-stage>strong{animation:none!important}
+}

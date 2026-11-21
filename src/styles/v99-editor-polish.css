@@ -164,3 +164,362 @@
 .v13-quick-page .ax97-workbench .v13-controls-card .v14-pitch-lock>button.ax71-switch-choice{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:43px!important;padding:7px 12px!important;border:1px solid #dfe8f2!important;border-radius:999px!important;background:#fff!important;box-shadow:0 3px 10px rgba(48,69,111,.045)!important}
 .v13-quick-page .ax97-workbench .v13-controls-card .v14-pitch-lock>button.ax71-switch-choice.active{border-color:#bdeee0!important;background:linear-gradient(100deg,rgba(18,226,172,.055),rgba(6,203,231,.035),rgba(143,82,239,.025))!important}
 @media(max-width:650px){.v13-quick-page .ax97-workbench .ax97-fade-status{grid-template-columns:minmax(0,1fr)!important;gap:7px!important}}
+
+
+/* AUDIXO V100 | waveform fade clarity, Open Studio-style switches and circular release polish. */
+
+/* The canvas already renders the real amplitude envelope. Keep the SVG as a thin
+   bracket guide only; legacy V95–V97 backgrounds created the unwanted filled wedge. */
+.v13-quick-page.ax98-quick-page .ax97-workbench .v13-fade-zone,
+.v13-quick-page.ax98-quick-page .ax97-workbench .v13-fade-zone.fade-in,
+.v13-quick-page.ax98-quick-page .ax97-workbench .v13-fade-zone.fade-out{
+ background:none!important;
+ background-color:transparent!important;
+ background-image:none!important;
+ border:0!important;
+ box-shadow:none!important;
+ filter:none!important;
+ mix-blend-mode:normal!important;
+ opacity:1!important;
+ pointer-events:none!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax96-fade-curve{
+ display:block!important;
+ position:absolute!important;
+ inset:0!important;
+ width:100%!important;
+ height:100%!important;
+ overflow:visible!important;
+ pointer-events:none!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax96-fade-curve path{
+ fill:none!important;
+ stroke:var(--ax99-green)!important;
+ stroke-width:1.35px!important;
+ stroke-linecap:round!important;
+ stroke-linejoin:round!important;
+ vector-effect:non-scaling-stroke!important;
+ opacity:.96!important;
+ filter:drop-shadow(0 0 1px rgba(18,226,172,.28))!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .v13-fade-zone.fade-out .ax96-fade-curve path{
+ stroke:var(--ax99-pink)!important;
+ filter:drop-shadow(0 0 1px rgba(241,44,196,.28))!important;
+}
+
+/* One consistent pill switch across Fade, Echo, Pitch, Pitch Lock and Library.
+   A spring easing moves the thumb in both directions without a rectangular control. */
+@keyframes ax100-toggle-nudge{
+ 0%{scale:1}
+ 58%{scale:1.12}
+ 100%{scale:1}
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax97-fade-status{
+ display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:10px!important;
+ padding:10px 0 2px!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax97-fade-status>button.ax71-switch-choice{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ gap:11px!important;
+ min-width:0!important;
+ min-height:48px!important;
+ padding:9px 13px!important;
+ border:1px solid #dce7f2!important;
+ border-radius:999px!important;
+ border-left:1px solid #dce7f2!important;
+ background:#fff!important;
+ box-shadow:0 4px 12px rgba(40,61,99,.045)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax97-fade-status>button.ax71-switch-choice.active{
+ border-color:#bceee1!important;
+ background:linear-gradient(105deg,rgba(18,226,172,.045),rgba(6,203,231,.035),rgba(143,82,239,.025))!important;
+ box-shadow:0 5px 14px rgba(18,180,155,.065)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-track{
+ position:relative!important;
+ display:block!important;
+ flex:0 0 42px!important;
+ width:42px!important;
+ height:24px!important;
+ border:1px solid #d8e3ef!important;
+ border-radius:999px!important;
+ background:#e9eef5!important;
+ box-shadow:inset 0 1px 3px rgba(34,55,88,.11)!important;
+ overflow:visible!important;
+ transition:background .24s ease,border-color .24s ease!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-track::before{
+ content:""!important;
+ position:absolute!important;
+ left:3px!important;
+ top:3px!important;
+ width:16px!important;
+ height:16px!important;
+ border-radius:50%!important;
+ background:#fff!important;
+ box-shadow:0 1px 4px rgba(26,48,83,.2)!important;
+ transform:translateX(0)!important;
+ animation:none!important;
+ transition:transform .36s cubic-bezier(.2,1.45,.4,1),box-shadow .2s ease!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active .ax71-switch-track{
+ border-color:transparent!important;
+ background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple))!important;
+ box-shadow:0 0 0 2px rgba(18,226,172,.07),inset 0 1px 2px rgba(23,43,72,.08)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active .ax71-switch-track::before{
+ transform:translateX(18px)!important;
+ box-shadow:0 1px 5px rgba(23,43,72,.2),0 0 7px rgba(255,255,255,.75)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active .ax71-switch-track::after{
+ content:""!important;
+ position:absolute!important;
+ inset:-3px!important;
+ border:1px solid rgba(18,226,172,.2)!important;
+ border-radius:999px!important;
+ pointer-events:none!important;
+ animation:ax100-toggle-nudge .34s ease-out both!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice>span{
+ display:grid!important;
+ gap:2px!important;
+ min-width:0!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice>span strong{
+ color:#263d59!important;
+ font-size:11px!important;
+ line-height:1.2!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice>span small{
+ color:#8292a8!important;
+ font-size:9px!important;
+ line-height:1.35!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active>span strong{color:#137b68!important}
+
+/* Compact effect bypass switches mirror the same track, thumb and tactile movement. */
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch{
+ min-width:84px!important;
+ min-height:40px!important;
+ height:40px!important;
+ padding:6px 10px!important;
+ gap:8px!important;
+ border:1px solid #dce6f0!important;
+ border-radius:999px!important;
+ background:#fff!important;
+ box-shadow:0 3px 9px rgba(43,62,99,.045)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch>i{
+ flex:0 0 40px!important;
+ width:40px!important;
+ height:23px!important;
+ border-radius:999px!important;
+ background:#e8edf4!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch>i::before{
+ left:4px!important;
+ top:4px!important;
+ width:15px!important;
+ height:15px!important;
+ transform:translateX(0)!important;
+ animation:none!important;
+ transition:transform .36s cubic-bezier(.2,1.45,.4,1)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch.active>i{
+ background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple))!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch.active>i::before{transform:translateX(17px)!important}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch>span{font-size:10px!important;font-weight:950!important}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch.active>span{color:#168b6b!important}
+.v13-quick-page.ax98-quick-page .ax97-workbench .v14-pitch-lock .ax71-switch-choice{border-radius:999px!important}
+.v13-quick-page.ax98-quick-page .ax97-workbench .v13-check input[type=checkbox]{border-radius:999px!important}
+.v13-quick-page.ax98-quick-page .ax97-workbench :is(.ax71-switch-choice,.ax71-fx-switch,.v13-check input[type=checkbox]):focus-visible{
+ outline:3px solid rgba(143,82,239,.22)!important;
+ outline-offset:3px!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-controls-bypassed{opacity:.52!important;filter:grayscale(.18)!important}
+
+/* A/B player geometry: one centre axis for the play button, seek line and VS badge. */
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax69-transport-main{
+ display:grid!important;
+ align-items:center!important;
+ justify-items:stretch!important;
+}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax69-play{
+ display:grid!important;
+ place-items:center!important;
+ align-self:center!important;
+ justify-self:center!important;
+ margin:0!important;
+ padding:0!important;
+ line-height:1!important;
+ text-align:center!important;
+ text-indent:1px!important;
+}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax69-play[aria-label^="Pause"]{text-indent:0!important}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax69-transport-meter{
+ position:relative!important;
+ display:block!important;
+ align-self:stretch!important;
+ min-height:0!important;
+ height:100%!important;
+}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax69-transport-meter input[type=range]{
+ position:absolute!important;
+ left:0!important;
+ top:50%!important;
+ transform:translateY(-50%)!important;
+ margin:0!important;
+}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax68-versus{
+ position:relative!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ align-self:center!important;
+ justify-self:stretch!important;
+ width:100%!important;
+ min-height:34px!important;
+ height:34px!important;
+ margin:0!important;
+ padding:0!important;
+}
+.v13-quick-page.ax98-quick-page .ax98-compare-stage .ax68-versus>span{
+ position:relative!important;
+ inset:auto!important;
+ display:grid!important;
+ place-items:center!important;
+ flex:0 0 30px!important;
+ width:30px!important;
+ height:30px!important;
+ margin:0 auto!important;
+ padding:0!important;
+ transform:none!important;
+ line-height:1!important;
+ text-align:center!important;
+}
+
+/* How It Works: a more deliberate product-card system with the full AUDIXO palette. */
+.ax25-how .ax25-page-hero h1{color:var(--ax99-ink)!important}
+.ax25-how .ax25-page-hero h1 em,
+.ax25-how .ax29-step-editorial>header h2 em{
+ color:transparent!important;
+ background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-pink),var(--ax99-purple),#172b45)!important;
+ background-size:220% 100%!important;
+ background-clip:text!important;
+ -webkit-background-clip:text!important;
+ -webkit-text-fill-color:transparent!important;
+ animation:ax99-gradient-drift 8s linear infinite!important;
+}
+.ax29-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+.ax29-step-card{
+ position:relative!important;
+ isolation:isolate!important;
+ min-height:182px!important;
+ padding:24px 58px 24px 25px!important;
+ border:1.5px solid transparent!important;
+ border-radius:25px!important;
+ overflow:hidden!important;
+ background-image:linear-gradient(#fff,#fff),linear-gradient(105deg,var(--ax99-green),var(--ax99-pink),#172b45,var(--ax99-purple),var(--ax99-cyan),var(--ax99-green))!important;
+ background-origin:border-box!important;
+ background-clip:padding-box,border-box!important;
+ background-size:100% 100%,220% 100%!important;
+ background-position:0 0,0% 50%!important;
+ background-repeat:no-repeat!important;
+ box-shadow:0 10px 27px rgba(35,60,105,.055),0 0 12px rgba(6,203,231,.035)!important;
+ transition:background-position .55s ease,transform .24s ease,box-shadow .24s ease!important;
+}
+.ax29-step-card::before{
+ content:""!important;
+ position:absolute!important;
+ left:0!important;
+ top:23px!important;
+ bottom:23px!important;
+ width:3px!important;
+ border-radius:999px!important;
+ background:linear-gradient(180deg,var(--ax99-green),var(--ax99-pink),#172b45,var(--ax99-purple))!important;
+ opacity:.88!important;
+ pointer-events:none!important;
+}
+.ax29-step-card:hover{
+ background-position:0 0,100% 50%!important;
+ transform:translateY(-3px)!important;
+ box-shadow:0 15px 34px rgba(37,62,110,.095),0 0 13px rgba(18,226,172,.08),0 0 13px rgba(241,44,196,.07)!important;
+}
+.ax29-step-card>div>b{
+ border:1.5px solid transparent!important;
+ border-radius:50%!important;
+ background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,var(--ax99-green),var(--ax99-pink),#172b45,var(--ax99-purple)) border-box!important;
+ color:#172b45!important;
+ box-shadow:0 4px 12px rgba(40,60,100,.075),0 0 10px rgba(18,226,172,.08)!important;
+}
+.ax29-step-card h3{color:#172b45!important;font-weight:1000!important}
+.ax29-step-card p{color:#6b7d94!important}
+.ax29-step-card>i{border-color:#ded4f2!important;color:#754ac4!important}
+@media(max-width:900px){.ax29-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){
+ .v13-quick-page.ax98-quick-page .ax97-workbench .ax97-fade-status{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
+ .v13-quick-page.ax98-quick-page .ax97-workbench .ax97-fade-status>button.ax71-switch-choice{min-height:46px!important}
+ .ax29-step-grid{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+ .ax29-step-card{min-height:158px!important;padding:20px 52px 20px 19px!important;border-radius:22px!important}
+}
+
+/* Changelog: clip the circular card itself, not just its gradient rim. This removes
+   the square white backing while retaining a readable circular content surface. */
+.ax97-changelog .ax94-release-card{
+ position:relative!important;
+ overflow:hidden!important;
+ border:0!important;
+ border-radius:50%!important;
+ clip-path:circle(50% at 50% 50%)!important;
+ background:#fff!important;
+ box-shadow:none!important;
+ filter:drop-shadow(0 9px 16px rgba(30,47,80,.11))!important;
+}
+.ax97-changelog .ax94-release-card::before{content:none!important;display:none!important}
+.ax97-changelog .ax94-release-card::after{
+ content:""!important;
+ position:absolute!important;
+ inset:0!important;
+ z-index:3!important;
+ border:3.5px solid transparent!important;
+ border-radius:50%!important;
+ clip-path:circle(50% at 50% 50%)!important;
+ background:conic-gradient(var(--ax99-green),var(--ax99-pink),#14263f,var(--ax99-purple),var(--ax99-cyan),var(--ax99-green)) border-box!important;
+ mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0)!important;
+ -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0)!important;
+ mask-composite:exclude!important;
+ -webkit-mask-composite:xor!important;
+ pointer-events:none!important;
+ animation:none!important;
+}
+.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:ax99-ring-rotate 6s linear infinite!important}
+.ax97-changelog .ax94-release-head strong{
+ font-family:'Nunito',ui-rounded,system-ui,sans-serif!important;
+ font-size:clamp(32px,3.8vw,48px)!important;
+ font-weight:1000!important;
+ letter-spacing:-.045em!important;
+ line-height:1.02!important;
+ background:linear-gradient(105deg,#a70c83,#4a218d,#00536f,#086345)!important;
+ background-size:210% 100%!important;
+ background-clip:text!important;
+ -webkit-background-clip:text!important;
+ -webkit-text-fill-color:transparent!important;
+}
+.ax97-changelog .ax94-release.is-keyword-active .ax94-release-head strong{animation:ax99-gradient-drift 7s linear infinite!important}
+.ax97-changelog .ax94-release-head small{color:#536780!important;font-weight:900!important}
+.ax97-changelog .ax94-release-card h2{color:#172b45!important;font-weight:1000!important}
+.ax97-changelog .ax94-release-card p{color:#61758d!important}
+@media(prefers-reduced-motion:reduce){
+ .v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-track::before,
+ .v13-quick-page.ax98-quick-page .ax97-workbench .ax71-fx-switch>i::before,
+ .v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active .ax71-switch-track::after{transition:none!important;animation:none!important}
+ .ax25-how .ax25-page-hero h1 em,.ax25-how .ax29-step-editorial>header h2 em,
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after,
+ .ax97-changelog .ax94-release.is-keyword-active .ax94-release-head strong{animation:none!important}
+ .ax29-step-card{transition:none!important}
+}

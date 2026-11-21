@@ -16,8 +16,8 @@ export default function RhythmType({lines,className='',requiresLoader=false,hold
  useEffect(()=>{
   const root=rootRef.current
   if(!root)return
-  const update=()=>setVisible(document.visibilityState==='visible' && (!observer || inView))
   let inView=true
+  const update=()=>setVisible(document.visibilityState==='visible' && inView)
   const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{
    inView=Boolean(entries[0]?.isIntersecting)
    update()

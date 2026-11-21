@@ -29,6 +29,7 @@ import './styles/v97-ui.css'
 import './styles/v98-unified-editors.css'
 import './styles/v99-editor-polish.css'
 import './styles/v101-premium-polish.css'
+import './styles/v102-editor-nexivo.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

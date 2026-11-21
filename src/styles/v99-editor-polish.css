@@ -523,3 +523,23 @@
  .ax97-changelog .ax94-release.is-keyword-active .ax94-release-head strong{animation:none!important}
  .ax29-step-card{transition:none!important}
 }
+
+
+/* Keep Fade Out visually distinct from Fade In while preserving the shared switch geometry. */
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active.red .ax71-switch-track{
+ background:linear-gradient(105deg,var(--ax99-pink),var(--ax99-purple),var(--ax99-cyan))!important;
+ box-shadow:0 0 0 2px rgba(241,44,196,.07),inset 0 1px 2px rgba(23,43,72,.08)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active.red .ax71-switch-track::after{
+ border-color:rgba(241,44,196,.22)!important;
+}
+.v13-quick-page.ax98-quick-page .ax97-workbench .ax71-switch-choice.active.red>span strong{color:#b52c91!important}
+
+/* The milestone surface must remain a geometric circle at narrow breakpoints too. */
+.ax97-changelog .ax94-release-card{
+ aspect-ratio:1 / 1!important;
+ height:auto!important;
+ min-height:0!important;
+ max-height:none!important;
+ flex-shrink:0!important;
+}

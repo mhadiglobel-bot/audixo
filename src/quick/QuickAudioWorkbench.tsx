@@ -264,7 +264,7 @@ export default function QuickAudioWorkbench({mode,title,eyebrow,description,tagl
             <div className="v13-applied-panel ax27-applied-panel"><span>ACTIVE ON EXPORT</span><div>{applied.map(item=><b key={item}>✓ {item}</b>)}</div></div>
           </aside>}
         </div>
-        <section className={`ax68-compare-stage ax95-compare-stage ax97-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">
+        <section className={`ax68-compare-stage ax95-compare-stage ax97-compare-stage ax98-compare-stage ${previewUrl&&previewDirty?'is-stale':''}`} aria-label="Compare original and processed audio">
           <header className="ax68-compare-heading"><div><small>LISTEN & COMPARE</small><strong>Hear the difference.</strong></div><span>{previewUrl&&!previewDirty?'Edited preview ready':'Original audio available'}</span></header>
           <div className="ax68-compare-grid ax97-compare-grid">
             <article className="ax68-compare-audio ax68-compare-original"><div className="ax68-player-title"><span className="ax68-player-icon">♫</span><div><small>01 / SOURCE</small><strong>Original audio</strong></div><b>UNCHANGED</b></div>

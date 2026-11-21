@@ -15,7 +15,7 @@ export default function Seo({title,description=site.description,path='/',schema}
   const url=pageUrl(path),image=site.url+'/og-image.png',article=path.startsWith('/blog/')
   document.title=full
   meta('description',description)
-  meta('robots',path==='/library'?'noindex,follow':'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1')
+  meta('robots',(path==='/library'||path.startsWith('/tool/'))?'noindex,follow':'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1')
   meta('og:title',full,true);meta('og:description',description,true)
   meta('og:type',article?'article':'website',true);meta('og:url',url,true)
   meta('og:site_name',site.name,true);meta('og:locale','en_US',true)
@@ -40,7 +40,7 @@ export default function Seo({title,description=site.description,path='/',schema}
    if(!existingOrg)document.head.append(orgScript)
   }else {identity?.remove();document.getElementById('organization-identity-schema')?.remove()}
   document.getElementById('page-schema')?.remove()
-  if(path!=='/library'){
+  if(path!=='/library'&&!path.startsWith('/tool/')){
    const generic={'@context':'https://schema.org','@type':path.startsWith('/tools/')?'SoftwareApplication':'WebPage',name:full,url,description,isPartOf:{'@type':'WebSite',name:site.name,url:site.url}}
    const script=document.createElement('script');script.id='page-schema';script.type='application/ld+json'
    script.textContent=JSON.stringify(schema||generic).replace(/</g,'\\u003c')

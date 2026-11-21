@@ -28,6 +28,7 @@ import './styles/v96-precision.css'
 import './styles/v97-ui.css'
 import './styles/v98-unified-editors.css'
 import './styles/v99-editor-polish.css'
+import './styles/v101-premium-polish.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

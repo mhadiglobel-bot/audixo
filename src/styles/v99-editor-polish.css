@@ -12,10 +12,13 @@
 /* Smooth page entry and staggered editor copy. */
 .ax98-quick-page{animation:ax99-page-enter .48s cubic-bezier(.2,.75,.25,1) both}
 .ax98-quick-page .ax47-tool-heading{animation:ax99-copy-enter .46s .035s both;color:var(--ax99-ink)!important;background:none!important;-webkit-text-fill-color:var(--ax99-ink)!important}
-.ax98-quick-page .ax47-tool-tagline{background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-size:240% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:ax99-gradient-drift 7s linear infinite,ax99-copy-enter .48s .095s both!important}
+.ax98-quick-page .ax47-tool-tagline{background:linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-size:240% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:ax99-copy-enter .48s .095s both!important}
 .ax98-quick-page .v13-tool-hero>div:first-child>p:not(.ax47-tool-tagline){animation:ax99-copy-enter .5s .15s both}
 .ax98-quick-page .ax98-tool-switcher{animation:ax99-copy-enter .48s .12s both}
-.ax98-quick-page .ax98-workbench{animation:ax99-copy-enter .52s .18s both}
+ .ax98-quick-page .ax98-workbench{animation:ax99-copy-enter .52s .18s both}
+.ax25-how,.ax97-changelog{animation:ax99-page-enter .48s cubic-bezier(.2,.75,.25,1) both}
+.ax25-how .ax25-page-hero h1,.ax97-changelog .ax94-changelog-hero h1{animation:ax99-copy-enter .5s .06s both}
+.ax25-how .ax29-step-editorial>header{animation:ax99-copy-enter .5s .12s both}
 
 /* Separate source sessions between quick editors. */
 .ax99-switcher-disclaimer{display:flex;align-items:center;gap:10px;margin-top:-5px!important;margin-bottom:13px!important;padding:9px 14px;border:1px solid #dce8f2;border-radius:999px;background:linear-gradient(100deg,rgba(231,255,247,.8),rgba(247,250,255,.94),rgba(250,241,255,.78));color:#61758e;box-shadow:0 4px 13px rgba(49,72,115,.035)}
@@ -100,7 +103,7 @@
 
 /* How It Works cards: two columns, four-neon outline and concise hierarchy. */
 .ax29-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
-.ax29-step-card{position:relative!important;min-width:0!important;min-height:174px!important;padding:23px 58px 23px 23px!important;border:1.5px solid transparent!important;border-radius:25px!important;overflow:hidden!important;background-image:linear-gradient(#fff,#fff),linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-origin:border-box!important;background-clip:padding-box,border-box!important;background-size:100% 100%,280% 100%!important;background-repeat:no-repeat!important;animation:ax99-border-flow 7s linear infinite,ax99-card-enter .52s cubic-bezier(.2,.75,.25,1) both!important;box-shadow:0 10px 28px rgba(35,60,105,.055),0 0 12px rgba(6,203,231,.035)!important;transition:transform .24s ease,box-shadow .24s ease!important}
+.ax29-step-card{position:relative!important;min-width:0!important;min-height:174px!important;padding:23px 58px 23px 23px!important;border:1.5px solid transparent!important;border-radius:25px!important;overflow:hidden!important;background-image:linear-gradient(#fff,#fff),linear-gradient(105deg,var(--ax99-green),var(--ax99-cyan),var(--ax99-purple),var(--ax99-pink),var(--ax99-green))!important;background-origin:border-box!important;background-clip:padding-box,border-box!important;background-size:100% 100%,100% 100%!important;background-repeat:no-repeat!important;animation:ax99-card-enter .52s cubic-bezier(.2,.75,.25,1) both!important;box-shadow:0 10px 28px rgba(35,60,105,.055),0 0 12px rgba(6,203,231,.035)!important;transition:transform .24s ease,box-shadow .24s ease!important}
 .ax29-step-card:nth-child(2){animation-delay:0s,.04s!important}.ax29-step-card:nth-child(3){animation-delay:0s,.08s!important}.ax29-step-card:nth-child(4){animation-delay:0s,.12s!important}.ax29-step-card:nth-child(5){animation-delay:0s,.16s!important}.ax29-step-card:nth-child(6){animation-delay:0s,.20s!important}.ax29-step-card:nth-child(7){animation-delay:0s,.24s!important}.ax29-step-card:nth-child(8){animation-delay:0s,.28s!important}.ax29-step-card:nth-child(9){animation-delay:0s,.32s!important}.ax29-step-card:nth-child(10){animation-delay:0s,.36s!important}.ax29-step-card:nth-child(11){animation-delay:0s,.40s!important}.ax29-step-card:nth-child(12){animation-delay:0s,.44s!important}
 .ax29-step-card:hover{transform:translateY(-4px)!important;box-shadow:0 15px 34px rgba(37,62,110,.1),0 0 16px rgba(18,226,172,.09),0 0 16px rgba(241,44,196,.075)!important}
 .ax29-step-card>div{display:flex!important;align-items:center!important;gap:11px!important}
@@ -140,6 +143,7 @@
  .ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:ax99-ring-rotate 5.5s linear infinite!important}
 }
 @media(prefers-reduced-motion:reduce){
+ .ax25-how,.ax97-changelog,.ax25-how .ax25-page-hero h1,.ax97-changelog .ax94-changelog-hero h1,.ax25-how .ax29-step-editorial>header,
  .ax98-quick-page,.ax98-quick-page .ax47-tool-heading,.ax98-quick-page .ax47-tool-tagline,.ax98-quick-page .v13-tool-hero>div:first-child>p:not(.ax47-tool-tagline),.ax98-quick-page .ax98-tool-switcher,.ax98-quick-page .ax98-workbench,.ax29-step-card,.ax97-changelog .ax94-release.is-keyword-active .ax94-release-card::after{animation:none!important;transition:none!important;filter:none!important;transform:none!important;opacity:1!important}
  .ax98-quick-page .ax71-switch-track::before,.ax98-quick-page .ax71-fx-switch>i::before,.ax98-quick-page .v13-check input[type=checkbox]::before{transition:none!important;animation:none!important}
 }

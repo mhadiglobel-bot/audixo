@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState,type CSSProperties} from 'react'
+import {useEffect,useMemo,useRef,useState,type CSSProperties} from 'react'
 
 type Phase='typing'|'hold'|'burst'
 type Props={lines:string[];className?:string;requiresLoader?:boolean;holdMs?:number}
@@ -10,7 +10,23 @@ function colorFor(index:number,length:number){
 }
 export default function RhythmType({lines,className='',requiresLoader=false,holdMs=2350}:Props){
  const [ready,setReady]=useState(()=>!requiresLoader||(typeof document!=='undefined'&&document.documentElement.dataset.audixoReady==='true'))
+ const rootRef=useRef<HTMLSpanElement|null>(null)
+ const [visible,setVisible]=useState(true)
  const [index,setIndex]=useState(0),[count,setCount]=useState(0),[phase,setPhase]=useState<Phase>('typing')
+ useEffect(()=>{
+  const root=rootRef.current
+  if(!root)return
+  let inView=true
+  const update=()=>setVisible(document.visibilityState==='visible' && inView)
+  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{
+   inView=Boolean(entries[0]?.isIntersecting)
+   update()
+  },{rootMargin:'120px 0px',threshold:0})
+  observer?.observe(root)
+  document.addEventListener('visibilitychange',update)
+  update()
+  return()=>{observer?.disconnect();document.removeEventListener('visibilitychange',update)}
+ },[])
  const prefersReduced=useMemo(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches,[])
  useEffect(()=>{
   if(ready)return
@@ -20,7 +36,7 @@ export default function RhythmType({lines,className='',requiresLoader=false,hold
   return()=>window.removeEventListener('audixo:loader-complete',onReady)
  },[ready])
  useEffect(()=>{
-  if(!ready||prefersReduced||lines.length===0)return
+  if(!ready||!visible||prefersReduced||lines.length===0)return
   const phrase=lines[index]||lines[0]||''
   const delay=phase==='typing'?31:phase==='hold'?holdMs:400
   const timer=window.setTimeout(()=>{
@@ -32,11 +48,11 @@ export default function RhythmType({lines,className='',requiresLoader=false,hold
    setCount(0);setIndex(i=>(i+1)%lines.length);setPhase('typing')
   },delay)
   return()=>window.clearTimeout(timer)
- },[ready,index,count,phase,lines,prefersReduced,holdMs])
+ },[ready,visible,index,count,phase,lines,prefersReduced,holdMs])
  const line=lines[index]||lines[0]||''
  const words=line.split(' ')
  let position=0
- return <span className={`ax37-rhythm ax38-rhythm ${className} ${phase==='burst'?'is-burst':''}`} aria-hidden="true">
+ return <span ref={rootRef} className={`ax37-rhythm ax38-rhythm ${className} ${phase==='burst'?'is-burst':''}`} aria-hidden="true">
   <span className="ax37-rhythm-words">{words.map((word,wordIndex)=>{
    const first=position;position+=word.length+1
    return <span className="ax37-rhythm-word" key={`${index}-word-${wordIndex}`}>

@@ -12,6 +12,7 @@ const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 const Library = lazy(() => import('./pages/Library'))
 const Blog = lazy(() => import('./pages/Blog'))
 const BlogPost = lazy(() => import('./pages/BlogPost'))
+const Mp3Reference = lazy(() => import('./pages/Mp3Reference'))
 const FAQ = lazy(() => import('./pages/FAQ'))
 const Help = lazy(() => import('./pages/Help'))
 const Nexivo = lazy(() => import('./pages/NexivoV92'))
@@ -52,6 +53,9 @@ export default function App(){return <SoundExperienceProvider><Suspense fallback
   <Route path="/library" element={<Library/>}/>
   <Route path="/blog" element={<Blog/>}/>
   <Route path="/blog/:slug" element={<BlogPost/>}/>
+  <Route path="/reference/mp3-file-size" element={<Mp3Reference/>}/>
+  <Route path="/reference/mp3-file-size/:bitrate" element={<Mp3Reference/>}/>
+  <Route path="/reference/mp3-file-size/:bitrate/:seconds" element={<Mp3Reference/>}/>
   <Route path="/faq" element={<FAQ/>}/>
   <Route path="/help" element={<Help/>}/>
   <Route path="/about" element={<About/>}/><Route path="/nexivo" element={<Nexivo/>}/><Route path="/pricing" element={<Pricing/>}/><Route path="/changelog" element={<Changelog/>}/><Route path="/tools/recorder" element={<Recording/>}/>

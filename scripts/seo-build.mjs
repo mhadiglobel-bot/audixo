@@ -101,7 +101,7 @@ if(!['http:','https:'].includes(new URL(origin).protocol))throw new Error('VITE_
 if(process.env.VERCEL&&!origin.startsWith('https:'))throw new Error('Set VITE_SITE_URL to your production HTTPS domain.')
 await mkdir('.build',{recursive:true})
 await build({entryPoints:['scripts/prerender.tsx'],outfile:'.build/prerender.mjs',bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',define:{'import.meta.env':JSON.stringify({VITE_SITE_URL:origin,VITE_SUPPORT_EMAIL:process.env.VITE_SUPPORT_EMAIL||'',VITE_SUPPORT_EMAIL_ENABLED:process.env.VITE_SUPPORT_EMAIL_ENABLED||'',VITE_AUDIXO_TURNSTILE_SITE_KEY:process.env.VITE_AUDIXO_TURNSTILE_SITE_KEY||''})}})
-const {pageRoutes,pageHtml,blogs,faqs,audioTools,DEMO_TRACKS}=await import(path.resolve('.build/prerender.mjs'))
+const {pageRoutes,pageHtml,blogs,faqs,audioTools,DEMO_TRACKS,mp3References,getMp3Reference}=await import(path.resolve('.build/prerender.mjs'))
 function renderPage(route){
  try{
   const html=pageHtml(route)
@@ -120,7 +120,7 @@ function checkSoundProvider(){
 
 checkSoundProvider()
 if(process.argv.includes('--check')){
- const routes=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),'/__ssr-not-found-check__']
+ const routes=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),...mp3References.map(p=>p.path),'/__ssr-not-found-check__']
  for(const route of routes)renderPage(route)
  await rm('.build',{recursive:true,force:true})
  console.log(`SSR regression passed: ${routes.length} routes; one sound provider/player; ${DEMO_TRACKS.length} unique free-positioned cards in one glass bin; no autoplay.`)
@@ -138,6 +138,7 @@ const pages={
  '/how-it-works':['How Audixo Works — From Audio Import to Final Export','Follow the Audixo workflow from importing audio through trimming, vocal separation, effects and download.'],
  '/about':['About Audixo','Meet Audixo: a creative audio studio with focused tools, a full waveform editor and vocal stem workflows.'],
  '/contact':['Official Support Email Coming Soon','The official AUDIXO contact email is coming soon. Explore audio tools and help resources in the meantime.'],
+ '/reference/mp3-file-size':['MP3 File Size Reference','Accurate constant-bit-rate MP3 file size estimates and quality comparisons for audio editing with AUDIXO.'],
  '/blog':['Audio Editing Guides','Practical guides to audio trimming, vocal separation, echo, reverb, MP3 quality and creative mixing.'],
  '/faq':['Audio Editing FAQ','Answers about direct trimming, middle cuts, AI vocal stems, recording, export quality and long audio.'],
  '/help':['Audio Editor Help Center','Solve common audio import, preview, export, recording and local AI problems.'],
@@ -156,7 +157,7 @@ const pages={
  '/tools/spatial-motion':['Audixo 8D / 16D Audio Motion — Spatial Sound Tool','Add stereo orbit and motion effects to audio, customize depth and speed and preview in headphones.']
 }
 for(const tool of audioTools)pages['/tool/'+tool.id]=[tool.name+' Audio Tool',tool.short]
-const paths=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id)]
+const paths=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),...mp3References.map(p=>p.path)]
 const indexablePaths=paths.filter(p=>p!=='/library'&&!p.startsWith('/tool/'))
 const seoBlogTitles={
  'removable-effects-and-duplicate':'Edit Selected Audio without Rebuilding',
@@ -168,10 +169,11 @@ const seoBlogDescriptions={
 }
 const originalError=console.error;console.error=(...args)=>{if(String(args[0]).includes('useLayoutEffect does nothing on the server'))return;originalError(...args)}
 for(const route of paths){
- const article=blogs.find(b=>route==='/blog/'+b.slug),[title,description]=article?[(seoBlogTitles[article.slug]||article.title),(seoBlogDescriptions[article.slug]||article.excerpt)]:pages[route],url=origin+route
+ const article=blogs.find(b=>route==='/blog/'+b.slug),reference=getMp3Reference(route),[title,description]=article?[(seoBlogTitles[article.slug]||article.title),(seoBlogDescriptions[article.slug]||article.excerpt)]:reference?[reference.title,reference.description]:pages[route],url=origin+route
  const publisher={'@type':'Organization',name:'Audixo Studio',url:origin,parentOrganization:{'@type':'Organization',name:'Nexivo'}}
  const website={'@type':'WebSite',name:'AUDIXO',url:origin+'/'}
  const schema=route==='/nexivo'?{'@context':'https://schema.org','@type':'Organization',name:'Nexivo',url,description}
+ :reference?{'@context':'https://schema.org','@type':'WebPage',name:title,description,url,inLanguage:'en',isAccessibleForFree:true,isPartOf:website,publisher}
  :article?{'@context':'https://schema.org','@type':'BlogPosting',headline:title,description,url,datePublished:article.date||undefined,publisher,mainEntityOfPage:url}
  :route==='/faq'?{'@context':'https://schema.org','@type':'FAQPage',url,mainEntity:faqs.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))}
  :route==='/'||route==='/editor'||route.startsWith('/tools/')||route.startsWith('/tool/')?{'@context':'https://schema.org','@type':'SoftwareApplication',name:'AUDIXO',applicationCategory:'MultimediaApplication',operatingSystem:'Web browser',url,description,publisher}

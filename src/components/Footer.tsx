@@ -11,7 +11,7 @@ const cols=[
  ]},
  {name:'Explore',links:[
   ['Home','/'],['Features','/features'],['How It Works','/how-it-works'],['About AUDIXO','/about'],
-  ['Nexivo','/nexivo'],['Changelog','/changelog'],['Pricing','/pricing'],['Sound Journal','/blog']
+  ['Nexivo','/nexivo'],['Changelog','/changelog'],['Pricing','/pricing'],['Sound Journal','/blog'],['MP3 File Size Reference','/reference/mp3-file-size']
  ]},
  {name:'Help & Support',links:[['Help Center','/help'],['FAQ','/faq'],['Contact','/contact']]},
  {name:'Legal',links:[['Privacy Policy','/privacy'],['Terms of Use','/terms'],['Copyright & Media Rights','/copyright']]}

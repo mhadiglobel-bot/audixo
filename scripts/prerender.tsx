@@ -25,9 +25,12 @@ import YouTubeConverter from '../src/pages/YouTubeConverter'
 import LyricsVideoMaker from '../src/pages/LyricsVideoMaker'
 import {audioTools} from '../src/data/tools'
 import {blogs} from '../src/data/blogs'
+import Mp3Reference from '../src/pages/Mp3Reference'
+import {mp3References,getMp3Reference} from '../src/data/mp3Reference'
+export {mp3References,getMp3Reference}
 export {blogs,faqs,audioTools}
 export {DEMO_TRACKS} from '../src/components/SoundExperience'
-export const pageRoutes:Record<string,React.ComponentType>={'/':Home,'/features':Features,'/how-it-works':HowItWorks,'/about':About,'/nexivo':Nexivo,'/pricing':Pricing,'/changelog':Changelog,'/tools/recorder':Recording,'/contact':Contact,'/blog':Blog,'/faq':FAQ,'/help':Help,'/privacy':Privacy,'/terms':Terms,'/copyright':Copyright,'/editor':Editor,'/library':Library,'/tools/vocals':Vocals,'/tools/trim-audio':QuickTrim,'/tools/echo':Echo,'/tools/slowed-reverb':Slowed,'/tools/pitch':Pitch,'/tools/spatial-motion':Spatial,'/tools/social-video-downloader':YouTubeConverter,'/tools/lyrics-video-maker':LyricsVideoMaker}
+export const pageRoutes:Record<string,React.ComponentType>={'/':Home,'/features':Features,'/how-it-works':HowItWorks,'/about':About,'/nexivo':Nexivo,'/pricing':Pricing,'/changelog':Changelog,'/tools/recorder':Recording,'/contact':Contact,'/blog':Blog,'/faq':FAQ,'/help':Help,'/privacy':Privacy,'/terms':Terms,'/copyright':Copyright,'/editor':Editor,'/library':Library,'/tools/vocals':Vocals,'/tools/trim-audio':QuickTrim,'/tools/echo':Echo,'/tools/slowed-reverb':Slowed,'/tools/pitch':Pitch,'/tools/spatial-motion':Spatial,'/tools/social-video-downloader':YouTubeConverter,'/tools/lyrics-video-maker':LyricsVideoMaker,'/reference/mp3-file-size':Mp3Reference}
 // Keep the same sound-provider boundary as src/App.tsx. This entry renders
 // pages without App during SEO generation, so App's provider is not inherited.
 // The provider must also stay INSIDE StaticRouter because it reads useLocation.
@@ -39,6 +42,8 @@ export function pageHtml(path:string){
      {Object.entries(pageRoutes).map(([p,C])=><Route key={p} path={p} element={<C/>}/>)}
      <Route path="/tool/:toolId" element={<Tool/>}/>
      <Route path="/blog/:slug" element={<BlogPost/>}/>
+     <Route path="/reference/mp3-file-size/:bitrate" element={<Mp3Reference/>}/>
+     <Route path="/reference/mp3-file-size/:bitrate/:seconds" element={<Mp3Reference/>}/>
      <Route path="*" element={<NotFound/>}/>
     </Routes>
    </SoundExperienceProvider>

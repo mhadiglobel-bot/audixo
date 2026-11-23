@@ -30,6 +30,7 @@ import './styles/v98-unified-editors.css'
 import './styles/v99-editor-polish.css'
 import './styles/v101-premium-polish.css'
 import './styles/v102-editor-nexivo.css'
+import './styles/mp3-reference-seo.css'
 
 document.documentElement.classList.add('audixo-light')
 ReactDOM.createRoot(document.getElementById('root')!).render(

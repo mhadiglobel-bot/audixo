@@ -28,8 +28,11 @@ assert.ok(read('public/llms.txt').includes(origin+'/features'),'LLM directory wr
 assert.ok(!read('public/llms.txt').includes('.vercel.app'),'LLM file leaks preview origin')
 const sitemap=read('dist/sitemap.xml')
 const urls=Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g),x=>x[1])
-assert.ok(urls.length>=10,'Sitemap unexpectedly empty')
+assert.ok(urls.length>=2100,'Sitemap should include the 2,100 MP3 reference answer pages')
+const mp3Urls=urls.filter(url=>url.includes('/reference/mp3-file-size/'))
+assert.equal(mp3Urls.length,2114,'Expected 14 bitrate directories and 2,100 MP3 answers')
 assert.equal(new Set(urls).size,urls.length,'Duplicate sitemap URLs')
+const referenceTitles=new Set(),referenceDescriptions=new Set()
 for(const url of urls){
  assert.ok(url.startsWith(origin+'/'),'Noncanonical sitemap URL: '+url)
  const pathname=new URL(url).pathname
@@ -41,6 +44,17 @@ for(const url of urls){
  assert.deepEqual(og,[url],'Missing/duplicate Open Graph URL '+url)
  assert.ok(!html.includes('audixo.vercel.app'),'Legacy preview hostname leaked into rendered HTML '+url)
  assert.ok(/<meta name="description" content="[^"]+"/.test(html),'Missing meta description '+url)
+ if(url.includes('/reference/mp3-file-size/')){
+  const title=html.match(/<title>([^<]+)<\/title>/)?.[1]
+  const description=html.match(/<meta name="description" content="([^"]+)"/)?.[1]
+  assert.ok(title&&description,'Missing reference metadata '+url)
+  assert.ok(!referenceTitles.has(title),'Duplicate reference title '+title)
+  assert.ok(!referenceDescriptions.has(description),'Duplicate reference description '+description)
+  referenceTitles.add(title);referenceDescriptions.add(description)
+  assert.ok(html.includes('AUDIXO Home'),'Reference needs home navigation '+url)
+  assert.ok(html.includes('<h1'),'Reference needs readable main content '+url)
+  assert.ok(!html.includes('name="robots" content="noindex'),'Reference unexpectedly noindexed '+url)
+ }
 }
 assert.ok(!sitemap.includes('/tools/mashup'),'Retired route in sitemap')
 const robots=read('dist/robots.txt')

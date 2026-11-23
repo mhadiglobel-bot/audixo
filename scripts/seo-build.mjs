@@ -157,7 +157,7 @@ const pages={
  '/tools/spatial-motion':['Audixo 8D / 16D Audio Motion — Spatial Sound Tool','Add stereo orbit and motion effects to audio, customize depth and speed and preview in headphones.']
 }
 for(const tool of audioTools)pages['/tool/'+tool.id]=[tool.name+' Audio Tool',tool.short]
-const paths=[...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),...mp3References.map(p=>p.path)]
+const paths=[...new Set([...Object.keys(pageRoutes),...blogs.map(b=>'/blog/'+b.slug),...audioTools.map(t=>'/tool/'+t.id),...mp3References.map(p=>p.path)])]
 const indexablePaths=paths.filter(p=>p!=='/library'&&!p.startsWith('/tool/'))
 const seoBlogTitles={
  'removable-effects-and-duplicate':'Edit Selected Audio without Rebuilding',
